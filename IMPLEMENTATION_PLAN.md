@@ -306,6 +306,14 @@ no-account workspace link.
 
 ---
 
+## Backlog (later)
+
+- [ ] **Interactive crop/zoom region** — let the customer drag to choose which
+      part of the photo to zoom into (pan + zoom box), not just centered zoom.
+      Currently: centered zoom slider (`cropToAspect` zoom) in the Studio.
+- [ ] Pan offset (X/Y) for off-center subjects.
+- [ ] Text/number legibility booster for simple logos.
+
 ## Cross-cutting conventions
 
 - **Styling:** logical properties only (`ms-/me-/ps-/pe-/start-/end-/text-start/end`).
