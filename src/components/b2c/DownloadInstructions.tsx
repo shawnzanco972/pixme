@@ -6,7 +6,15 @@
  */
 import { useState } from "react";
 
-export function DownloadInstructions({ orderId }: { orderId: string }) {
+export function DownloadInstructions({
+  orderId,
+  track = "b2c",
+  label = "הורדת הוראות הרכבה (PDF)",
+}: {
+  orderId: string;
+  track?: "b2c" | "b2b";
+  label?: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +25,7 @@ export function DownloadInstructions({ orderId }: { orderId: string }) {
       const res = await fetch("/api/generate-instructions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify({ orderId, track }),
       });
       if (!res.ok) throw new Error("שגיאה ביצירת ה‑PDF.");
       const blob = await res.blob();
@@ -42,7 +50,7 @@ export function DownloadInstructions({ orderId }: { orderId: string }) {
         disabled={loading}
         className="rounded-full bg-black px-6 py-3 text-white transition-colors hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
       >
-        {loading ? "מכין…" : "הורדת הוראות הרכבה (PDF)"}
+        {loading ? "מכין…" : label}
       </button>
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>

@@ -53,3 +53,34 @@ export function computePrice(
 export function formatILS(amount: number): string {
   return `${amount.toLocaleString("he-IL")} ₪`;
 }
+
+// --- B2B (license batches) -------------------------------------------------
+
+const B2B_PER_LICENSE = 35; // base per digital license
+/** Volume discount tiers: [minLicenses, perLicensePrice]. */
+const B2B_TIERS: ReadonlyArray<readonly [number, number]> = [
+  [100, 25],
+  [50, 29],
+  [20, 32],
+  [1, B2B_PER_LICENSE],
+];
+
+export interface B2bPrice {
+  licenses: number;
+  perLicense: number;
+  total: number;
+  currency: "ILS";
+}
+
+/** Price a B2B license batch with simple volume discounts. */
+export function computeB2bPrice(licenses: number): B2bPrice {
+  const n = Math.max(0, Math.floor(licenses));
+  const perLicense =
+    B2B_TIERS.find(([min]) => n >= min)?.[1] ?? B2B_PER_LICENSE;
+  return {
+    licenses: n,
+    perLicense,
+    total: n * perLicense,
+    currency: "ILS",
+  };
+}

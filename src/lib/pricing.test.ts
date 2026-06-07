@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computePrice, formatILS, SIZES } from "./pricing";
+import { computeB2bPrice, computePrice, formatILS, SIZES } from "./pricing";
 
 describe("computePrice", () => {
   it("digital price scales with area and has no physical surcharge", () => {
@@ -28,5 +28,22 @@ describe("computePrice", () => {
 
   it("formats ILS with the shekel sign", () => {
     expect(formatILS(120)).toContain("₪");
+  });
+});
+
+describe("computeB2bPrice", () => {
+  it("totals licenses × per-license price", () => {
+    const p = computeB2bPrice(10);
+    expect(p.total).toBe(p.licenses * p.perLicense);
+  });
+
+  it("applies volume discounts at higher tiers", () => {
+    expect(computeB2bPrice(100).perLicense).toBeLessThan(
+      computeB2bPrice(5).perLicense,
+    );
+  });
+
+  it("floors fractional license counts", () => {
+    expect(computeB2bPrice(9.7).licenses).toBe(9);
   });
 });
