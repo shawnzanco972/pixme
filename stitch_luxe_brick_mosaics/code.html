@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Creative Workshop - Mosaic Builder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Rubik:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#bb152c",
+                        "surface-variant": "#e0e3e5",
+                        "on-primary-fixed-variant": "#92001c",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-primary-fixed": "#410007",
+                        "primary": "#b7102a",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#db313f",
+                        "on-primary-container": "#fffbff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#191c1e",
+                        "outline-variant": "#e4bebc",
+                        "secondary": "#1d4ed8",
+                        "surface-bright": "#f7f9fb",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "on-tertiary-fixed-variant": "#5a4300",
+                        "on-secondary-fixed-variant": "#0039b5",
+                        "tertiary-fixed": "#ffdf98",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#dce1ff",
+                        "error-container": "#ffdad6",
+                        "surface": "#f7f9fb",
+                        "on-secondary-container": "#fffbff",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "outline": "#8f6f6e",
+                        "secondary-container": "#4069f2",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#2d3133",
+                        "surface-container": "#eceef0",
+                        "background": "#f7f9fb",
+                        "on-secondary-fixed": "#001551",
+                        "on-surface-variant": "#5b403f",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-tertiary-container": "#fffbff",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#f3bf2f",
+                        "tertiary": "#745800",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-dim": "#d8dadc",
+                        "on-surface": "#191c1e",
+                        "inverse-primary": "#ffb3b1",
+                        "secondary-fixed-dim": "#b7c4ff",
+                        "tertiary-container": "#926f00",
+                        "primary-fixed": "#ffdad8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-xs": "4px",
+                        "base": "8px",
+                        "grid-margin": "24px",
+                        "gutter": "16px",
+                        "stack-lg": "32px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "stack-xl": "64px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Rubik"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Rubik"],
+                        "headline-md": ["Rubik"],
+                        "display-lg": ["Rubik"],
+                        "display-lg-mobile": ["Rubik"],
+                        "label-sm": ["Rubik"],
+                        "body-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom range slider styling for playful aesthetic */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #1d4ed8; /* Secondary */
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e0e3e5; /* Surface Variant */
+            border-radius: 4px;
+        }
+        
+        /* Toy block pattern background */
+        .bg-baseplate {
+            background-color: #f7f9fb;
+            background-image: radial-gradient(circle at center, #e0e3e5 2px, transparent 2px);
+            background-size: 16px 16px;
+        }
+
+        /* 3D Button Click Effect Utility */
+        .btn-3d {
+            transition: all 0.1s ease;
+            position: relative;
+            top: 0;
+        }
+        .btn-3d:active {
+            top: 4px;
+            border-bottom-width: 0px !important;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body class="bg-baseplate text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopNavBar Component -->
+<nav class="bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed-dim w-full top-0 sticky border-b-4 border-surface-variant dark:border-outline-variant shadow-sm z-50" dir="ltr">
+<div class="flex justify-between items-center px-grid-margin py-base max-w-7xl mx-auto">
+<!-- Brand Logo -->
+<div class="font-display-lg text-display-lg text-primary dark:text-primary-fixed tracking-tight">
+                Creative Workshop
+            </div>
+<!-- Navigation Links -->
+<div class="hidden md:flex gap-gutter items-center">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-lg transition-all px-3 py-2 active:translate-y-0.5 transition-transform duration-75 font-label-md text-label-md" href="#">
+                    Gallery
+                </a>
+<a class="text-secondary dark:text-secondary-fixed-dim border-b-2 border-secondary font-bold pb-1 hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-lg transition-all px-3 py-2 active:translate-y-0.5 transition-transform duration-75 font-label-md text-label-md" href="#">
+                    Create
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-lg transition-all px-3 py-2 active:translate-y-0.5 transition-transform duration-75 font-label-md text-label-md" href="#">
+                    Help
+                </a>
+</div>
+<!-- Trailing Action -->
+<div>
+<button class="bg-primary text-on-primary border-b-[3px] border-on-primary-fixed-variant rounded-lg font-label-md text-label-md px-6 py-2 btn-3d hover:bg-primary-container">
+                    Login
+                </button>
+</div>
+</div>
+</nav>
+<!-- Main Workspace Area -->
+<main class="flex-grow w-full max-w-7xl mx-auto px-grid-margin py-stack-lg">
+<!-- Grid Layout: Sidebar Right (DOM first for RTL), Canvas Left (DOM second) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-grid-margin items-start">
+<!-- RIGHT SIDEBAR (Controls) -->
+<aside class="lg:col-span-4 flex flex-col gap-stack-md">
+<!-- Title Card -->
+<div class="bg-surface-container-lowest rounded-xl p-gutter border-2 border-surface-variant shadow-sm relative overflow-hidden">
+<div class="absolute top-0 right-0 w-full h-2 bg-primary"></div>
+<h1 class="font-headline-md text-headline-md text-primary mb-1 mt-2">סדנת פסיפס</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">הגדירו את מידות הלוח ובחרו צבעים כדי להתחיל ליצור.</p>
+</div>
+<!-- Board Dimensions Card -->
+<div class="bg-surface-container-lowest rounded-xl p-gutter border-2 border-surface-variant shadow-sm border-b-4">
+<h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 mb-stack-md">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">grid_on</span>
+                        מידות הלוח (במספר לוחות)
+                    </h2>
+<div class="flex gap-gutter">
+<div class="flex-1">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">רוחב</label>
+<div class="relative">
+<input class="w-full border-2 border-surface-variant rounded-lg py-3 px-4 font-body-md text-body-md text-center focus:border-secondary focus:ring-0 shadow-inner bg-surface" type="number" value="4"/>
+</div>
+</div>
+<div class="flex-1">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">גובה</label>
+<div class="relative">
+<input class="w-full border-2 border-surface-variant rounded-lg py-3 px-4 font-body-md text-body-md text-center focus:border-secondary focus:ring-0 shadow-inner bg-surface" type="number" value="4"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Color Palette Card -->
+<div class="bg-surface-container-lowest rounded-xl p-gutter border-2 border-surface-variant shadow-sm border-b-4">
+<h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 mb-stack-md">
+<span class="material-symbols-outlined text-[#f3bf2f]" style="font-variation-settings: 'FILL' 1;">palette</span>
+                        פלטת צבעים
+                    </h2>
+<div class="grid grid-cols-5 gap-3">
+<!-- Swatches -->
+<button class="w-12 h-12 rounded-full border-2 border-surface-variant bg-[#b7102a] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#b7102a] active:scale-95"></button>
+<button class="w-12 h-12 rounded-full border-2 border-surface-variant bg-[#1d4ed8] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d4ed8] active:scale-95"></button>
+<button class="w-12 h-12 rounded-full border-2 border-surface-variant bg-[#f3bf2f] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f3bf2f] active:scale-95"></button>
+<button class="w-12 h-12 rounded-full border-4 border-secondary bg-[#191c1e] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#191c1e] active:scale-95 relative">
+<span class="absolute inset-0 m-auto w-2 h-2 bg-white rounded-full"></span>
+</button>
+<button class="w-12 h-12 rounded-full border-2 border-surface-variant bg-[#ffffff] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ffffff] active:scale-95"></button>
+<button class="w-12 h-12 rounded-full border-2 border-surface-variant bg-[#8f6f6e] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8f6f6e] active:scale-95"></button>
+<button class="w-12 h-12 rounded-full border-2 border-surface-variant bg-[#4069f2] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4069f2] active:scale-95"></button>
+<button class="w-12 h-12 rounded-full border-2 border-surface-variant bg-[#db313f] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#db313f] active:scale-95"></button>
+<button class="w-12 h-12 rounded-full border-2 border-surface-variant bg-[#e4bebc] shadow-sm hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e4bebc] active:scale-95"></button>
+<button class="w-12 h-12 rounded-full border-2 border-dashed border-outline-variant bg-surface-container flex items-center justify-center shadow-sm hover:bg-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">add</span>
+</button>
+</div>
+</div>
+<!-- Image Settings Card -->
+<div class="bg-surface-container-lowest rounded-xl p-gutter border-2 border-surface-variant shadow-sm border-b-4">
+<h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 mb-stack-md">
+<span class="material-symbols-outlined text-outline" style="font-variation-settings: 'FILL' 1;">tune</span>
+                        הגדרות תמונה
+                    </h2>
+<div class="flex flex-col gap-4">
+<div>
+<div class="flex justify-between mb-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">זום</label>
+<span class="font-label-sm text-label-sm text-secondary">100%</span>
+</div>
+<input max="200" min="10" type="range" value="100"/>
+</div>
+<div>
+<div class="flex justify-between mb-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">ניגודיות</label>
+</div>
+<input max="200" min="0" type="range" value="100"/>
+</div>
+<div>
+<div class="flex justify-between mb-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">רוויה</label>
+</div>
+<input max="200" min="0" type="range" value="100"/>
+</div>
+<div class="flex items-center justify-between mt-2 pt-4 border-t-2 border-surface-variant border-dashed">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-2 cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">blur_on</span>
+                                טשטוש (Dithering)
+                            </label>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-3 mt-2">
+<button class="w-full bg-primary text-on-primary border-b-[4px] border-on-primary-fixed-variant rounded-xl font-headline-sm text-headline-sm py-4 flex items-center justify-center gap-2 btn-3d hover:bg-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">upload_file</span>
+                        העלאת תמונה
+                    </button>
+<button class="w-full bg-secondary text-on-secondary border-b-[4px] border-on-secondary-fixed-variant rounded-xl font-headline-sm text-headline-sm py-4 flex items-center justify-center gap-2 btn-3d hover:bg-secondary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+                        הוספה לעגלה
+                    </button>
+</div>
+</aside>
+<!-- LEFT MAIN CANVAS (Canvas Area) -->
+<section class="lg:col-span-8 h-[800px] flex items-center justify-center bg-surface-container-low rounded-2xl border-4 border-surface-variant shadow-inner p-gutter relative overflow-hidden group">
+<!-- Decorative baseplate studs on canvas background -->
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_#d8dadc_2px,_transparent_2px)] bg-[length:24px_24px] opacity-50"></div>
+<!-- The Mosaic Art Canvas -->
+<div class="relative w-full max-w-3xl aspect-square bg-white shadow-md border-2 border-outline-variant p-2 transform transition-transform duration-500 group-hover:scale-[1.02]">
+<div class="w-full h-full bg-surface-container-lowest border border-surface-variant relative overflow-hidden" style="display: grid; grid-template-columns: repeat(32, 1fr); grid-template-rows: repeat(32, 1fr);">
+<!-- Semantic placeholder for generated pixel art -->
+<div class="absolute inset-0 bg-center bg-cover bg-no-repeat" data-alt="A brightly colored, high-resolution pixel art illustration of a cute, stylized robot holding a flower. The pixel art uses a vibrant palette of cherry red, bright blue, sunny yellow, and crisp white, resembling plastic building bricks. The background of the artwork is a clean, solid light blue. The aesthetic is cheerful, digital, and heavily textured to look like a physical mosaic built from small square pieces, fitting a modern toy-like design style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlI4dcDO4kVKj8xMIxWM4nw06tUJgBdHIm1O2EMfjmgsH-KALmoXVzRhSPASfl5jPmJuHaJavnwcNP523escih-Fo6Uo0_mrSLsxlVAgK3xEu2JBDkISlHS6AWShxmlAo-LAKiaaPuRxmHwkhXLzqyeVAty1hV1Ga_VV3haE-5V3M9_3j0xXhgpPVb-Hk9jKUJGHdB_4VS4GZ4Y9UmhwXciqu6qT8seI1iOUHA1zvlhqzoAPlX7-TuGKNJ09RFRl6mPo6NrzfSkY4');">
+</div>
+</div>
+</div>
+<!-- Floating Zoom controls on canvas (optional subtle extra) -->
+<div class="absolute bottom-6 left-6 flex bg-surface-container-lowest rounded-full border-2 border-surface-variant shadow-sm p-1">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface transition-colors active:scale-95">
+<span class="material-symbols-outlined">zoom_out</span>
+</button>
+<div class="w-px h-6 bg-surface-variant my-auto mx-1"></div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface transition-colors active:scale-95">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer Component -->
+<footer class="bg-surface-container-lowest dark:bg-surface-dim text-secondary dark:text-secondary-fixed w-full mt-stack-xl border-t-2 border-surface-variant dark:border-outline-variant flat opacity-90 hover:opacity-100 transition-opacity" dir="ltr">
+<div class="flex flex-col md:flex-row justify-between items-center px-grid-margin py-stack-lg max-w-7xl mx-auto gap-gutter">
+<!-- Brand Logo -->
+<div class="font-headline-sm text-headline-sm text-on-surface">
+                Creative Workshop
+            </div>
+<!-- Links -->
+<div class="flex gap-gutter font-label-sm text-label-sm">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Terms</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Privacy</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Support</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Community</a>
+</div>
+<!-- Copyright -->
+<div class="font-body-md text-body-md text-on-surface-variant">
+                © 2024 Creative Workshop. Build your world, one brick at a time.
+            </div>
+</div>
+</footer>
+</body></html>

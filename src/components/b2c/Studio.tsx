@@ -246,7 +246,7 @@ export function Studio() {
       </section>
 
       {/* Controls */}
-      <section className="flex flex-col gap-5">
+      <section className="card flex flex-col gap-5 p-6">
         <h2 className="font-heading text-2xl font-bold">הזמינו את הפסיפס שלכם</h2>
 
         {testFull && (
@@ -452,7 +452,7 @@ export function Studio() {
 
         <div className="grid gap-3">
           <input
-            className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            className="input"
             placeholder="שם מלא"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -460,26 +460,26 @@ export function Studio() {
           <input
             type="email"
             dir="ltr"
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-start dark:border-zinc-700 dark:bg-zinc-900"
+            className="input text-start"
             placeholder="אימייל"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <div className="grid grid-cols-2 gap-3">
             <input
-              className="col-span-2 rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              className="input col-span-2"
               placeholder="רחוב ומספר"
               value={street}
               onChange={(e) => setStreet(e.target.value)}
             />
             <input
-              className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              className="input"
               placeholder="עיר"
               value={city}
               onChange={(e) => setCity(e.target.value)}
             />
             <input
-              className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              className="input"
               placeholder="מיקוד"
               value={zip}
               onChange={(e) => setZip(e.target.value)}
@@ -488,14 +488,16 @@ export function Studio() {
         </div>
 
         <div className="mt-2 flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-800">
-          <span className="text-2xl font-bold">{formatILS(price.total)}</span>
+          <span className="font-heading text-2xl font-bold">
+            {formatILS(price.total)}
+          </span>
           <button
             type="button"
             onClick={() => void handleOrder()}
             disabled={submitting || !result}
-            className="rounded-full bg-black px-8 py-3 text-white transition-colors hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            className="btn btn-primary"
           >
-            {submitting ? "מעבד…" : "להזמנה"}
+            {submitting ? "מעבד…" : "הוספה לעגלה 🛒"}
           </button>
         </div>
 

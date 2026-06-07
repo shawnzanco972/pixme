@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { Heebo, David_Libre } from "next/font/google";
+import { Heebo, Rubik } from "next/font/google";
+
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 // Primary body font
@@ -9,11 +12,11 @@ const heebo = Heebo({
   display: "swap",
 });
 
-// Headings font
-const davidLibre = David_Libre({
-  variable: "--font-david-libre",
+// Headings / labels — Rubik (rounded, toy-like; supports Hebrew)
+const rubik = Rubik({
+  variable: "--font-rubik",
   subsets: ["hebrew", "latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -47,9 +50,13 @@ export default function RootLayout({
     <html
       lang="he"
       dir="rtl"
-      className={`${heebo.variable} ${davidLibre.variable} h-full antialiased`}
+      className={`${heebo.variable} ${rubik.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">{children}</div>
+        <SiteFooter />
+      </body>
     </html>
   );
 }
