@@ -30,6 +30,17 @@ export interface RestockReport {
 }
 
 /**
+ * Per-order packing list: per-color pieces + spare + grams for ONE order.
+ * What the packer weighs out for the box (incl. spare allowance).
+ */
+export function orderPackingList(
+  pixelMap: number[][],
+  palette: BrickColor[] = CATALOG,
+): RestockReport {
+  return aggregateRestock([pixelMap], palette);
+}
+
+/**
  * @param pixelMaps pixel_maps of pending physical orders (each number[][])
  */
 export function aggregateRestock(

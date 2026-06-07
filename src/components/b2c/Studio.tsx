@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type BrickifyResult } from "@/lib/brick-engine";
+import { ColorBreakdown } from "@/components/b2c/ColorBreakdown";
 import { getActivePalette } from "@/lib/brick-engine/palette";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
 import { usePaletteInventory } from "@/lib/brick-engine/usePaletteInventory";
@@ -21,7 +22,6 @@ const CM_PER_PLATE = 19.2;
 const MAX_PLATES = 5;
 import { createClient } from "@/lib/supabase/client";
 import { uploadToSignedUrl } from "@/lib/supabase/storage";
-import type { FulfillmentType } from "@/lib/supabase/types.helpers";
 
 export function Studio() {
   const { brickify } = useBrickWorker();
@@ -39,7 +39,6 @@ export function Studio() {
   const [saturation, setSaturation] = useState(1.1);
   // Dithering off by default (it reads as speckle at stud resolution).
   const [dither, setDither] = useState(0);
-  const [fulfillment, setFulfillment] = useState<FulfillmentType>("digital");
   const [result, setResult] = useState<BrickifyResult | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +90,8 @@ export function Studio() {
   const [zip, setZip] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const price = computePrice(cols, rows, fulfillment);
+  // Every order ships a physical kit (the instruction PDF is a free download).
+  const price = computePrice(cols, rows, "physical");
 
   const onPick = useCallback(async (f: File) => {
     setError(null);
@@ -146,7 +146,7 @@ export function Studio() {
     if (!file || !result) return setError("נא להעלות תמונה תחילה.");
     if (!name.trim() || !email.trim())
       return setError("נא למלא שם וכתובת אימייל.");
-    if (fulfillment === "physical" && (!street || !city || !zip))
+    if (!street || !city || !zip)
       return setError("נא למלא כתובת למשלוח.");
 
     setSubmitting(true);
@@ -173,11 +173,10 @@ export function Studio() {
           customer_name: name,
           contact_email: email,
           total_price: price.total,
-          fulfillment_type: fulfillment,
+          fulfillment_type: "physical",
           image_url: path,
           pixel_map: result.pixelMap,
-          shipping_address:
-            fulfillment === "physical" ? { street, city, zip } : null,
+          shipping_address: { street, city, zip },
         }),
       });
       if (!res.ok) throw new Error("שגיאה ביצירת ההזמנה.");
@@ -224,10 +223,13 @@ export function Studio() {
         </label>
         {working && <p className="text-sm text-zinc-500">מעבד…</p>}
         {result && (
-          <p className="text-sm text-zinc-500">
-            {result.cols}×{result.rows} אריחים · {result.cols * result.rows}{" "}
-            חלקים
-          </p>
+          <>
+            <p className="text-sm text-zinc-500">
+              {result.cols}×{result.rows} אריחים · {result.cols * result.rows}{" "}
+              חלקים
+            </p>
+            <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
+          </>
         )}
       </section>
 
@@ -404,29 +406,9 @@ export function Studio() {
           </p>
         </div>
 
-        <div>
-          <p className="mb-2 text-sm font-medium">סוג אספקה</p>
-          <div className="flex gap-2">
-            {(
-              [
-                ["digital", "דיגיטלי (PDF)"],
-                ["physical", "ערכה פיזית"],
-              ] as const
-            ).map(([val, label]) => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => setFulfillment(val)}
-                className={`rounded-lg border px-4 py-2 text-sm transition-colors ${
-                  fulfillment === val
-                    ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                    : "border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+          📦 כל הזמנה כוללת ערכה פיזית עם כל הלבנים + חוברת הוראות. קובץ ההוראות
+          (PDF) זמין להורדה חינם בעמוד ההזמנה.
         </div>
 
         <div className="grid gap-3">
@@ -444,28 +426,26 @@ export function Studio() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          {fulfillment === "physical" && (
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                className="col-span-2 rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-                placeholder="רחוב ומספר"
-                value={street}
-                onChange={(e) => setStreet(e.target.value)}
-              />
-              <input
-                className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-                placeholder="עיר"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-              <input
-                className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-                placeholder="מיקוד"
-                value={zip}
-                onChange={(e) => setZip(e.target.value)}
-              />
-            </div>
-          )}
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              className="col-span-2 rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              placeholder="רחוב ומספר"
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+            />
+            <input
+              className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              placeholder="עיר"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+            <input
+              className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              placeholder="מיקוד"
+              value={zip}
+              onChange={(e) => setZip(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="mt-2 flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-800">

@@ -169,7 +169,14 @@ export default async function AdminDashboard() {
                   className="border-t border-zinc-100 dark:border-zinc-800"
                 >
                   <td className="p-3">{day(o.created_at)}</td>
-                  <td className="p-3">{o.customer_name}</td>
+                  <td className="p-3">
+                    <a
+                      href={`/admin/orders/${o.id}`}
+                      className="font-medium underline"
+                    >
+                      {o.customer_name}
+                    </a>
+                  </td>
                   <td className="p-3">
                     {STATUS_HE[o.status as OrderStatus] ?? o.status}
                   </td>
@@ -178,7 +185,12 @@ export default async function AdminDashboard() {
                   </td>
                   <td className="p-3">{formatILS(Number(o.total_price))}</td>
                   <td className="p-3">
-                    <DownloadInstructions orderId={o.id} label="PDF" />
+                    <a
+                      href={`/admin/orders/${o.id}`}
+                      className="text-sm underline"
+                    >
+                      פתח
+                    </a>
                   </td>
                 </tr>
               ))}

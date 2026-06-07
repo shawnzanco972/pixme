@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { GRAMS_PER_STUD, SPARE_RATIO } from "@/lib/packing";
-import { aggregateRestock } from "./restock";
+import { aggregateRestock, orderPackingList } from "./restock";
 
 describe("aggregateRestock", () => {
   it("sums per-color pieces across multiple orders", () => {
@@ -31,6 +31,20 @@ describe("aggregateRestock", () => {
     const report = aggregateRestock([map]);
     expect(report.lines[0].id).toBe(0); // most-used first
     expect(report.lines.every((l) => typeof l.core === "boolean")).toBe(true);
+  });
+
+  it("orderPackingList gives per-color pieces + spare + grams for one order", () => {
+    const map = [
+      [0, 0, 0, 0],
+      [3, 3, 3, 3],
+    ]; // 4×White(0), 4×Black(3)
+    const list = orderPackingList(map);
+    expect(list.orderCount).toBe(1);
+    expect(list.totalPieces).toBe(8);
+    const white = list.lines.find((l) => l.id === 0)!;
+    expect(white.pieces).toBe(4);
+    expect(white.piecesWithSpare).toBe(Math.ceil(4 * (1 + SPARE_RATIO)));
+    expect(white.grams).toBeGreaterThan(white.pieces * GRAMS_PER_STUD * 0.9);
   });
 
   it("handles an empty pending set", () => {
