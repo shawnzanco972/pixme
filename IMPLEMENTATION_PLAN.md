@@ -64,31 +64,46 @@ Mark tasks done by switching `- [ ]` to `- [x]`.
 Goal: a deployable backend skeleton — DB live, env wired, payment webhook
 researched and stubbed — before any heavy feature work.
 
-### 1.1 Supabase project & client wiring
+### 1.1 Supabase project & client wiring — ✅ COMPLETE
+> Live project ref: `ldolbwvkzuhzzgzrpvmj`
 - **Plan**
-  - [ ] Confirm Supabase project (create or reuse), capture project URL + keys
-  - [ ] Decide env var names (`NEXT_PUBLIC_SUPABASE_URL`,
+  - [x] Confirm Supabase project (create or reuse), capture project URL + keys
+  - [x] Decide env var names (`NEXT_PUBLIC_SUPABASE_URL`,
         `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
 - **Implement**
-  - [ ] Add `.env.local` (+ `.env.example`) with Supabase + iCount placeholders
-  - [ ] Apply migrations `0001` and `0002` to the Supabase project
-  - [ ] Create `src/lib/supabase/client.ts` (browser, anon key)
-  - [ ] Create `src/lib/supabase/server.ts` (server, service-role for trusted ops)
-  - [ ] Generate TypeScript DB types into `src/lib/supabase/types.ts`
+  - [x] Add `.env.local` (+ `.env.example`) with Supabase + iCount placeholders
+  - [x] Apply migrations `0001` and `0002` to the Supabase project
+  - [x] Create `src/lib/supabase/client.ts` (browser, anon key)
+  - [x] Create `src/lib/supabase/server.ts` (server: RLS client + service-role admin client)
+  - [x] Create `src/lib/supabase/env.ts` (validated env access)
+  - [x] Author authoritative TypeScript DB types in `src/lib/supabase/types.ts`
+        (generated from live project) + domain aliases in `types.helpers.ts`
+  - [x] `0003_security_hardening.sql` — pin `set_updated_at` search_path; revoke
+        EXECUTE on trigger functions (resolved advisor warnings)
 - **Verify**
-  - [ ] Run Supabase advisors (security/perf) — resolve RLS warnings
-  - [ ] Smoke test: anon insert into `b2c_orders` succeeds; anon select returns 0 rows
-  - [ ] Smoke test: anon can read only active `b2b_workspaces`
+  - [x] `npm run build` + `npm run lint` pass with the new modules
+  - [x] Run Supabase advisors (security) — resolved actionable warnings; the
+        remaining `rls_policy_always_true` warnings are accepted-by-design
+        (authenticated == admin; guest-checkout INSERT). Revisit when we add a
+        dedicated admin role/claim.
+  - [x] Smoke test: anon insert into `b2c_orders` succeeds; anon select returns 0 rows
+  - [x] Smoke test: anon can read only active `b2b_workspaces` (1 active visible, inactive hidden)
+  - [x] Bonus: `slots_used` trigger fires on anon submission (0 → 1)
 
-### 1.2 Supabase Storage for uploads
+### 1.2 Supabase Storage for uploads — ✅ COMPLETE
 - **Plan**
-  - [ ] Define bucket(s): `uploads` (original photos), `previews` (optional)
-  - [ ] Decide path convention (e.g. `b2c/{order_id}/original.jpg`)
+  - [x] Define bucket: private `uploads` (10 MB cap, image MIME types only)
+  - [x] Decide path convention: `b2c/{orderId}/original.{ext}`,
+        `b2b/{workspaceId}/{submissionId}.{ext}`
 - **Implement**
-  - [ ] Create bucket(s) + Storage RLS (anon upload, admin/public read as needed)
-  - [ ] Helper for signed upload URLs in `src/lib/supabase/storage.ts`
+  - [x] `0004_storage_uploads.sql` — create private `uploads` bucket + Storage RLS
+        (anon/auth INSERT; authenticated-only SELECT; no anon update/delete)
+  - [x] Helpers in `src/lib/supabase/storage.ts`: signed upload URL (server mints),
+        `uploadToSignedUrl` (browser), signed download URL (admin viewing), path builders
 - **Verify**
-  - [ ] Upload a test image from the browser; confirm public/signed URL resolves
+  - [x] Bucket + both policies confirmed present via SQL
+  - [x] `npm run build` + `npm run lint` pass
+  - [ ] Upload a test image from the browser end-to-end (deferred to first UI in Phase 4)
 
 ### 1.3 iCount integration research (BLOCKER for payments)
 - **Plan / Research**
