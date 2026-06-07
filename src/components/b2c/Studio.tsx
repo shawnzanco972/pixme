@@ -129,13 +129,15 @@ export function Studio() {
     <div className="mx-auto grid w-full max-w-5xl gap-8 p-6 md:grid-cols-2">
       {/* Preview / upload */}
       <section className="flex flex-col gap-4">
-        <label className="flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-          {result ? (
-            <canvas
-              ref={canvasRef}
-              className="h-full w-full object-contain [image-rendering:pixelated]"
-            />
-          ) : (
+        <label className="relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+          {/* Canvas is always mounted so its ref is stable for the first paint. */}
+          <canvas
+            ref={canvasRef}
+            className={`h-full w-full object-contain [image-rendering:pixelated] ${
+              result ? "" : "hidden"
+            }`}
+          />
+          {!result && (
             <span className="px-6 text-center text-zinc-500">
               לחצו כדי להעלות תמונה
               <br />

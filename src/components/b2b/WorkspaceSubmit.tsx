@@ -86,13 +86,15 @@ export function WorkspaceSubmit({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4">
-      <label className="flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-        {pixelMap ? (
-          <canvas
-            ref={canvasRef}
-            className="h-full w-full object-contain [image-rendering:pixelated]"
-          />
-        ) : (
+      <label className="relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+        {/* Canvas always mounted so its ref is stable for the first paint. */}
+        <canvas
+          ref={canvasRef}
+          className={`h-full w-full object-contain [image-rendering:pixelated] ${
+            pixelMap ? "" : "hidden"
+          }`}
+        />
+        {!pixelMap && (
           <span className="px-6 text-center text-zinc-500">
             לחצו כדי להעלות תמונה
           </span>

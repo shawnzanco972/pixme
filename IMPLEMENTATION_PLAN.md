@@ -175,7 +175,8 @@ a Web Worker so the UI never blocks. **Client-side only.**
   - [x] `src/lib/brick-engine/useBrickWorker.ts` — React hook (id-correlated, transferable)
 - **Verify**
   - [x] Build passes (worker bundled via `new URL(..., import.meta.url)`)
-  - [ ] Live in-browser jank check (do during Phase 4.1 UI)
+  - [x] Live in-browser: worker maps a test image to a 384px preview, full
+        27-color palette, no console errors (verified via preview)
 
 ---
 
@@ -219,7 +220,7 @@ Guest checkout, tracked by email + order token.
   - [x] Logical properties + Hebrew copy throughout
 - **Verify**
   - [x] Build + lint pass
-  - [ ] Live in-browser upload→preview smoke (manual)
+  - [x] Live in-browser upload→preview verified (fixed a first-paint canvas-ref bug)
 
 ### 4.2 Checkout & provisioning — ✅ COMPLETE (live payment pending creds)
 - **Plan**
