@@ -1,20 +1,46 @@
 /**
  * Brick Engine — orchestration.
  *
- * Pipeline (CLAUDE.md):
- *   image → coarse block quantization (gamma-correct averaging, in OKLab)
- *         → nearest-color match in OKLab (+ material penalty)
- *         → despeckle
- *         → pixel_map (2D array of palette indexes, row-major)
+ * Pipeline (CLAUDE.md + crispness refactor):
+ *   image
+ *     → user pre-processing (brightness / contrast / saturation)   [crisp edges]
+ *     → coarse block quantization (gamma-correct linear averaging)
+ *     → dither: tiny noise in sRGB before OKLab conversion           [no banding]
+ *     → nearest-color match in OKLab (+ material penalty)  — phase 1 greedy
+ *     → despeckle with Sobel edge preservation                      [keep edges]
+ *     → swap optimization                                  — phase 2 refine
+ *     → pixel_map (2D array of palette indexes, row-major)
  *
- * Runs entirely client-side (Web Worker). The resulting pixel_map is persisted
- * to the DB and later trusted by the PDF route — image math never re-runs.
+ * Runs entirely client-side (Web Worker). The result is DETERMINISTIC for a
+ * given image+options (seeded RNG), since the pixel_map is persisted and later
+ * trusted by the PDF route — image math never re-runs.
  */
 import { type OKLab } from "./color";
 import { despeckleGrid, type DespeckleOptions } from "./despeckle";
+import {
+  ditherLinearToOklab,
+  DEFAULT_DITHER_AMOUNT,
+  type DitherOptions,
+} from "./dither";
 import { nearestColorIndex, type MatchOptions } from "./match";
+import { swapOptimize, type SwapOptions } from "./optimize";
 import { DEFAULT_PALETTE, type BrickColor } from "./palette";
-import { quantizeToGrid, type RGBAImage } from "./quantize";
+import { preprocessImage, type PreprocessOptions } from "./preprocess";
+import { quantizeToLinearGrid, type RGBAImage } from "./quantize";
+import { mulberry32 } from "./rng";
+import { computeEdgeMask } from "./sobel";
+
+export interface EdgePreservationOptions {
+  /** Enable Sobel edge preservation in despeckle. Default true. */
+  enabled?: boolean;
+  /** Sobel magnitude (on OKLab L) above which a cell counts as an edge. */
+  threshold?: number;
+}
+
+export interface OptimizeOptions extends SwapOptions {
+  /** Enable phase-2 swap optimization. Default true. */
+  enabled?: boolean;
+}
 
 export interface BrickifyOptions {
   /** Grid width in studs. Default 48 (3 × 16-stud modules). */
@@ -25,9 +51,21 @@ export interface BrickifyOptions {
   palette?: BrickColor[];
   /** Matching options (material preference/penalty). */
   match?: MatchOptions;
+  /** User pre-processing (brightness/contrast/saturation). */
+  preprocess?: PreprocessOptions;
+  /** Dithering options; pass `null` to disable noise dithering. */
+  dither?: DitherOptions | null;
   /** Despeckle options; pass `null` to disable despeckling. */
   despeckle?: DespeckleOptions | null;
+  /** Sobel edge-preservation options for despeckle. */
+  edgePreservation?: EdgePreservationOptions;
+  /** Phase-2 swap optimization options. */
+  optimize?: OptimizeOptions;
+  /** Seed for the deterministic RNG (dither + swap). Default 1337. */
+  seed?: number;
 }
+
+const DEFAULT_EDGE_THRESHOLD = 0.085;
 
 export interface BrickifyResult {
   /** 2D array of palette indexes (row-major: pixelMap[row][col]). */
@@ -56,18 +94,52 @@ export function brickifyImage(
   const cols = options.cols ?? 48;
   const rows = options.rows ?? 48;
   const palette = options.palette ?? DEFAULT_PALETTE;
+  const rng = mulberry32(options.seed ?? 1337);
 
-  // 1) Coarse block quantization → grid of average OKLab colors.
-  const avgGrid: OKLab[] = quantizeToGrid(image, cols, rows);
+  // 0) User pre-processing on the full-res image (contrast keeps edges sharp).
+  const src = preprocessImage(image, options.preprocess ?? {});
 
-  // 2) Nearest-color match each cell.
-  let indices: number[] = avgGrid.map((lab) =>
+  // 1) Coarse block quantization → grid of average LINEAR-RGB colors.
+  const linGrid = quantizeToLinearGrid(src, cols, rows);
+
+  // 2) Dither: add tiny noise in sRGB, then convert to OKLab (breaks banding).
+  const ditherAmount =
+    options.dither === null ? 0 : (options.dither?.amount ?? DEFAULT_DITHER_AMOUNT);
+  const targets: OKLab[] = linGrid.map((lin) =>
+    ditherLinearToOklab(lin, ditherAmount, rng),
+  );
+
+  // 3) Phase 1 — greedy nearest-color match in OKLab.
+  let indices: number[] = targets.map((lab) =>
     nearestColorIndex(lab, palette, options.match),
   );
 
-  // 3) Despeckle (unless disabled).
+  // 4) Despeckle with Sobel edge preservation (unless disabled).
   if (options.despeckle !== null) {
-    indices = despeckleGrid(indices, cols, rows, options.despeckle ?? {});
+    const edgeEnabled = options.edgePreservation?.enabled ?? true;
+    const edgeMask = edgeEnabled
+      ? computeEdgeMask(
+          targets.map((t) => t.L),
+          cols,
+          rows,
+          options.edgePreservation?.threshold ?? DEFAULT_EDGE_THRESHOLD,
+        )
+      : null;
+    indices = despeckleGrid(indices, cols, rows, {
+      ...options.despeckle,
+      edgeMask,
+    });
+  }
+
+  // 5) Phase 2 — swap optimization (repairs accuracy lost to despeckle).
+  if (options.optimize?.enabled ?? true) {
+    const oklabById = new Map<number, OKLab>(
+      palette.map((c) => [c.id, c.oklab]),
+    );
+    indices = swapOptimize(indices, targets, oklabById, {
+      iterations: options.optimize?.iterations,
+      rng,
+    });
   }
 
   return { pixelMap: inflate(indices, cols), cols, rows };

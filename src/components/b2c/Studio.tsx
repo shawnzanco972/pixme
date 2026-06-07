@@ -27,6 +27,9 @@ export function Studio() {
   const [file, setFile] = useState<File | null>(null);
   const [imageData, setImageData] = useState<ImageData | null>(null);
   const [size, setSize] = useState<MosaicSize>(48);
+  // Pre-processing controls (defaults bias toward crisp, vivid output).
+  const [contrast, setContrast] = useState(1.2);
+  const [saturation, setSaturation] = useState(1.1);
   const [fulfillment, setFulfillment] = useState<FulfillmentType>("digital");
   const [result, setResult] = useState<BrickifyResult | null>(null);
   const [working, setWorking] = useState(false);
@@ -59,7 +62,11 @@ export function Studio() {
   useEffect(() => {
     let cancelled = false;
     if (!imageData) return;
-    brickify(imageData, { cols: size, rows: size })
+    brickify(imageData, {
+      cols: size,
+      rows: size,
+      preprocess: { contrast, saturation },
+    })
       .then((r) => {
         if (cancelled) return;
         setResult(r);
@@ -72,7 +79,7 @@ export function Studio() {
     return () => {
       cancelled = true;
     };
-  }, [imageData, size, brickify]);
+  }, [imageData, size, contrast, saturation, brickify]);
 
   async function handleOrder() {
     setError(null);
@@ -188,6 +195,45 @@ export function Studio() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Pre-processing: higher contrast keeps edges crisp; saturation keeps
+            colors vivid. Disabled until an image is loaded. */}
+        <div className="grid gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">
+              ניגודיות: {contrast.toFixed(2)}
+            </span>
+            <input
+              type="range"
+              min={0.5}
+              max={2}
+              step={0.05}
+              value={contrast}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setContrast(Number(e.target.value));
+              }}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">
+              רוויה: {saturation.toFixed(2)}
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.05}
+              value={saturation}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setSaturation(Number(e.target.value));
+              }}
+            />
+          </label>
         </div>
 
         <div>

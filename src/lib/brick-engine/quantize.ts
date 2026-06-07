@@ -1,10 +1,13 @@
 /**
  * Coarse block quantization.
  *
- * Downsamples a full-resolution image to a `cols × rows` grid of average
- * colors. Averaging is done in LINEAR-LIGHT sRGB (gamma-correct) — averaging
- * raw sRGB bytes would darken/muddy the result. Each block average is returned
- * as OKLab, ready for matching.
+ * Downsamples a full-resolution image to a `cols × rows` grid of average colors.
+ * Averaging is done in LINEAR-LIGHT sRGB (gamma-correct) — averaging raw sRGB
+ * bytes would darken/muddy the result.
+ *
+ * `quantizeToLinearGrid` returns the per-cell average as linear RGB, so the
+ * pipeline can inject dithering noise BEFORE the OKLab conversion. The older
+ * `quantizeToGrid` (returns OKLab directly) is kept as a convenience wrapper.
  */
 import { linearRgbToOklab, srgbChannelToLinear, type OKLab } from "./color";
 
@@ -15,20 +18,22 @@ export interface RGBAImage {
   height: number;
 }
 
+/** Linear-light RGB triple, each channel in [0,1]. */
+export type LinearRGB = [number, number, number];
+
 /**
- * Reduce an image to a grid of average OKLab colors.
- * Returns a row-major array of length `rows * cols`.
+ * Reduce an image to a grid of average LINEAR RGB colors (row-major,
+ * length `rows * cols`).
  */
-export function quantizeToGrid(
+export function quantizeToLinearGrid(
   image: RGBAImage,
   cols: number,
   rows: number,
-): OKLab[] {
+): LinearRGB[] {
   const { data, width, height } = image;
-  const out: OKLab[] = new Array(cols * rows);
+  const out: LinearRGB[] = new Array(cols * rows);
 
   for (let gy = 0; gy < rows; gy++) {
-    // Pixel-space bounds of this grid row.
     const y0 = Math.floor((gy * height) / rows);
     const y1 = Math.max(y0 + 1, Math.floor(((gy + 1) * height) / rows));
 
@@ -56,9 +61,20 @@ export function quantizeToGrid(
       }
 
       const inv = wsum > 0 ? 1 / wsum : 0;
-      out[gy * cols + gx] = linearRgbToOklab(rl * inv, gl * inv, bl * inv);
+      out[gy * cols + gx] = [rl * inv, gl * inv, bl * inv];
     }
   }
 
   return out;
+}
+
+/** Reduce an image to a grid of average OKLab colors (no dithering). */
+export function quantizeToGrid(
+  image: RGBAImage,
+  cols: number,
+  rows: number,
+): OKLab[] {
+  return quantizeToLinearGrid(image, cols, rows).map(([r, g, b]) =>
+    linearRgbToOklab(r, g, b),
+  );
 }

@@ -155,7 +155,11 @@ a Web Worker so the UI never blocks. **Client-side only.**
   - [x] Unit tests: sRGB↔OKLab reference values (white/black/red) within tolerance
   - [x] Unit tests: skin-tone samples NEVER match green (the core failure mode)
 
-### 2.2 Quantization & denoise pipeline — ✅ COMPLETE
+### 2.2 Quantization & denoise pipeline — ✅ COMPLETE (+ crispness refactor)
+> Engine v2: pre-processing (contrast/saturation), noise dithering, Sobel
+> edge-preserving despeckle, and phase-2 swap optimization. Deterministic
+> (seeded). User contrast/saturation sliders live in the Studio. See
+> `preprocess.ts`, `dither.ts`, `sobel.ts`, `optimize.ts`, `rng.ts`.
 - **Plan**
   - [x] Grid model: **16×16 modular blocks** (default 48×48 overall, configurable)
   - [x] Order of operations: block quantize (gamma-correct) → match → despeckle

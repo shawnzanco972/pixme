@@ -24,7 +24,9 @@ export function WorkspaceSubmit({ workspaceId }: { workspaceId: string }) {
     setError(null);
     setFile(f);
     try {
-      await process(f, SUBMISSION_SIZE);
+      await process(f, SUBMISSION_SIZE, {
+        preprocess: { contrast: 1.2, saturation: 1.1 },
+      });
     } catch {
       setError("שגיאה בעיבוד התמונה.");
     }

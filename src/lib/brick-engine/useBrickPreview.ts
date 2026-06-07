@@ -6,7 +6,11 @@
  */
 import { useCallback, useRef, useState } from "react";
 
-import { DEFAULT_PALETTE, renderPreviewRGBA } from "@/lib/brick-engine";
+import {
+  DEFAULT_PALETTE,
+  renderPreviewRGBA,
+  type BrickifyOptions,
+} from "@/lib/brick-engine";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
 import { fileToImageData, paintToCanvas } from "@/lib/image";
 
@@ -17,13 +21,18 @@ export function useBrickPreview() {
   const [working, setWorking] = useState(false);
 
   const process = useCallback(
-    async (file: File, size: number): Promise<number[][]> => {
+    async (
+      file: File,
+      size: number,
+      extra?: Omit<BrickifyOptions, "cols" | "rows">,
+    ): Promise<number[][]> => {
       setWorking(true);
       try {
         const imageData = await fileToImageData(file);
         const { pixelMap: map } = await brickify(imageData, {
           cols: size,
           rows: size,
+          ...extra,
         });
         const scale = Math.max(4, Math.floor(384 / size));
         const rgba = renderPreviewRGBA(map, DEFAULT_PALETTE, scale);

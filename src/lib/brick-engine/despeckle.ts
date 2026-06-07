@@ -1,10 +1,9 @@
 /**
- * Despeckling — removes isolated noise pixels from a quantized index grid.
+ * Despeckling with Sobel edge preservation.
  *
- * After matching, single stray studs that differ from their surroundings make
- * mosaics look noisy and are annoying to build. For each cell we look at its
- * 8-neighborhood; if too few neighbors share the cell's color, we replace it
- * with the most common neighboring color (majority vote).
+ * Removes isolated noise studs (majority vote over the 8-neighborhood) WITHOUT
+ * rounding off crisp outlines: cells flagged on a strong Sobel edge are skipped
+ * entirely, so edges stay sharp while flat regions get cleaned up.
  */
 
 export interface DespeckleOptions {
@@ -16,6 +15,11 @@ export interface DespeckleOptions {
   minSameNeighbors?: number;
   /** Number of passes. Default 1. */
   passes?: number;
+  /**
+   * Optional edge mask (row-major, same length as the grid). Cells where this is
+   * `true` are treated as edges and left untouched (edge preservation).
+   */
+  edgeMask?: boolean[] | null;
 }
 
 const NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
@@ -30,7 +34,7 @@ const NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
 ];
 
 /**
- * Despeckle a row-major index grid in place-safe manner (returns a new grid).
+ * Despeckle a row-major index grid (returns a new grid).
  */
 export function despeckleGrid(
   grid: number[],
@@ -40,6 +44,7 @@ export function despeckleGrid(
 ): number[] {
   const minSame = options.minSameNeighbors ?? 2;
   const passes = options.passes ?? 1;
+  const edgeMask = options.edgeMask ?? null;
 
   let current = grid.slice();
 
@@ -48,8 +53,12 @@ export function despeckleGrid(
 
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        const center = current[y * cols + x];
+        const cell = y * cols + x;
 
+        // Edge preservation: never smooth a cell on a sharp edge.
+        if (edgeMask && edgeMask[cell]) continue;
+
+        const center = current[cell];
         let sameCount = 0;
         const counts = new Map<number, number>();
 
@@ -63,7 +72,6 @@ export function despeckleGrid(
         }
 
         if (sameCount < minSame) {
-          // Replace with the most common neighbor color.
           let bestVal = center;
           let bestCount = -1;
           for (const [val, count] of counts) {
@@ -72,7 +80,7 @@ export function despeckleGrid(
               bestVal = val;
             }
           }
-          next[y * cols + x] = bestVal;
+          next[cell] = bestVal;
         }
       }
     }

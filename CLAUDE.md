@@ -38,6 +38,20 @@ We are building a highly automated, **zero-stock (or low-inventory) e-commerce p
 - Distance metric: **Euclidean in OKLab** + a **material mismatch penalty** term.
 - Apply coarse block quantization and despeckling to reduce noise before/after matching.
 
+### Brick Engine pipeline (crispness, in order) — `src/lib/brick-engine`
+1. **Pre-processing** (`preprocess.ts`): brightness/contrast/saturation on the
+   full-res image. Higher contrast keeps edges sharp through downsampling.
+2. **Block quantization** (`quantize.ts`): gamma-correct linear-RGB averaging.
+3. **Dithering** (`dither.ts`): tiny sRGB noise *before* OKLab conversion to
+   break ties / kill banding.
+4. **Phase 1 — greedy match** (`match.ts`): nearest OKLab + material penalty.
+5. **Despeckle with Sobel edge preservation** (`despeckle.ts` + `sobel.ts`):
+   skip smoothing on strong edges so outlines stay crisp.
+6. **Phase 2 — swap optimization** (`optimize.ts`): swap two cells' colors when
+   it lowers total OKLab error; repairs accuracy lost to despeckle.
+- Deterministic via a seeded RNG (`rng.ts`) — the pixel_map is persisted and
+  trusted by the PDF route, so the same image+options must always reproduce it.
+
 ## DATABASE
 
 - Supabase Postgres. SQL migrations live in `supabase/migrations/`.
