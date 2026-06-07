@@ -10,7 +10,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
 import { DownloadPdfButton } from "@/components/admin/DownloadPdfButton";
-import { FulfillButton } from "@/components/admin/FulfillButton";
+import { OrderStatusSelect } from "@/components/admin/OrderStatusSelect";
 import { MosaicPreview } from "@/components/MosaicPreview";
 import { formatWeight, GRAMS_PER_STUD } from "@/lib/packing";
 import { formatILS } from "@/lib/pricing";
@@ -76,7 +76,10 @@ export default async function AdminOrderDetail({
         <a href="/admin" className="text-sm text-zinc-500 underline">
           → חזרה ללוח הניהול
         </a>
-        <FulfillButton orderId={order.id} status={order.status as OrderStatus} />
+        <OrderStatusSelect
+          orderId={order.id}
+          status={order.status as OrderStatus}
+        />
       </div>
 
       <header className="flex flex-col gap-1">
