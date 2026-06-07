@@ -9,19 +9,54 @@
 import type { FulfillmentType } from "@/lib/supabase/types.helpers";
 
 /**
- * Supported square mosaic sizes (studs per side), aligned to the modular
- * 24×24 baseplate model from the Strategic Blueprint:
- *   24 = Mini   (1×1 baseplate)
- *   48 = Regular(2×2 baseplates)  → ~₪290 physical
- *   72 = Big    (3×3 baseplates)  → ~₪450 physical
+ * Modular sizing — everything is built from 24×24 baseplates (the Strategic
+ * Blueprint "unit"). A mosaic is `platesX × platesY` plates, so it can be square
+ * or rectangular (wide/panoramic/tall).
  */
-export const SIZES = [24, 48, 72] as const;
-export type MosaicSize = (typeof SIZES)[number];
+export const PLATE_STUDS = 24;
 
-/** Number of 24×24 baseplates a size tiles into (e.g. 48 → 2×2 = 4). */
-export function baseplateCount(size: MosaicSize): number {
-  const perSide = size / 24;
-  return perSide * perSide;
+export type SizeGroup = "square" | "pano";
+
+export interface SizePreset {
+  id: string;
+  platesX: number;
+  platesY: number;
+  group: SizeGroup;
+  /** Hebrew label for the UI. */
+  labelHe: string;
+}
+
+/** Studs per side for a preset. */
+export function presetStuds(p: { platesX: number; platesY: number }): {
+  cols: number;
+  rows: number;
+} {
+  return { cols: p.platesX * PLATE_STUDS, rows: p.platesY * PLATE_STUDS };
+}
+
+/** Total 24×24 baseplates for a grid. */
+export function baseplateCount(platesX: number, platesY: number): number {
+  return platesX * platesY;
+}
+
+export const SIZE_PRESETS: readonly SizePreset[] = [
+  // Squares
+  { id: "1x1", platesX: 1, platesY: 1, group: "square", labelHe: "מיני" },
+  { id: "2x2", platesX: 2, platesY: 2, group: "square", labelHe: "רגיל" },
+  { id: "3x3", platesX: 3, platesY: 3, group: "square", labelHe: "גדול" },
+  { id: "4x4", platesX: 4, platesY: 4, group: "square", labelHe: "ענק" },
+  { id: "5x5", platesX: 5, platesY: 5, group: "square", labelHe: "פרימיום" },
+  // Rectangular / panoramic (X = horizontal plates, Y = vertical plates)
+  { id: "3x2", platesX: 3, platesY: 2, group: "pano", labelHe: "רוחב" },
+  { id: "2x3", platesX: 2, platesY: 3, group: "pano", labelHe: "פורטרט" },
+  { id: "4x2", platesX: 4, platesY: 2, group: "pano", labelHe: "פנורמה" },
+  { id: "2x4", platesX: 2, platesY: 4, group: "pano", labelHe: "גובה" },
+  { id: "5x3", platesX: 5, platesY: 3, group: "pano", labelHe: "פנורמה רחבה" },
+  { id: "3x5", platesX: 3, platesY: 5, group: "pano", labelHe: "פוסטר" },
+] as const;
+
+export function presetById(id: string): SizePreset | undefined {
+  return SIZE_PRESETS.find((p) => p.id === id);
 }
 
 export interface PriceBreakdown {
@@ -33,7 +68,7 @@ export interface PriceBreakdown {
   currency: "ILS";
 }
 
-// Calibrated so Regular(48)→₪290 and Big(72)→₪450 physical, with digital ~half.
+// Calibrated so Regular(48²)→₪290 and Big(72²)→₪450 physical, digital ~half.
 const DIGITAL_FIXED = 85;
 const DIGITAL_PER_STUD = 0.02778;
 const PHYSICAL_FIXED = 162;
@@ -41,11 +76,13 @@ const PHYSICAL_PER_STUD = 0.05556;
 
 const round5 = (n: number) => Math.round(n / 5) * 5;
 
+/** Price from the total stud count (cols × rows). */
 export function computePrice(
-  size: MosaicSize,
+  cols: number,
+  rows: number,
   fulfillment: FulfillmentType,
 ): PriceBreakdown {
-  const studs = size * size;
+  const studs = cols * rows;
 
   const base = round5(DIGITAL_FIXED + studs * DIGITAL_PER_STUD);
 

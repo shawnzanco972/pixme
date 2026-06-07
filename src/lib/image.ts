@@ -32,6 +32,41 @@ export async function fileToImageData(
   }
 }
 
+/**
+ * Center-crop ImageData to a target aspect ratio (cover), so a rectangular
+ * mosaic grid maps to the photo without stretching. Returns the input unchanged
+ * if it already matches the aspect closely.
+ */
+export function cropToAspect(
+  src: ImageData,
+  aspectW: number,
+  aspectH: number,
+): ImageData {
+  const targetAR = aspectW / aspectH;
+  const srcAR = src.width / src.height;
+  if (Math.abs(targetAR - srcAR) < 0.01) return src;
+
+  let cw = src.width;
+  let ch = src.height;
+  if (srcAR > targetAR) {
+    // too wide → trim sides
+    cw = Math.round(src.height * targetAR);
+  } else {
+    // too tall → trim top/bottom
+    ch = Math.round(src.width / targetAR);
+  }
+  const ox = Math.floor((src.width - cw) / 2);
+  const oy = Math.floor((src.height - ch) / 2);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = src.width;
+  canvas.height = src.height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return src;
+  ctx.putImageData(src, 0, 0);
+  return ctx.getImageData(ox, oy, cw, ch);
+}
+
 /** Paint a preview RGBA buffer onto a canvas element at integer scale. */
 export function paintToCanvas(
   canvas: HTMLCanvasElement,

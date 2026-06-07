@@ -13,8 +13,12 @@ import { getActivePalette } from "@/lib/brick-engine/palette";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
 import { usePaletteInventory } from "@/lib/brick-engine/usePaletteInventory";
 import { renderBricks } from "@/lib/brick-render";
-import { fileToImageData } from "@/lib/image";
-import { computePrice, formatILS, SIZES, type MosaicSize } from "@/lib/pricing";
+import { cropToAspect, fileToImageData } from "@/lib/image";
+import { computePrice, formatILS, PLATE_STUDS } from "@/lib/pricing";
+
+// Physical size of one 24×24 baseplate (24 studs × 8mm pitch ≈ 19.2 cm).
+const CM_PER_PLATE = 19.2;
+const MAX_PLATES = 5;
 import { createClient } from "@/lib/supabase/client";
 import { uploadToSignedUrl } from "@/lib/supabase/storage";
 import type { FulfillmentType } from "@/lib/supabase/types.helpers";
@@ -25,7 +29,11 @@ export function Studio() {
 
   const [file, setFile] = useState<File | null>(null);
   const [imageData, setImageData] = useState<ImageData | null>(null);
-  const [size, setSize] = useState<MosaicSize>(48);
+  // Baseplate grid (like brick.me): horizontal × vertical 24×24 plates.
+  const [platesX, setPlatesX] = useState(2);
+  const [platesY, setPlatesY] = useState(2);
+  const cols = platesX * PLATE_STUDS;
+  const rows = platesY * PLATE_STUDS;
   // Pre-processing controls (defaults bias toward crisp, vivid output).
   const [contrast, setContrast] = useState(1.2);
   const [saturation, setSaturation] = useState(1.1);
@@ -74,7 +82,7 @@ export function Studio() {
   const [zip, setZip] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const price = computePrice(size, fulfillment);
+  const price = computePrice(cols, rows, fulfillment);
 
   const onPick = useCallback(async (f: File) => {
     setError(null);
@@ -93,9 +101,11 @@ export function Studio() {
   useEffect(() => {
     let cancelled = false;
     if (!imageData) return;
-    brickify(imageData, {
-      cols: size,
-      rows: size,
+    // Crop the source to the chosen aspect so rectangular grids don't stretch.
+    const cropped = cropToAspect(imageData, cols, rows);
+    brickify(cropped, {
+      cols,
+      rows,
       palette: activePalette,
       preprocess: { contrast, saturation },
       dither: dither > 0 ? { amount: dither } : null,
@@ -110,7 +120,17 @@ export function Studio() {
     return () => {
       cancelled = true;
     };
-  }, [imageData, size, contrast, saturation, dither, enabledKey, activePalette, brickify]);
+  }, [
+    imageData,
+    cols,
+    rows,
+    contrast,
+    saturation,
+    dither,
+    enabledKey,
+    activePalette,
+    brickify,
+  ]);
 
   async function handleOrder() {
     setError(null);
@@ -167,7 +187,10 @@ export function Studio() {
     <div className="mx-auto grid w-full max-w-5xl gap-8 p-6 md:grid-cols-2">
       {/* Preview / upload */}
       <section className="flex flex-col gap-4">
-        <label className="relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+        <label
+          className="relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900"
+          style={{ aspectRatio: `${cols} / ${rows}` }}
+        >
           {/* Canvas is always mounted so its ref is stable for the first paint. */}
           <canvas
             ref={canvasRef}
@@ -204,29 +227,56 @@ export function Studio() {
         <h2 className="font-heading text-2xl font-bold">הזמינו את הפסיפס שלכם</h2>
 
         <div>
-          <p className="mb-2 text-sm font-medium">גודל</p>
-          <div className="flex gap-2">
-            {SIZES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => {
-                  if (imageData) setWorking(true);
-                  setSize(s);
-                }}
-                className={`rounded-lg border px-4 py-2 text-sm transition-colors ${
-                  size === s
-                    ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                    : "border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                }`}
-              >
-                {s}×{s}
-                <span className="block text-xs opacity-70">
-                  {s === 24 ? "מיני" : s === 48 ? "רגיל 2×2" : "גדול 3×3"}
-                </span>
-              </button>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-medium">מספר לוחות בסיס</p>
+            <span className="text-xs text-zinc-500">
+              {cols}×{rows} אריחים
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-6">
+            {(
+              [
+                ["לרוחב", platesX, setPlatesX] as const,
+                ["לגובה", platesY, setPlatesY] as const,
+              ] as const
+            ).map(([label, value, setter]) => (
+              <div key={label} className="flex items-center gap-3">
+                <span className="text-sm text-zinc-500">{label}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="הפחת"
+                    disabled={value <= 1}
+                    onClick={() => {
+                      if (imageData) setWorking(true);
+                      setter(Math.max(1, value - 1));
+                    }}
+                    className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
+                  >
+                    −
+                  </button>
+                  <span className="w-5 text-center font-medium">{value}</span>
+                  <button
+                    type="button"
+                    aria-label="הוסף"
+                    disabled={value >= MAX_PLATES}
+                    onClick={() => {
+                      if (imageData) setWorking(true);
+                      setter(Math.min(MAX_PLATES, value + 1));
+                    }}
+                    className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
+          <p className="mt-2 text-xs text-zinc-500">
+            גודל סופי: {Math.round(platesX * CM_PER_PLATE)}×
+            {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ ·{" "}
+            {platesX * platesY} לוחות
+          </p>
         </div>
 
         {/* Pre-processing: higher contrast keeps edges crisp; saturation keeps

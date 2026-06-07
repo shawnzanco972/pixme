@@ -93,10 +93,23 @@ export function buildInstructionsPdf(
     maxH: A4.h - (MARGIN + 26) - MARGIN,
   });
 
-  // ------------------------------------------------------------- Modules
+  // --------------------------------------------------- Baseplate layout map
   const modulesX = Math.ceil(cols / moduleSize);
   const modulesY = Math.ceil(rows / moduleSize);
 
+  // Only worth a dedicated overview page when there's more than one baseplate.
+  if (modulesX * modulesY > 1) {
+    doc.addPage();
+    drawBaseplateLayout(doc, pixelMap, byId, {
+      moduleSize,
+      cols,
+      rows,
+      modulesX,
+      modulesY,
+    });
+  }
+
+  // ------------------------------------------------------------- Modules
   for (let my = 0; my < modulesY; my++) {
     for (let mx = 0; mx < modulesX; mx++) {
       doc.addPage();
@@ -135,6 +148,73 @@ function drawPreview(
       const [r, g, b] = byId.get(pixelMap[y][x])?.rgb ?? [0, 0, 0];
       doc.setFillColor(r, g, b);
       doc.rect(box.x + x * cell, box.y + y * cell, cell, cell, "F");
+    }
+  }
+}
+
+/**
+ * Overview page: the whole mosaic with thick baseplate boundaries and an
+ * R#-C# label per baseplate, so the builder knows which plate goes where on the
+ * wall before opening the per-baseplate stud pages.
+ */
+function drawBaseplateLayout(
+  doc: jsPDF,
+  pixelMap: number[][],
+  byId: Map<number, BrickColor>,
+  m: {
+    moduleSize: number;
+    cols: number;
+    rows: number;
+    modulesX: number;
+    modulesY: number;
+  },
+) {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text(
+    `Baseplate Layout — ${m.modulesY} rows × ${m.modulesX} cols of ${m.moduleSize}-stud plates`,
+    MARGIN,
+    MARGIN + 6,
+  );
+
+  const top = MARGIN + 12;
+  const cell = Math.min(
+    (A4.w - 2 * MARGIN) / m.cols,
+    (A4.h - top - MARGIN) / m.rows,
+  );
+  const gridX = MARGIN;
+
+  drawPreview(doc, pixelMap, byId, {
+    x: gridX,
+    y: top,
+    maxW: m.cols * cell,
+    maxH: m.rows * cell,
+  });
+
+  // Baseplate boundary lines + labels.
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.6);
+  for (let r = 0; r <= m.modulesY; r++) {
+    const y = top + Math.min(r * m.moduleSize, m.rows) * cell;
+    doc.line(gridX, y, gridX + m.cols * cell, y);
+  }
+  for (let c = 0; c <= m.modulesX; c++) {
+    const x = gridX + Math.min(c * m.moduleSize, m.cols) * cell;
+    doc.line(x, top, x, top + m.rows * cell);
+  }
+
+  doc.setFontSize(Math.max(8, m.moduleSize * cell * 0.18));
+  for (let my = 0; my < m.modulesY; my++) {
+    for (let mx = 0; mx < m.modulesX; mx++) {
+      const label = `R${my + 1}-C${mx + 1}`;
+      const cx =
+        gridX + (mx + 0.5) * m.moduleSize * cell;
+      const cy = top + (my + 0.5) * m.moduleSize * cell;
+      // White halo for legibility over any color.
+      doc.setTextColor(255, 255, 255);
+      doc.text(label, cx + 0.3, cy + 0.3, { align: "center" });
+      doc.setTextColor(20, 20, 20);
+      doc.text(label, cx, cy, { align: "center" });
     }
   }
 }
