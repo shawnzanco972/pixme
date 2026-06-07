@@ -1,7 +1,7 @@
 import { B2bPurchase } from "@/components/b2b/B2bPurchase";
 
 export const metadata = {
-  title: "פסיפסים לעסקים — Pixme",
+  title: "פסיפסים לעסקים — Pixipic",
 };
 
 export default function B2bPage() {

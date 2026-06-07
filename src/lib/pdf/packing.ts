@@ -27,7 +27,7 @@ export function buildPackingListPdf(
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("Pixme — Packing List", MARGIN, MARGIN + 6);
+  doc.text("Pixipic — Packing List", MARGIN, MARGIN + 6);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);

@@ -27,13 +27,13 @@ const siteUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Pixme — פסיפס מהתמונה שלך",
-    template: "%s · Pixme",
+    default: "Pixipic — פסיפס מהתמונה שלך",
+    template: "%s · Pixipic",
   },
   description:
     "הפכו תמונה לפסיפס לבנים — העלו, צפו בתצוגה מקדימה, והזמינו ערכה.",
   openGraph: {
-    title: "Pixme — פסיפס מהתמונה שלך",
+    title: "Pixipic — פסיפס מהתמונה שלך",
     description:
       "הפכו תמונה לפסיפס לבנים — העלו, צפו בתצוגה מקדימה, והזמינו ערכה.",
     locale: "he_IL",

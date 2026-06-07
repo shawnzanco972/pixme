@@ -18,7 +18,7 @@ export function SiteHeader() {
           href="/"
           className="font-heading text-2xl font-bold tracking-tight text-primary"
         >
-          Pixme
+          Pixipic
         </Link>
 
         <nav className="hidden items-center gap-6 sm:flex">

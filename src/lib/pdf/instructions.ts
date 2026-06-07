@@ -66,7 +66,7 @@ export function buildInstructionsPdf(
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const hebrewFont = maybeRegisterHebrew(doc, options.hebrewFontBase64);
   const title =
-    options.title ?? (hebrewFont ? "פיקסמי — מדריך הרכבה" : "Pixme — Build Instructions");
+    options.title ?? (hebrewFont ? "פיקסיפיק — מדריך הרכבה" : "Pixipic — Build Instructions");
 
   // ---------------------------------------------------------------- Cover
   doc.setFont(hebrewFont ?? "helvetica", hebrewFont ? "normal" : "bold");
@@ -321,7 +321,7 @@ function drawInventory(
     align: "right",
   });
 
-  // Weight-based packing target (Pixme packs by scale, not by counting).
+  // Weight-based packing target (Pixipic packs by scale, not by counting).
   const w = estimateWeight(inv.totalStuds);
   y += rowH;
   doc.setFont("helvetica", "normal");

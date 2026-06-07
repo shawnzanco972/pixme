@@ -41,6 +41,16 @@ export function Studio() {
   const [dither, setDither] = useState(0);
   // Zoom/crop (1 = fit; >1 crops tighter so the subject gets more studs).
   const [zoom, setZoom] = useState(1);
+  // Crop center (0..1) for drag-to-pan when zoomed in.
+  const [panX, setPanX] = useState(0.5);
+  const [panY, setPanY] = useState(0.5);
+  const dragRef = useRef<{
+    x: number;
+    y: number;
+    px: number;
+    py: number;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<BrickifyResult | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +61,38 @@ export function Studio() {
     setSaturation(1.1);
     setDither(0);
     setZoom(1);
+    setPanX(0.5);
+    setPanY(0.5);
   };
+
+  const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+  function onPanStart(e: React.PointerEvent) {
+    if (zoom <= 1 || !result) return;
+    dragRef.current = { x: e.clientX, y: e.clientY, px: panX, py: panY };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+  function onPanMove(e: React.PointerEvent) {
+    const d = dragRef.current;
+    if (!d || !canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const dx = (e.clientX - d.x) / rect.width / zoom;
+    const dy = (e.clientY - d.y) / rect.height / zoom;
+    if (imageData) setWorking(true);
+    setPanX(clamp01(d.px - dx));
+    setPanY(clamp01(d.py - dy));
+  }
+  function onPanEnd(e: React.PointerEvent) {
+    dragRef.current = null;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+  }
+
+  function bumpZoom(delta: number) {
+    if (imageData) setWorking(true);
+    setZoom((z) => Math.max(1, Math.min(3, Math.round((z + delta) * 10) / 10)));
+  }
 
   // Hidden dev test mode: ?testPalette=full feeds all 24 colors to the matcher.
   const [testFull] = useState(
@@ -122,7 +163,7 @@ export function Studio() {
     if (!imageData) return;
     // Crop to the chosen aspect + zoom so rectangular grids don't stretch and
     // the customer can frame the subject (more studs where it matters).
-    const cropped = cropToAspect(imageData, cols, rows, zoom);
+    const cropped = cropToAspect(imageData, cols, rows, zoom, panX, panY);
     brickify(cropped, {
       cols,
       rows,
@@ -148,6 +189,8 @@ export function Studio() {
     saturation,
     dither,
     zoom,
+    panX,
+    panY,
     enabledKey,
     activePalette,
     brickify,
@@ -205,41 +248,100 @@ export function Studio() {
 
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-8 p-6 md:grid-cols-2">
-      {/* Preview / upload */}
+      {/* Preview / upload stage */}
       <section className="flex flex-col gap-4">
-        <label
-          className="relative flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900"
-          style={{ aspectRatio: `${cols} / ${rows}` }}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void onPick(f);
+          }}
+        />
+
+        <div
+          className="relative flex items-center justify-center overflow-hidden rounded-2xl border border-outline bg-[#eceef0] shadow-inner"
+          style={{
+            aspectRatio: `${cols} / ${rows}`,
+            backgroundImage:
+              "radial-gradient(circle, rgba(0,0,0,0.06) 1.4px, transparent 1.6px)",
+            backgroundSize: "14px 14px",
+          }}
         >
-          {/* Canvas is always mounted so its ref is stable for the first paint. */}
+          {/* Canvas always mounted so its ref is stable for the first paint. */}
           <canvas
             ref={canvasRef}
-            className={`h-full w-full object-contain ${result ? "" : "hidden"}`}
+            onPointerDown={onPanStart}
+            onPointerMove={onPanMove}
+            onPointerUp={onPanEnd}
+            className={`h-full w-full object-contain ${result ? "" : "hidden"} ${
+              zoom > 1 ? "cursor-grab active:cursor-grabbing touch-none" : ""
+            }`}
           />
+
           {!result && (
-            <span className="px-6 text-center text-zinc-500">
-              לחצו כדי להעלות תמונה
-              <br />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-500"
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl text-primary">
+                +
+              </span>
+              <span className="font-heading font-medium">העלו תמונה</span>
               <span className="text-sm">JPG · PNG · WEBP</span>
+            </button>
+          )}
+
+          {/* Zoom controls + drag hint (start/right corner) */}
+          {result && (
+            <div className="absolute bottom-3 start-3 flex items-center gap-1 rounded-full bg-surface/90 p-1 shadow">
+              <button
+                type="button"
+                aria-label="הקטן"
+                onClick={() => bumpZoom(-0.2)}
+                className="h-8 w-8 rounded-full text-lg leading-none hover:bg-surface-muted"
+              >
+                −
+              </button>
+              <span className="w-10 text-center text-xs tabular-nums">
+                {zoom.toFixed(1)}×
+              </span>
+              <button
+                type="button"
+                aria-label="הגדל"
+                onClick={() => bumpZoom(0.2)}
+                className="h-8 w-8 rounded-full text-lg leading-none hover:bg-surface-muted"
+              >
+                +
+              </button>
+            </div>
+          )}
+          {result && zoom > 1 && (
+            <span className="absolute top-3 end-3 rounded-full bg-surface/90 px-3 py-1 text-xs shadow">
+              גררו להזזת המסגרת ✋
             </span>
           )}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void onPick(f);
-            }}
-          />
-        </label>
+        </div>
+
         {working && <p className="text-sm text-zinc-500">מעבד…</p>}
         {result && (
           <>
-            <p className="text-sm text-zinc-500">
-              {result.cols}×{result.rows} אריחים · {result.cols * result.rows}{" "}
-              חלקים
-            </p>
+            <div className="flex items-center justify-between text-sm text-zinc-500">
+              <span>
+                {result.cols}×{result.rows} אריחים · {result.cols * result.rows}{" "}
+                חלקים
+              </span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="underline"
+              >
+                החלפת תמונה
+              </button>
+            </div>
             <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
           </>
         )}

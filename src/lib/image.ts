@@ -46,6 +46,8 @@ export function cropToAspect(
   aspectW: number,
   aspectH: number,
   zoom = 1,
+  centerX = 0.5,
+  centerY = 0.5,
 ): ImageData {
   const targetAR = aspectW / aspectH;
   const srcAR = src.width / src.height;
@@ -67,8 +69,9 @@ export function cropToAspect(
 
   if (cw === src.width && ch === src.height) return src;
 
-  const ox = Math.floor((src.width - cw) / 2);
-  const oy = Math.floor((src.height - ch) / 2);
+  // Position the crop window at (centerX, centerY), clamped to image bounds.
+  const ox = clamp(Math.round(centerX * src.width - cw / 2), 0, src.width - cw);
+  const oy = clamp(Math.round(centerY * src.height - ch / 2), 0, src.height - ch);
 
   const canvas = document.createElement("canvas");
   canvas.width = src.width;
@@ -77,6 +80,10 @@ export function cropToAspect(
   if (!ctx) return src;
   ctx.putImageData(src, 0, 0);
   return ctx.getImageData(ox, oy, cw, ch);
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
 }
 
 /** Paint a preview RGBA buffer onto a canvas element at integer scale. */

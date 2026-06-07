@@ -1,6 +1,6 @@
 import { LoginForm } from "@/components/admin/LoginForm";
 
-export const metadata = { title: "כניסת מנהל — Pixme" };
+export const metadata = { title: "כניסת מנהל — Pixipic" };
 
 export default function AdminLoginPage() {
   return (
