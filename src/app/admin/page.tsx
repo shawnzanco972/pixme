@@ -7,6 +7,7 @@
 import { redirect } from "next/navigation";
 
 import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
+import { ExportRestockCsv } from "@/components/admin/ExportRestockCsv";
 import { SignOutButton } from "@/components/admin/SignOutButton";
 import { StockManager } from "@/components/admin/StockManager";
 import { formatWeight } from "@/lib/packing";
@@ -83,13 +84,51 @@ export default async function AdminDashboard() {
         </div>
       </header>
 
+      {/* Summary stats */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {(
+          [
+            ["הזמנות פרטיות", String(b2c?.length ?? 0)],
+            [
+              "לאריזה (פיזי)",
+              String(
+                (b2c ?? []).filter(
+                  (o) =>
+                    o.fulfillment_type === "physical" && o.status === "paid",
+                ).length,
+              ),
+            ],
+            [
+              "הכנסות (ששולמו)",
+              formatILS(
+                (b2c ?? [])
+                  .filter((o) => o.status !== "pending")
+                  .reduce((s, o) => s + Number(o.total_price), 0),
+              ),
+            ],
+            ["משקל לרכש", formatWeight(restock.totalGrams)],
+          ] as const
+        ).map(([label, value]) => (
+          <div
+            key={label}
+            className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
+          >
+            <p className="text-xs text-zinc-500">{label}</p>
+            <p className="mt-1 text-xl font-bold">{value}</p>
+          </div>
+        ))}
+      </section>
+
       <StockManager />
 
       {/* Restock intelligence */}
       <section className="flex flex-col gap-3">
-        <h2 className="font-heading text-xl font-semibold">
-          רכש מלאי — הזמנות פיזיות ממתינות ({restock.orderCount})
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-xl font-semibold">
+            רכש מלאי — הזמנות פיזיות ממתינות ({restock.orderCount})
+          </h2>
+          <ExportRestockCsv lines={restock.lines} />
+        </div>
         {restock.lines.length === 0 ? (
           <p className="text-sm text-zinc-400">אין הזמנות פיזיות לרכש כרגע.</p>
         ) : (

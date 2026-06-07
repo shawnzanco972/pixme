@@ -9,7 +9,9 @@
 import { notFound, redirect } from "next/navigation";
 
 import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
+import { DownloadPdfButton } from "@/components/admin/DownloadPdfButton";
 import { FulfillButton } from "@/components/admin/FulfillButton";
+import { MosaicPreview } from "@/components/MosaicPreview";
 import { formatWeight, GRAMS_PER_STUD } from "@/lib/packing";
 import { formatILS } from "@/lib/pricing";
 import { orderPackingList } from "@/lib/restock";
@@ -101,26 +103,40 @@ export default async function AdminOrderDetail({
           ) : (
             <p className="text-sm text-zinc-400">אין כתובת</p>
           )}
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             <DownloadInstructions
               orderId={order.id}
-              label="הורד הוראות ללקוח (PDF)"
+              label="הוראות ללקוח (PDF)"
+            />
+            <DownloadPdfButton
+              endpoint="/api/packing-list"
+              body={{ orderId: order.id }}
+              filename={`pixme-packing-${order.id}.pdf`}
+              label="רשימת אריזה (PDF)"
             />
           </div>
         </div>
 
-        {/* Original photo */}
+        {/* Mosaic preview (always available from pixel_map) + original photo */}
         <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="font-heading text-lg font-semibold">תמונה מקורית</h2>
-          {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl}
-              alt="original"
-              className="max-h-48 w-full rounded-lg object-contain"
-            />
+          <h2 className="font-heading text-lg font-semibold">הפסיפס</h2>
+          {pixelMap ? (
+            <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+              <MosaicPreview pixelMap={pixelMap} />
+            </div>
           ) : (
-            <p className="text-sm text-zinc-400">אין תמונה</p>
+            <p className="text-sm text-zinc-400">אין מפת לבנים</p>
+          )}
+          {photoUrl && (
+            <>
+              <p className="text-xs text-zinc-500">תמונה מקורית:</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoUrl}
+                alt="original"
+                className="max-h-40 w-full rounded-lg object-contain"
+              />
+            </>
           )}
         </div>
       </section>

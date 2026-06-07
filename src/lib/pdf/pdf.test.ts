@@ -4,6 +4,7 @@ import { brickifyImage } from "@/lib/brick-engine";
 import { DEFAULT_PALETTE } from "@/lib/brick-engine/palette";
 import { buildInventory } from "./inventory";
 import { buildInstructionsPdf } from "./instructions";
+import { buildPackingListPdf } from "./packing";
 
 describe("buildInventory", () => {
   it("counts parts and totals correctly, sorted by count desc", () => {
@@ -53,6 +54,22 @@ describe("buildInstructionsPdf", () => {
     expect(buf.byteLength).toBeGreaterThan(1000);
 
     // PDF magic header "%PDF"
+    const head = new Uint8Array(buf.slice(0, 4));
+    expect(Array.from(head)).toEqual([0x25, 0x50, 0x44, 0x46]);
+  });
+});
+
+describe("buildPackingListPdf", () => {
+  it("produces a valid PDF for an order pixel_map", () => {
+    const map = [
+      [0, 0, 11, 11],
+      [3, 3, 17, 17],
+    ];
+    const buf = buildPackingListPdf(map, {
+      orderId: "abc",
+      customerName: "Test",
+    });
+    expect(buf.byteLength).toBeGreaterThan(800);
     const head = new Uint8Array(buf.slice(0, 4));
     expect(Array.from(head)).toEqual([0x25, 0x50, 0x44, 0x46]);
   });

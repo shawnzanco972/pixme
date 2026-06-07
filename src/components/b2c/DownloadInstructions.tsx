@@ -27,7 +27,14 @@ export function DownloadInstructions({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, track }),
       });
-      if (!res.ok) throw new Error("שגיאה ביצירת ה‑PDF.");
+      if (!res.ok) {
+        let detail = `(${res.status})`;
+        try {
+          const j = (await res.json()) as { error?: string };
+          if (j.error) detail = `${j.error} (${res.status})`;
+        } catch {}
+        throw new Error(`שגיאה ביצירת ה‑PDF: ${detail}`);
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

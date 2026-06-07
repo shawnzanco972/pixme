@@ -52,4 +52,17 @@ Make sure the Vercel project has the same env vars set as `.env.local`.
   the shipping address, and a **"סמן כנשלח"** button.
 
 A **demo order** ("הזמנת דמו", ₪290, paid) has been seeded so you have something
-to click into immediately.
+to click into immediately. It has no original photo (nothing was uploaded), but
+the **mosaic preview** is rendered from its data so you can still see the design.
+
+## Troubleshooting PDF downloads
+
+The instruction + packing PDFs are generated server-side and need the Supabase
+**service-role key**. If a download shows an error like *"Missing required
+environment variable…"* or a 500:
+
+- **Local:** make sure `.env.local` has `SUPABASE_SERVICE_ROLE_KEY` filled in.
+- **Vercel:** Project → Settings → Environment Variables must include
+  `SUPABASE_SERVICE_ROLE_KEY` (and the two `NEXT_PUBLIC_SUPABASE_*` keys), then
+  redeploy. The download buttons now show the exact error to help diagnose.
+

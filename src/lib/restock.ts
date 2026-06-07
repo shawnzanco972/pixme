@@ -12,6 +12,7 @@ export interface RestockLine {
   id: number;
   name: string;
   hex: string;
+  rgb: [number, number, number];
   /** One of the 17 core (launch) colors. */
   core: boolean;
   /** Total studs needed across all aggregated orders. */
@@ -64,6 +65,7 @@ export function aggregateRestock(
         id,
         name: c?.name ?? `Unknown #${id}`,
         hex: c?.hex ?? "#000000",
+        rgb: c?.rgb ?? [0, 0, 0],
         core: isCore(id),
         pieces,
         piecesWithSpare,
