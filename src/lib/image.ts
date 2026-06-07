@@ -25,6 +25,9 @@ export async function fileToImageData(
     canvas.height = h;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("Canvas 2D context unavailable");
+    // Composite over WHITE so transparent PNGs don't become dark/brown blocks.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
     ctx.drawImage(bitmap, 0, 0, w, h);
     return ctx.getImageData(0, 0, w, h);
   } finally {
@@ -33,28 +36,37 @@ export async function fileToImageData(
 }
 
 /**
- * Center-crop ImageData to a target aspect ratio (cover), so a rectangular
- * mosaic grid maps to the photo without stretching. Returns the input unchanged
- * if it already matches the aspect closely.
+ * Center-crop ImageData to a target aspect ratio (cover) with an optional
+ * `zoom` (>1 crops tighter into the center = more studs on the subject). This
+ * decouples framing from the baseplate grid: changing plate count keeps the
+ * same crop, and the zoom slider recomposes independently.
  */
 export function cropToAspect(
   src: ImageData,
   aspectW: number,
   aspectH: number,
+  zoom = 1,
 ): ImageData {
   const targetAR = aspectW / aspectH;
   const srcAR = src.width / src.height;
-  if (Math.abs(targetAR - srcAR) < 0.01) return src;
 
-  let cw = src.width;
-  let ch = src.height;
+  // Largest centered rect of the target aspect that fits the source...
+  let cw: number;
+  let ch: number;
   if (srcAR > targetAR) {
-    // too wide → trim sides
-    cw = Math.round(src.height * targetAR);
+    ch = src.height;
+    cw = src.height * targetAR;
   } else {
-    // too tall → trim top/bottom
-    ch = Math.round(src.width / targetAR);
+    cw = src.width;
+    ch = src.width / targetAR;
   }
+  // ...then zoom in (crop tighter).
+  const z = Math.max(1, zoom);
+  cw = Math.max(1, Math.round(cw / z));
+  ch = Math.max(1, Math.round(ch / z));
+
+  if (cw === src.width && ch === src.height) return src;
+
   const ox = Math.floor((src.width - cw) / 2);
   const oy = Math.floor((src.height - ch) / 2);
 

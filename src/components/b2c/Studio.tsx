@@ -39,9 +39,19 @@ export function Studio() {
   const [saturation, setSaturation] = useState(1.1);
   // Dithering off by default (it reads as speckle at stud resolution).
   const [dither, setDither] = useState(0);
+  // Zoom/crop (1 = fit; >1 crops tighter so the subject gets more studs).
+  const [zoom, setZoom] = useState(1);
   const [result, setResult] = useState<BrickifyResult | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resetAdjustments = () => {
+    if (imageData) setWorking(true);
+    setContrast(1.2);
+    setSaturation(1.1);
+    setDither(0);
+    setZoom(1);
+  };
 
   // Hidden dev test mode: ?testPalette=full feeds all 24 colors to the matcher.
   const [testFull] = useState(
@@ -110,8 +120,9 @@ export function Studio() {
   useEffect(() => {
     let cancelled = false;
     if (!imageData) return;
-    // Crop the source to the chosen aspect so rectangular grids don't stretch.
-    const cropped = cropToAspect(imageData, cols, rows);
+    // Crop to the chosen aspect + zoom so rectangular grids don't stretch and
+    // the customer can frame the subject (more studs where it matters).
+    const cropped = cropToAspect(imageData, cols, rows, zoom);
     brickify(cropped, {
       cols,
       rows,
@@ -136,6 +147,7 @@ export function Studio() {
     contrast,
     saturation,
     dither,
+    zoom,
     enabledKey,
     activePalette,
     brickify,
@@ -300,6 +312,33 @@ export function Studio() {
         {/* Pre-processing: higher contrast keeps edges crisp; saturation keeps
             colors vivid. Disabled until an image is loaded. */}
         <div className="grid gap-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">התאמות תמונה</p>
+            <button
+              type="button"
+              className="text-xs text-zinc-500 underline"
+              onClick={resetAdjustments}
+            >
+              איפוס לברירת מחדל
+            </button>
+          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">
+              זום / חיתוך: {zoom.toFixed(1)}×
+            </span>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.1}
+              value={zoom}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setZoom(Number(e.target.value));
+              }}
+            />
+          </label>
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">
               ניגודיות: {contrast.toFixed(2)}

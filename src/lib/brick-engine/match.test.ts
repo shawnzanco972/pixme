@@ -10,10 +10,10 @@ describe("nearestColorIndex", () => {
     const GREEN_ID = 2;
     const NOUGAT_ID = 3;
     const defs: BrickColorDef[] = [
-      { id: 0, name: "White", hex: "#f4f4f4", material: "solid" },
-      { id: 1, name: "Black", hex: "#1b1b1b", material: "solid" },
-      { id: GREEN_ID, name: "Bright Green", hex: "#4b9f4a", material: "solid" },
-      { id: NOUGAT_ID, name: "Nougat", hex: "#cc8e69", material: "solid" },
+      { id: 0, name: "White", hex: "#f4f4f4", material: "solid", core: true },
+      { id: 1, name: "Black", hex: "#1b1b1b", material: "solid", core: true },
+      { id: GREEN_ID, name: "Bright Green", hex: "#4b9f4a", material: "solid", core: true },
+      { id: NOUGAT_ID, name: "Nougat", hex: "#cc8e69", material: "solid", core: true },
     ];
     const palette = buildPalette(defs);
 
@@ -41,11 +41,22 @@ describe("nearestColorIndex", () => {
     expect(nearestColorIndex(target, DEFAULT_PALETTE)).toBe(blue.id);
   });
 
+  it("keeps a saturated target colorful instead of collapsing to gray", () => {
+    const defs: BrickColorDef[] = [
+      { id: 0, name: "Red", hex: "#c91a09", material: "solid", core: true },
+      { id: 1, name: "Gray", hex: "#8a8a8a", material: "solid", core: true },
+    ];
+    const palette = buildPalette(defs);
+    // A muted/darkish red whose lightness is close to mid-gray.
+    const mutedRed = srgbToOklab(150, 70, 60);
+    expect(nearestColorIndex(mutedRed, palette)).toBe(0); // Red, not Gray
+  });
+
   it("penalizes material mismatches", () => {
     // Two near-identical reds: one solid, one transparent. Prefer solid.
     const defs: BrickColorDef[] = [
-      { id: 0, name: "Solid Red", hex: "#c4151c", material: "solid" },
-      { id: 1, name: "Trans Red", hex: "#c4151c", material: "transparent" },
+      { id: 0, name: "Solid Red", hex: "#c4151c", material: "solid", core: true },
+      { id: 1, name: "Trans Red", hex: "#c4151c", material: "transparent", core: true },
     ];
     const palette = buildPalette(defs);
     const target = srgbToOklab(0xc4, 0x15, 0x1c);

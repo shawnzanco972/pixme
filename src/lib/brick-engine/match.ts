@@ -7,7 +7,7 @@
  * when they are *dramatically* closer — this keeps mosaics buildable from
  * standard stock and avoids odd material swaps.
  */
-import { oklabDistanceSq, type OKLab } from "./color";
+import { type OKLab } from "./color";
 import type { BrickColor, BrickMaterial } from "./palette";
 
 export interface MatchOptions {
@@ -19,9 +19,25 @@ export interface MatchOptions {
    * perceptual gap, so material is respected but not absolute.
    */
   materialPenalty?: number;
+  /**
+   * Weight on the chroma (a,b) axes relative to lightness (L) in the distance.
+   * >1 makes hue/saturation matter MORE than lightness, so a saturated target
+   * (e.g. a red logo) won't collapse to gray — gray has ~0 chroma and is thus
+   * far away. Default 1.6.
+   */
+  chromaWeight?: number;
 }
 
 const DEFAULT_PENALTY = 0.15;
+const DEFAULT_CHROMA_WEIGHT = 1.6;
+
+/** Chroma-weighted squared OKLab distance. */
+function weightedDistanceSq(x: OKLab, y: OKLab, chromaWeight: number): number {
+  const dL = x.L - y.L;
+  const da = x.a - y.a;
+  const db = x.b - y.b;
+  return dL * dL + chromaWeight * (da * da + db * db);
+}
 
 /**
  * Effective squared distance from a target OKLab color to a palette entry,
@@ -35,8 +51,9 @@ export function effectiveDistanceSq(
 ): number {
   const preferred = opts.preferredMaterial ?? "solid";
   const penalty = opts.materialPenalty ?? DEFAULT_PENALTY;
+  const chromaWeight = opts.chromaWeight ?? DEFAULT_CHROMA_WEIGHT;
 
-  const baseSq = oklabDistanceSq(target, candidate.oklab);
+  const baseSq = weightedDistanceSq(target, candidate.oklab, chromaWeight);
   if (candidate.material === preferred) return baseSq;
 
   // Add penalty in distance (not squared) space, then re-square.
