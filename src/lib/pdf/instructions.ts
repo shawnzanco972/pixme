@@ -16,6 +16,7 @@
 import { jsPDF } from "jspdf";
 
 import { DEFAULT_PALETTE, type BrickColor } from "@/lib/brick-engine/palette";
+import { estimateWeight } from "@/lib/packing";
 import { buildInventory } from "./inventory";
 
 export interface InstructionsOptions {
@@ -239,4 +240,18 @@ function drawInventory(
   doc.text(`Total studs: ${inv.totalStuds}`, A4.w - MARGIN, y, {
     align: "right",
   });
+
+  // Weight-based packing target (Pixme packs by scale, not by counting).
+  const w = estimateWeight(inv.totalStuds);
+  y += rowH;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(
+    `Packing scale target: ~${w.scaleTargetGrams} g (incl. ${Math.round(
+      (w.bricksWithSpareGrams / w.bricksGrams - 1) * 100,
+    )}% spare)`,
+    A4.w - MARGIN,
+    y,
+    { align: "right" },
+  );
 }

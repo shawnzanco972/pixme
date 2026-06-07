@@ -17,9 +17,25 @@ const davidLibre = David_Libre({
   display: "swap",
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+  "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Pixme — פסיפס מהתמונה שלך",
-  description: "הפכו תמונה לפסיפס לבנים — העלו, צפו בתצוגה מקדימה, והזמינו ערכה.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Pixme — פסיפס מהתמונה שלך",
+    template: "%s · Pixme",
+  },
+  description:
+    "הפכו תמונה לפסיפס לבנים — העלו, צפו בתצוגה מקדימה, והזמינו ערכה.",
+  openGraph: {
+    title: "Pixme — פסיפס מהתמונה שלך",
+    description:
+      "הפכו תמונה לפסיפס לבנים — העלו, צפו בתצוגה מקדימה, והזמינו ערכה.",
+    locale: "he_IL",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

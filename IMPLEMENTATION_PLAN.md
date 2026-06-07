@@ -279,19 +279,26 @@ no-account workspace link.
 
 ---
 
-## Phase 6 — Logistics, Polish & Launch
+## Phase 6 — Logistics, Polish & Launch (in progress)
 
 - **Plan**
-  - [ ] Define HFD / Chita shipping integration scope (labels/handoff)
+  - [x] HFD / Chita scope documented in `docs/logistics.md`
 - **Implement**
-  - [ ] Shipping label / handoff flow for physical orders
-  - [ ] SEO + Hebrew metadata, OG images, sitemap
-  - [ ] Error monitoring + analytics
+  - [x] Weight-based packing: `lib/packing.ts` (`estimateWeight`) — scale target
+        printed on the PDF inventory page (core "pack by weight" model)
+  - [x] SEO: `robots.ts`, `sitemap.ts`, `metadataBase` + OpenGraph (he_IL),
+        title template; private routes disallowed from indexing
+  - [ ] Shipping label / handoff flow for physical orders (needs HFD/Chita creds;
+        suggest `tracking_id`/`courier` columns — see docs/logistics.md)
+  - [ ] Error monitoring + analytics (needs provider account)
+  - [ ] Admin "mark fulfilled" action + packing view
   - [ ] Accessibility pass (RTL, contrast, keyboard, screen reader)
 - **Verify**
-  - [ ] Lighthouse / a11y audit passes
-  - [ ] End-to-end dry run: B2C + B2B, digital + physical
-  - [ ] Production deploy to Vercel with env + webhooks configured
+  - [x] Build + lint pass; packing unit-tested
+  - [ ] Lighthouse / a11y audit
+  - [ ] End-to-end dry run: B2C + B2B, digital + physical (needs iCount creds)
+  - [x] Production deploy to Vercel connected (env set by Shawn); confirm
+        `NEXT_PUBLIC_SITE_URL` + iCount webhook URL on first real deploy
 
 ---
 
