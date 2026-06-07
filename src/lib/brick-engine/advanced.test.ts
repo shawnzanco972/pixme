@@ -43,6 +43,24 @@ describe("preprocessImage", () => {
     expect(out.data[0]).toBe(out.data[1]);
     expect(out.data[1]).toBe(out.data[2]);
   });
+
+  it("auto-levels stretches a low-contrast image's tonal range", () => {
+    // A flat gradient confined to [80,160] should expand toward [0,255].
+    const px: [number, number, number][] = [];
+    for (let i = 0; i < 100; i++) {
+      const v = 80 + Math.round((i / 99) * 80); // 80..160
+      px.push([v, v, v]);
+    }
+    const out = preprocessImage(img(100, 1, px), { autoLevels: true });
+    let min = 255;
+    let max = 0;
+    for (let i = 0; i < out.data.length; i += 4) {
+      min = Math.min(min, out.data[i]);
+      max = Math.max(max, out.data[i]);
+    }
+    expect(min).toBeLessThan(80); // darks pushed down
+    expect(max).toBeGreaterThan(160); // lights pushed up
+  });
 });
 
 describe("dither", () => {

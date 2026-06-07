@@ -37,6 +37,7 @@ export function Studio() {
   // Pre-processing controls (defaults bias toward crisp, vivid output).
   const [contrast, setContrast] = useState(1.2);
   const [saturation, setSaturation] = useState(1.1);
+  const [autoLevels, setAutoLevels] = useState(true);
   // Dithering off by default (it reads as speckle at stud resolution).
   const [dither, setDither] = useState(0);
   // Zoom/crop (1 = fit; >1 crops tighter so the subject gets more studs).
@@ -59,6 +60,7 @@ export function Studio() {
     if (imageData) setWorking(true);
     setContrast(1.2);
     setSaturation(1.1);
+    setAutoLevels(true);
     setDither(0);
     setZoom(1);
     setPanX(0.5);
@@ -168,7 +170,7 @@ export function Studio() {
       cols,
       rows,
       palette: activePalette,
-      preprocess: { contrast, saturation },
+      preprocess: { contrast, saturation, autoLevels },
       dither: dither > 0 ? { amount: dither } : null,
     })
       .then((r) => {
@@ -187,6 +189,7 @@ export function Studio() {
     rows,
     contrast,
     saturation,
+    autoLevels,
     dither,
     zoom,
     panX,
@@ -491,6 +494,18 @@ export function Studio() {
                 setDither(Number(e.target.value));
               }}
             />
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={autoLevels}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setAutoLevels(e.target.checked);
+              }}
+            />
+            שיפור אוטומטי (ניגודיות חכמה)
           </label>
         </div>
 

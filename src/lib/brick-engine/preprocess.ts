@@ -17,12 +17,15 @@ export interface PreprocessOptions {
   contrast?: number;
   /** 1 = unchanged. 0 = grayscale, >1 more vivid. */
   saturation?: number;
+  /** Auto-levels: stretch tonal range (1st–99th pct) so flat photos pop. */
+  autoLevels?: boolean;
 }
 
 const REC601 = { r: 0.299, g: 0.587, b: 0.114 };
 
 function isIdentity(o: PreprocessOptions): boolean {
   return (
+    !o.autoLevels &&
     (o.brightness ?? 1) === 1 &&
     (o.contrast ?? 1) === 1 &&
     (o.saturation ?? 1) === 1
@@ -30,8 +33,49 @@ function isIdentity(o: PreprocessOptions): boolean {
 }
 
 /**
- * Return a new RGBAImage with brightness/contrast/saturation applied.
- * Returns the input unchanged when all controls are neutral.
+ * Compute auto-levels black/white points (0..1) from the luma histogram at the
+ * 1st/99th percentiles. Returns null if the range is too small to bother.
+ */
+function computeLevels(
+  src: Uint8ClampedArray,
+): { lo: number; hi: number } | null {
+  const hist = new Uint32Array(256);
+  let count = 0;
+  // Sample every 4th pixel for speed (16 bytes).
+  for (let i = 0; i < src.length; i += 16) {
+    if (src[i + 3] === 0) continue;
+    const y = (REC601.r * src[i] + REC601.g * src[i + 1] + REC601.b * src[i + 2]) | 0;
+    hist[y]++;
+    count++;
+  }
+  if (count === 0) return null;
+  const lowCut = count * 0.01;
+  const highCut = count * 0.01;
+  let acc = 0;
+  let lo = 0;
+  for (let v = 0; v < 256; v++) {
+    acc += hist[v];
+    if (acc >= lowCut) {
+      lo = v;
+      break;
+    }
+  }
+  acc = 0;
+  let hi = 255;
+  for (let v = 255; v >= 0; v--) {
+    acc += hist[v];
+    if (acc >= highCut) {
+      hi = v;
+      break;
+    }
+  }
+  if (hi - lo < 24) return null; // already full-range; skip
+  return { lo: lo / 255, hi: hi / 255 };
+}
+
+/**
+ * Return a new RGBAImage with auto-levels + brightness/contrast/saturation
+ * applied. Returns the input unchanged when all controls are neutral.
  */
 export function preprocessImage(
   image: RGBAImage,
@@ -44,12 +88,21 @@ export function preprocessImage(
   const saturation = options.saturation ?? 1;
 
   const src = image.data;
+  const levels = options.autoLevels ? computeLevels(src) : null;
+  const span = levels ? levels.hi - levels.lo : 1;
   const out = new Uint8ClampedArray(src.length);
 
   for (let i = 0; i < src.length; i += 4) {
     let r = src[i] / 255;
     let g = src[i + 1] / 255;
     let b = src[i + 2] / 255;
+
+    // 0) Auto-levels: stretch [lo,hi] → [0,1] equally per channel (keeps hue).
+    if (levels) {
+      r = (r - levels.lo) / span;
+      g = (g - levels.lo) / span;
+      b = (b - levels.lo) / span;
+    }
 
     // 1) Brightness (multiplicative).
     r *= brightness;
