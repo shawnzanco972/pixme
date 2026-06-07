@@ -1,29 +1,43 @@
 "use client";
 /**
- * Admin color-stock manager (24-color catalog).
+ * Admin inventory manager (24-color catalog) — availability + on-hand weight.
  *
- * Effective availability = DB override (brick_stock) if present, else the
- * color's `core` default (17 core in stock, 7 boosters out). Toggling writes an
- * explicit brick_stock row. The studio reads the same logic so out-of-stock
- * colors are hidden from customers and excluded from the engine.
+ * Effective in-stock = DB override (brick_stock.in_stock) if a row exists, else
+ * the color's `core` default. on_hand_grams is what's physically in stock (by
+ * weight); the restock report compares it to demand.
  */
 import { useEffect, useState } from "react";
 
 import { CATALOG, isCore } from "@/lib/brick-engine/palette";
+import { formatWeight } from "@/lib/packing";
 import { createClient } from "@/lib/supabase/client";
 
+interface Row {
+  in_stock: boolean;
+  on_hand_grams: number;
+}
+
 export function StockManager() {
-  // Explicit DB overrides: id → in_stock.
-  const [overrides, setOverrides] = useState<Map<number, boolean>>(new Map());
-  const [saving, setSaving] = useState<number | null>(null);
+  const [rows, setRows] = useState<Map<number, Row>>(new Map());
+  const [drafts, setDrafts] = useState<Map<number, string>>(new Map());
+  const [savingId, setSavingId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const sb = createClient();
-      const { data } = await sb.from("brick_stock").select("id, in_stock");
+      const { data } = await sb
+        .from("brick_stock")
+        .select("id, in_stock, on_hand_grams");
       if (!cancelled) {
-        setOverrides(new Map((data ?? []).map((r) => [r.id, r.in_stock])));
+        setRows(
+          new Map(
+            (data ?? []).map((r) => [
+              r.id,
+              { in_stock: r.in_stock, on_hand_grams: Number(r.on_hand_grams) },
+            ]),
+          ),
+        );
       }
     })();
     return () => {
@@ -31,53 +45,112 @@ export function StockManager() {
     };
   }, []);
 
-  const inStockOf = (id: number): boolean =>
-    overrides.get(id) ?? isCore(id);
+  const inStockOf = (id: number) => rows.get(id)?.in_stock ?? isCore(id);
+  const onHandOf = (id: number) => rows.get(id)?.on_hand_grams ?? 0;
 
-  async function toggle(id: number) {
-    const next = !inStockOf(id);
-    setSaving(id);
+  async function save(id: number, patch: Partial<Row>) {
+    setSavingId(id);
+    const next: Row = {
+      in_stock: patch.in_stock ?? inStockOf(id),
+      on_hand_grams: patch.on_hand_grams ?? onHandOf(id),
+    };
     const sb = createClient();
     const { error } = await sb
       .from("brick_stock")
-      .upsert({ id, in_stock: next }, { onConflict: "id" });
-    setSaving(null);
-    if (error) return;
-    setOverrides((prev) => new Map(prev).set(id, next));
+      .upsert({ id, ...next }, { onConflict: "id" });
+    setSavingId(null);
+    if (!error) setRows((prev) => new Map(prev).set(id, next));
   }
 
   const inStockCount = CATALOG.filter((c) => inStockOf(c.id)).length;
+  const totalGrams = CATALOG.reduce((s, c) => s + onHandOf(c.id), 0);
 
   return (
     <section className="flex flex-col gap-3">
       <h2 className="font-heading text-xl font-semibold">
-        מלאי צבעים ({inStockCount}/{CATALOG.length} זמינים)
+        מלאי צבעים ({inStockCount}/{CATALOG.length} זמינים ·{" "}
+        {formatWeight(totalGrams)} במלאי)
       </h2>
-      <div className="flex flex-wrap gap-2">
-        {CATALOG.map((c) => {
-          const oos = !inStockOf(c.id);
-          return (
-            <button
-              key={c.id}
-              type="button"
-              disabled={saving === c.id}
-              onClick={() => toggle(c.id)}
-              title={`${c.name}${isCore(c.id) ? " · ליבה" : " · בוסט"}`}
-              className={`flex h-12 w-12 items-center justify-center rounded-lg border-2 text-xs ${
-                oos
-                  ? "border-red-400 opacity-30"
-                  : "border-zinc-300 dark:border-zinc-700"
-              }`}
-              style={{ backgroundColor: c.hex }}
-            >
-              {oos ? <span className="text-red-700">✕</span> : null}
-            </button>
-          );
-        })}
+      <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <table className="w-full text-start text-sm">
+          <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+            <tr>
+              <th className="p-2 text-start">צבע</th>
+              <th className="p-2 text-start">סוג</th>
+              <th className="p-2 text-start">זמין</th>
+              <th className="p-2 text-start">במלאי (גרם)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CATALOG.map((c) => {
+              const draft = drafts.get(c.id);
+              const value = draft ?? String(onHandOf(c.id));
+              return (
+                <tr
+                  key={c.id}
+                  className="border-t border-zinc-100 dark:border-zinc-800"
+                >
+                  <td className="p-2">
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="inline-block h-4 w-4 rounded border border-black/20"
+                        style={{ backgroundColor: c.hex }}
+                      />
+                      {c.name}
+                    </span>
+                  </td>
+                  <td className="p-2 text-xs text-zinc-500">
+                    {isCore(c.id) ? "ליבה" : "בוסט"}
+                  </td>
+                  <td className="p-2">
+                    <button
+                      type="button"
+                      disabled={savingId === c.id}
+                      onClick={() => save(c.id, { in_stock: !inStockOf(c.id) })}
+                      className={`rounded-full px-3 py-1 text-xs ${
+                        inStockOf(c.id)
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                      }`}
+                    >
+                      {inStockOf(c.id) ? "זמין" : "אזל"}
+                    </button>
+                  </td>
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="decimal"
+                      className="w-24 rounded border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+                      value={value}
+                      onChange={(e) =>
+                        setDrafts((d) =>
+                          new Map(d).set(c.id, e.target.value),
+                        )
+                      }
+                      onBlur={() => {
+                        if (draft === undefined) return;
+                        const n = Number(draft);
+                        setDrafts((d) => {
+                          const nd = new Map(d);
+                          nd.delete(c.id);
+                          return nd;
+                        });
+                        if (!Number.isNaN(n) && n !== onHandOf(c.id)) {
+                          void save(c.id, { on_hand_grams: n });
+                        }
+                      }}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
       <p className="text-xs text-zinc-500">
-        לחצו על צבע כדי לסמן שאזל / חזר למלאי. 17 צבעי הליבה זמינים כברירת מחדל;
-        7 צבעי הבוסט מושבתים עד שתזמינו אותם.
+        17 צבעי ליבה זמינים כברירת מחדל. עדכנו משקל במלאי כדי לראות חוסרים בדוח
+        הרכש.
       </p>
     </section>
   );

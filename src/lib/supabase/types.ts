@@ -151,18 +151,21 @@ export type Database = {
         Row: {
           id: number
           in_stock: boolean
+          on_hand_grams: number
           sort_order: number
           updated_at: string
         }
         Insert: {
           id: number
           in_stock?: boolean
+          on_hand_grams?: number
           sort_order?: number
           updated_at?: string
         }
         Update: {
           id?: number
           in_stock?: boolean
+          on_hand_grams?: number
           sort_order?: number
           updated_at?: string
         }

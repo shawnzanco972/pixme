@@ -72,6 +72,24 @@ export default async function AdminDashboard() {
       .filter((m): m is PixelMap => Array.isArray(m)),
   );
 
+  // On-hand inventory (grams) to compute the shortfall to reorder.
+  const { data: stockRows } = await supabase
+    .from("brick_stock")
+    .select("id, on_hand_grams");
+  const onHand = new Map<number, number>(
+    (stockRows ?? []).map((r) => [r.id, Number(r.on_hand_grams)]),
+  );
+  const reorder = restock.lines.map((l) => {
+    const onHandGrams = onHand.get(l.id) ?? 0;
+    return {
+      ...l,
+      onHandGrams,
+      toOrderGrams: Math.max(0, Math.round((l.grams - onHandGrams) * 10) / 10),
+    };
+  });
+  const totalToOrder =
+    Math.round(reorder.reduce((s, l) => s + l.toOrderGrams, 0) * 10) / 10;
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 p-6">
       <header className="flex items-center justify-between">
@@ -127,9 +145,9 @@ export default async function AdminDashboard() {
           <h2 className="font-heading text-xl font-semibold">
             רכש מלאי — הזמנות פיזיות ממתינות ({restock.orderCount})
           </h2>
-          <ExportRestockCsv lines={restock.lines} />
+          <ExportRestockCsv rows={reorder} />
         </div>
-        {restock.lines.length === 0 ? (
+        {reorder.length === 0 ? (
           <p className="text-sm text-zinc-400">אין הזמנות פיזיות לרכש כרגע.</p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -137,13 +155,13 @@ export default async function AdminDashboard() {
               <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
                 <tr>
                   <th className="p-3 text-start">צבע</th>
-                  <th className="p-3 text-start">חלקים</th>
-                  <th className="p-3 text-start">להזמין (כולל רזרבה)</th>
-                  <th className="p-3 text-start">משקל</th>
+                  <th className="p-3 text-start">נדרש (כולל רזרבה)</th>
+                  <th className="p-3 text-start">במלאי</th>
+                  <th className="p-3 text-start">להזמין</th>
                 </tr>
               </thead>
               <tbody>
-                {restock.lines.map((l) => (
+                {reorder.map((l) => (
                   <tr
                     key={l.id}
                     className="border-t border-zinc-100 dark:border-zinc-800"
@@ -160,27 +178,32 @@ export default async function AdminDashboard() {
                         ) : null}
                       </span>
                     </td>
-                    <td className="p-3">{l.pieces.toLocaleString("he-IL")}</td>
-                    <td className="p-3 font-medium">
-                      {l.piecesWithSpare.toLocaleString("he-IL")}
-                    </td>
                     <td className="p-3">{formatWeight(l.grams)}</td>
+                    <td className="p-3 text-zinc-500">
+                      {formatWeight(l.onHandGrams)}
+                    </td>
+                    <td
+                      className={`p-3 font-medium ${
+                        l.toOrderGrams > 0 ? "text-red-600" : "text-green-600"
+                      }`}
+                    >
+                      {l.toOrderGrams > 0 ? formatWeight(l.toOrderGrams) : "✓"}
+                    </td>
                   </tr>
                 ))}
                 <tr className="border-t-2 border-zinc-300 font-semibold dark:border-zinc-700">
-                  <td className="p-3">סה״כ ({restock.lines.length} צבעים)</td>
-                  <td className="p-3">
-                    {restock.totalPieces.toLocaleString("he-IL")}
-                  </td>
-                  <td className="p-3" />
+                  <td className="p-3">סה״כ ({reorder.length} צבעים)</td>
                   <td className="p-3">{formatWeight(restock.totalGrams)}</td>
+                  <td className="p-3" />
+                  <td className="p-3">{formatWeight(totalToOrder)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         )}
         <p className="text-xs text-zinc-500">
-          ★ = צבע בערכת הליבה המומלצת. כולל {Math.round(0.03 * 100)}% רזרבה.
+          ★ = צבע ליבה. &quot;נדרש&quot; כולל {Math.round(0.03 * 100)}% רזרבה.
+          &quot;להזמין&quot; = נדרש פחות מלאי קיים.
         </p>
       </section>
 
