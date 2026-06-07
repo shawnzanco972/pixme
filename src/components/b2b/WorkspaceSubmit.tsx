@@ -92,9 +92,7 @@ export function WorkspaceSubmit({ workspaceId }: { workspaceId: string }) {
         {/* Canvas always mounted so its ref is stable for the first paint. */}
         <canvas
           ref={canvasRef}
-          className={`h-full w-full object-contain [image-rendering:pixelated] ${
-            pixelMap ? "" : "hidden"
-          }`}
+          className={`h-full w-full object-contain ${pixelMap ? "" : "hidden"}`}
         />
         {!pixelMap && (
           <span className="px-6 text-center text-zinc-500">

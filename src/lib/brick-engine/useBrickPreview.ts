@@ -6,13 +6,10 @@
  */
 import { useCallback, useRef, useState } from "react";
 
-import {
-  DEFAULT_PALETTE,
-  renderPreviewRGBA,
-  type BrickifyOptions,
-} from "@/lib/brick-engine";
+import { type BrickifyOptions } from "@/lib/brick-engine";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
-import { fileToImageData, paintToCanvas } from "@/lib/image";
+import { renderBricks } from "@/lib/brick-render";
+import { fileToImageData } from "@/lib/image";
 
 export function useBrickPreview() {
   const { brickify } = useBrickWorker();
@@ -34,9 +31,7 @@ export function useBrickPreview() {
           rows: size,
           ...extra,
         });
-        const scale = Math.max(4, Math.floor(384 / size));
-        const rgba = renderPreviewRGBA(map, DEFAULT_PALETTE, scale);
-        if (canvasRef.current) paintToCanvas(canvasRef.current, rgba);
+        if (canvasRef.current) renderBricks(canvasRef.current, map);
         setPixelMap(map);
         return map;
       } finally {

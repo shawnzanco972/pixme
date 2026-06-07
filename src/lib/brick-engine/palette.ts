@@ -70,6 +70,28 @@ const DEFAULT_PALETTE_DEFS: BrickColorDef[] = [
   { id: 28, name: "Magenta", hex: "#923978", material: "solid" },
   { id: 29, name: "Dark Pink", hex: "#c870a0", material: "solid" },
   { id: 30, name: "Bright Pink", hex: "#e4adc8", material: "solid" },
+
+  // --- Extended range (appended; richer gradations for photo fidelity) ---
+  // Neutrals
+  { id: 31, name: "Very Light Bluish Gray", hex: "#d4d6d1", material: "solid" },
+  { id: 32, name: "Light Gray", hex: "#bcbcb9", material: "solid" },
+  // Skin / warm midtones (faces)
+  { id: 33, name: "Light Flesh", hex: "#f5cba9", material: "solid" },
+  { id: 34, name: "Medium Dark Flesh", hex: "#c77e4e", material: "solid" },
+  { id: 35, name: "Sienna", hex: "#8d5524", material: "solid" },
+  { id: 36, name: "Medium Brown", hex: "#5a3a22", material: "solid" },
+  { id: 37, name: "Sand", hex: "#c2b280", material: "solid" },
+  { id: 38, name: "Dark Orange", hex: "#a85b2a", material: "solid" },
+  // Greens
+  { id: 39, name: "Olive Green", hex: "#8a8a3a", material: "solid" },
+  { id: 40, name: "Medium Green", hex: "#73a86b", material: "solid" },
+  // Blues / cyans
+  { id: 41, name: "Sky Blue", hex: "#7dbbdd", material: "solid" },
+  { id: 42, name: "Sand Blue", hex: "#5e748c", material: "solid" },
+  { id: 43, name: "Teal", hex: "#2f6f72", material: "solid" },
+  // Purple / pink
+  { id: 44, name: "Lavender", hex: "#cda4de", material: "solid" },
+  { id: 45, name: "Light Pink", hex: "#f6c3d0", material: "solid" },
 ];
 
 /** Build a runtime palette (with rgb + precomputed OKLab) from defs. */

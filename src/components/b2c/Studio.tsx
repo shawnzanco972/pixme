@@ -8,13 +8,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  DEFAULT_PALETTE,
-  renderPreviewRGBA,
-  type BrickifyResult,
-} from "@/lib/brick-engine";
+import { type BrickifyResult } from "@/lib/brick-engine";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
-import { fileToImageData, paintToCanvas } from "@/lib/image";
+import { renderBricks } from "@/lib/brick-render";
+import { fileToImageData } from "@/lib/image";
 import { computePrice, formatILS, SIZES, type MosaicSize } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/client";
 import { uploadToSignedUrl } from "@/lib/supabase/storage";
@@ -73,9 +70,7 @@ export function Studio() {
       .then((r) => {
         if (cancelled) return;
         setResult(r);
-        const scale = Math.max(4, Math.floor(384 / size));
-        const rgba = renderPreviewRGBA(r.pixelMap, DEFAULT_PALETTE, scale);
-        if (canvasRef.current) paintToCanvas(canvasRef.current, rgba);
+        if (canvasRef.current) renderBricks(canvasRef.current, r.pixelMap);
       })
       .catch(() => !cancelled && setError("שגיאה בעיבוד התמונה."))
       .finally(() => !cancelled && setWorking(false));
@@ -143,9 +138,7 @@ export function Studio() {
           {/* Canvas is always mounted so its ref is stable for the first paint. */}
           <canvas
             ref={canvasRef}
-            className={`h-full w-full object-contain [image-rendering:pixelated] ${
-              result ? "" : "hidden"
-            }`}
+            className={`h-full w-full object-contain ${result ? "" : "hidden"}`}
           />
           {!result && (
             <span className="px-6 text-center text-zinc-500">
