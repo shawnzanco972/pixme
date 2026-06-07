@@ -8,6 +8,7 @@
 import { notFound } from "next/navigation";
 
 import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
+import { MosaicPreview } from "@/components/MosaicPreview";
 import { formatILS } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { OrderStatus, PixelMap } from "@/lib/supabase/types.helpers";
@@ -40,11 +41,18 @@ export default async function OrderPage({
 
   if (error || !order) notFound();
 
-  const hasMap = Array.isArray(order.pixel_map as PixelMap | null);
+  const pixelMap = order.pixel_map as PixelMap | null;
+  const hasMap = Array.isArray(pixelMap);
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 p-8">
       <h1 className="font-heading text-3xl font-bold">ההזמנה שלך</h1>
+
+      {hasMap && pixelMap && (
+        <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+          <MosaicPreview pixelMap={pixelMap} />
+        </div>
+      )}
 
       <dl className="grid grid-cols-2 gap-y-3 rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
         <dt className="text-zinc-500">מספר הזמנה</dt>
@@ -75,7 +83,14 @@ export default async function OrderPage({
         </p>
       )}
 
-      {hasMap && <DownloadInstructions orderId={order.id} />}
+      {hasMap && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-zinc-500">
+            הוראות ההרכבה (PDF) זמינות להורדה חינם:
+          </p>
+          <DownloadInstructions orderId={order.id} />
+        </div>
+      )}
     </main>
   );
 }
