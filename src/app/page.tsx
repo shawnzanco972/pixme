@@ -10,16 +10,16 @@ export default function Home() {
       </p>
       <div className="flex flex-col gap-4 sm:flex-row">
         <a
-          href="#"
+          href="/create"
           className="rounded-full bg-black px-8 py-3 text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
         >
           התחילו עכשיו
         </a>
         <a
-          href="#"
+          href="/b2b"
           className="rounded-full border border-zinc-300 px-8 py-3 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
         >
-          למידע נוסף
+          לעסקים
         </a>
       </div>
     </main>

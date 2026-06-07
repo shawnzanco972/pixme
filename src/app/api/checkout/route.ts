@@ -25,6 +25,11 @@ function siteUrl(): string {
   );
 }
 
+/** iCount is considered configured once an API token is present. */
+function paymentsConfigured(): boolean {
+  return Boolean(process.env.ICOUNT_API_TOKEN);
+}
+
 export async function POST(request: Request) {
   let body: Record<string, unknown>;
   try {
@@ -66,6 +71,16 @@ export async function POST(request: Request) {
 
       if (error || !data) {
         throw new Error(error?.message ?? "Failed to create B2C order");
+      }
+
+      // If iCount isn't configured yet, return the order page so the full
+      // upload→order flow works; payment activates once creds are set.
+      if (!paymentsConfigured()) {
+        return NextResponse.json({
+          orderId: data.id,
+          url: `${siteUrl()}/order/${data.id}`,
+          paymentConfigured: false,
+        });
       }
 
       const checkout = await createCheckout({
@@ -111,6 +126,14 @@ export async function POST(request: Request) {
 
       if (error || !data) {
         throw new Error(error?.message ?? "Failed to create B2B order");
+      }
+
+      if (!paymentsConfigured()) {
+        return NextResponse.json({
+          orderId: data.id,
+          url: `${siteUrl()}/b2b/thank-you?order=${data.id}`,
+          paymentConfigured: false,
+        });
       }
 
       const checkout = await createCheckout({
