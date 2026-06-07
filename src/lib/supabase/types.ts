@@ -147,6 +147,27 @@ export type Database = {
         }
         Relationships: []
       }
+      brick_stock: {
+        Row: {
+          id: number
+          in_stock: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          in_stock?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          in_stock?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employee_submissions: {
         Row: {
           created_at: string

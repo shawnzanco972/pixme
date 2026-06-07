@@ -6,6 +6,7 @@
  * OKLab values are precomputed once at module load for fast matching.
  */
 import { hexToRgb, srgbToOklab, type OKLab } from "./color";
+import { nearestColorIndex } from "./match";
 
 export type BrickMaterial = "solid" | "transparent" | "metallic";
 
@@ -111,4 +112,67 @@ export function colorByIndex(
   index: number,
 ): BrickColor | undefined {
   return palette.find((c) => c.id === index);
+}
+
+/** Full catalog (every color we could ever stock). Alias of DEFAULT_PALETTE. */
+export const CATALOG: BrickColor[] = DEFAULT_PALETTE;
+
+/**
+ * Recommended STARTER palette — the minimum set worth ordering for good
+ * coverage across typical photos (neutrals + a full skin ramp + primaries).
+ * This is what the studio enables by default. ~24 colors.
+ */
+export const RECOMMENDED_IDS: ReadonlySet<number> = new Set([
+  0, 1, 2, 3, // neutrals
+  4, 5, 6, 7, 8, 9, 10, // browns + skin ramp
+  11, 12, 14, 16, // red / orange / yellow
+  18, 19, // greens
+  23, 24, 25, 26, // blues
+  29, 30, // pinks
+  37, // sand
+]);
+
+export function isRecommended(id: number): boolean {
+  return RECOMMENDED_IDS.has(id);
+}
+
+/**
+ * Build the ACTIVE palette the engine matches against = catalog filtered to a
+ * set of enabled color ids (e.g. in-stock ∩ user-selected). Order is preserved.
+ */
+export function getActivePalette(
+  enabledIds: Iterable<number>,
+  catalog: BrickColor[] = CATALOG,
+): BrickColor[] {
+  const set = enabledIds instanceof Set ? enabledIds : new Set(enabledIds);
+  return catalog.filter((c) => set.has(c.id));
+}
+
+/**
+ * Remap a pixel_map so every cell uses only colors in `targetPalette`. Any
+ * index not in the target (e.g. a color that went out of stock) is replaced
+ * with the perceptually nearest available color (OKLab). Pure + deterministic.
+ */
+export function remapPixelMap(
+  pixelMap: number[][],
+  targetPalette: BrickColor[],
+  catalog: BrickColor[] = CATALOG,
+): number[][] {
+  const targetIds = new Set(targetPalette.map((c) => c.id));
+  const catById = new Map(catalog.map((c) => [c.id, c]));
+  const cache = new Map<number, number>();
+
+  const resolve = (id: number): number => {
+    if (targetIds.has(id)) return id;
+    const cached = cache.get(id);
+    if (cached !== undefined) return cached;
+    const c = catById.get(id);
+    const replacement = c
+      ? nearestColorIndex(c.oklab, targetPalette)
+      : (targetPalette[0]?.id ?? id);
+    cache.set(id, replacement);
+    return replacement;
+  };
+
+  return pixelMap.map((row) => row.map(resolve));
 }

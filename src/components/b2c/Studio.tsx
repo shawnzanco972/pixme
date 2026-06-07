@@ -6,10 +6,12 @@
  * The Brick Engine runs in a Web Worker (useBrickWorker); the resulting
  * pixel_map is persisted with the order and later trusted by the PDF route.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type BrickifyResult } from "@/lib/brick-engine";
+import { getActivePalette } from "@/lib/brick-engine/palette";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
+import { usePaletteInventory } from "@/lib/brick-engine/usePaletteInventory";
 import { renderBricks } from "@/lib/brick-render";
 import { fileToImageData } from "@/lib/image";
 import { computePrice, formatILS, SIZES, type MosaicSize } from "@/lib/pricing";
@@ -33,6 +35,36 @@ export function Studio() {
   const [result, setResult] = useState<BrickifyResult | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Color scheme (supply-driven): catalog + live stock; user can add/remove.
+  const { colors, defaultEnabledIds } = usePaletteInventory();
+  const [customEnabled, setCustomEnabled] = useState<Set<number> | null>(null);
+  const enabled = customEnabled ?? defaultEnabledIds;
+  const enabledKey = useMemo(
+    () => [...enabled].sort((a, b) => a - b).join(","),
+    [enabled],
+  );
+  const activePalette = useMemo(
+    () => getActivePalette(enabled),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [enabledKey],
+  );
+
+  const toggleColor = useCallback(
+    (id: number, inStock: boolean) => {
+      if (!inStock) return;
+      const next = new Set(enabled);
+      if (next.has(id)) {
+        if (next.size <= 4) return; // keep a usable minimum
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      if (imageData) setWorking(true);
+      setCustomEnabled(next);
+    },
+    [enabled, imageData],
+  );
 
   // Customer details
   const [name, setName] = useState("");
@@ -64,6 +96,7 @@ export function Studio() {
     brickify(imageData, {
       cols: size,
       rows: size,
+      palette: activePalette,
       preprocess: { contrast, saturation },
       dither: dither > 0 ? { amount: dither } : null,
     })
@@ -77,7 +110,7 @@ export function Studio() {
     return () => {
       cancelled = true;
     };
-  }, [imageData, size, contrast, saturation, dither, brickify]);
+  }, [imageData, size, contrast, saturation, dither, enabledKey, activePalette, brickify]);
 
   async function handleOrder() {
     setError(null);
@@ -250,6 +283,59 @@ export function Studio() {
               }}
             />
           </label>
+        </div>
+
+        {/* Color scheme — supply-driven. In-stock colors can be toggled;
+            out-of-stock are disabled. Default scheme is our recommended set. */}
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-medium">
+              צבעים ({enabled.size})
+            </p>
+            <button
+              type="button"
+              className="text-xs text-zinc-500 underline"
+              onClick={() => {
+                if (imageData) setWorking(true);
+                setCustomEnabled(null);
+              }}
+            >
+              איפוס לברירת מחדל
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {colors.map((c) => {
+              const on = enabled.has(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  disabled={!c.inStock}
+                  title={
+                    c.inStock
+                      ? c.name + (on ? " (פעיל)" : "")
+                      : `${c.name} — אזל מהמלאי`
+                  }
+                  onClick={() => toggleColor(c.id, c.inStock)}
+                  className={`h-7 w-7 rounded-md border transition ${
+                    on
+                      ? "ring-2 ring-offset-1 ring-black dark:ring-white"
+                      : "opacity-45"
+                  } ${!c.inStock ? "cursor-not-allowed opacity-20" : ""}`}
+                  style={{ backgroundColor: c.hex, borderColor: "#0003" }}
+                >
+                  {!c.inStock ? (
+                    <span className="text-[10px] leading-none text-zinc-700">
+                      ✕
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            לחצו כדי להוסיף/להסיר צבע. צבעים שאזלו מהמלאי מושבתים.
+          </p>
         </div>
 
         <div>

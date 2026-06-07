@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 
 import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
 import { SignOutButton } from "@/components/admin/SignOutButton";
+import { StockManager } from "@/components/admin/StockManager";
 import { formatILS } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/supabase/types.helpers";
@@ -66,6 +67,8 @@ export default async function AdminDashboard() {
           <SignOutButton />
         </div>
       </header>
+
+      <StockManager />
 
       {/* B2C orders */}
       <section className="flex flex-col gap-3">
