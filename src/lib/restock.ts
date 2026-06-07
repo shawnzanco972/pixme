@@ -5,18 +5,15 @@
  * Pure + deterministic so it can run on the server (admin page) or in tests.
  */
 import { countParts } from "@/lib/brick-engine";
-import {
-  CATALOG,
-  isRecommended,
-  type BrickColor,
-} from "@/lib/brick-engine/palette";
+import { CATALOG, isCore, type BrickColor } from "@/lib/brick-engine/palette";
 import { GRAMS_PER_STUD, SPARE_RATIO } from "@/lib/packing";
 
 export interface RestockLine {
   id: number;
   name: string;
   hex: string;
-  recommended: boolean;
+  /** One of the 17 core (launch) colors. */
+  core: boolean;
   /** Total studs needed across all aggregated orders. */
   pieces: number;
   /** Pieces including spare allowance (what to actually order). */
@@ -56,7 +53,7 @@ export function aggregateRestock(
         id,
         name: c?.name ?? `Unknown #${id}`,
         hex: c?.hex ?? "#000000",
-        recommended: isRecommended(id),
+        core: isCore(id),
         pieces,
         piecesWithSpare,
         grams: Math.round(piecesWithSpare * GRAMS_PER_STUD * 10) / 10,

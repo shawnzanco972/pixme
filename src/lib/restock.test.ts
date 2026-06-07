@@ -30,9 +30,7 @@ describe("aggregateRestock", () => {
     ];
     const report = aggregateRestock([map]);
     expect(report.lines[0].id).toBe(0); // most-used first
-    expect(report.lines.every((l) => typeof l.recommended === "boolean")).toBe(
-      true,
-    );
+    expect(report.lines.every((l) => typeof l.core === "boolean")).toBe(true);
   });
 
   it("handles an empty pending set", () => {

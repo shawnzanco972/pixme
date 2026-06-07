@@ -116,7 +116,7 @@ export default async function AdminDashboard() {
                           style={{ backgroundColor: l.hex }}
                         />
                         {l.name}
-                        {l.recommended ? (
+                        {l.core ? (
                           <span className="text-xs text-zinc-400">★</span>
                         ) : null}
                       </span>

@@ -44,8 +44,17 @@ export function Studio() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Hidden dev test mode: ?testPalette=full feeds all 24 colors to the matcher.
+  const [testFull] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("testPalette") === "full",
+  );
+
   // Color scheme (supply-driven): catalog + live stock; user can add/remove.
-  const { colors, defaultEnabledIds } = usePaletteInventory();
+  // Normal users only ever see/process in-stock colors (the 17 core).
+  const { colors, defaultEnabledIds } = usePaletteInventory(testFull);
+  const visibleColors = colors.filter((c) => c.inStock);
   const [customEnabled, setCustomEnabled] = useState<Set<number> | null>(null);
   const enabled = customEnabled ?? defaultEnabledIds;
   const enabledKey = useMemo(
@@ -226,6 +235,13 @@ export function Studio() {
       <section className="flex flex-col gap-5">
         <h2 className="font-heading text-2xl font-bold">הזמינו את הפסיפס שלכם</h2>
 
+        {testFull && (
+          <div className="rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+            🧪 מצב בדיקה — פלטת 24 צבעים מלאה (כולל 7 צבעי בוסט שאינם במלאי).
+            לבדיקה בלבד, לא להזמנה.
+          </div>
+        )}
+
         <div>
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-medium">מספר לוחות בסיס</p>
@@ -354,7 +370,7 @@ export function Studio() {
             </button>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {colors.map((c) => {
+            {visibleColors.map((c) => {
               const on = enabled.has(c.id);
               return (
                 <button

@@ -2,24 +2,25 @@ import { describe, expect, it } from "vitest";
 
 import {
   CATALOG,
+  CORE_IDS,
   DEFAULT_PALETTE,
-  RECOMMENDED_IDS,
   getActivePalette,
   remapPixelMap,
 } from "./palette";
 
 describe("catalog", () => {
-  it("has unique ids and hex values", () => {
+  it("defines exactly 24 colors with unique ids and hex values", () => {
+    expect(CATALOG.length).toBe(24);
     const ids = new Set(CATALOG.map((c) => c.id));
     const hexes = new Set(CATALOG.map((c) => c.hex.toLowerCase()));
-    expect(ids.size).toBe(CATALOG.length);
-    expect(hexes.size).toBe(CATALOG.length); // no duplicate colors
+    expect(ids.size).toBe(24);
+    expect(hexes.size).toBe(24); // no duplicate colors
   });
 
-  it("recommended starter set is a subset of the catalog (>= 20 colors)", () => {
-    const ids = new Set(CATALOG.map((c) => c.id));
-    for (const id of RECOMMENDED_IDS) expect(ids.has(id)).toBe(true);
-    expect(RECOMMENDED_IDS.size).toBeGreaterThanOrEqual(20);
+  it("marks exactly 17 core colors (launch order) in stock by default", () => {
+    expect(CORE_IDS.size).toBe(17);
+    expect(CATALOG.filter((c) => c.core)).toHaveLength(17);
+    expect(CATALOG.filter((c) => !c.core)).toHaveLength(7); // boosters
   });
 });
 

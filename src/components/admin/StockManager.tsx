@@ -1,74 +1,68 @@
 "use client";
 /**
- * Admin color-stock manager. Lets the operator mark catalog colors in/out of
- * stock (upserts brick_stock; absence of a row == in stock). The studio reads
- * this so out-of-stock colors are disabled and the engine stops using them.
+ * Admin color-stock manager (24-color catalog).
+ *
+ * Effective availability = DB override (brick_stock) if present, else the
+ * color's `core` default (17 core in stock, 7 boosters out). Toggling writes an
+ * explicit brick_stock row. The studio reads the same logic so out-of-stock
+ * colors are hidden from customers and excluded from the engine.
  */
 import { useEffect, useState } from "react";
 
-import { CATALOG, isRecommended } from "@/lib/brick-engine/palette";
+import { CATALOG, isCore } from "@/lib/brick-engine/palette";
 import { createClient } from "@/lib/supabase/client";
 
 export function StockManager() {
-  const [outOfStock, setOutOfStock] = useState<Set<number>>(new Set());
+  // Explicit DB overrides: id → in_stock.
+  const [overrides, setOverrides] = useState<Map<number, boolean>>(new Map());
   const [saving, setSaving] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const sb = createClient();
-      const { data } = await sb
-        .from("brick_stock")
-        .select("id, in_stock")
-        .eq("in_stock", false);
-      if (!cancelled) setOutOfStock(new Set((data ?? []).map((r) => r.id)));
+      const { data } = await sb.from("brick_stock").select("id, in_stock");
+      if (!cancelled) {
+        setOverrides(new Map((data ?? []).map((r) => [r.id, r.in_stock])));
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, []);
 
+  const inStockOf = (id: number): boolean =>
+    overrides.get(id) ?? isCore(id);
+
   async function toggle(id: number) {
-    const nowInStock = outOfStock.has(id); // currently OOS → bringing back
+    const next = !inStockOf(id);
     setSaving(id);
     const sb = createClient();
     const { error } = await sb
       .from("brick_stock")
-      .upsert({ id, in_stock: nowInStock }, { onConflict: "id" });
+      .upsert({ id, in_stock: next }, { onConflict: "id" });
     setSaving(null);
     if (error) return;
-    setOutOfStock((prev) => {
-      const next = new Set(prev);
-      if (nowInStock) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setOverrides((prev) => new Map(prev).set(id, next));
   }
 
-  const recommendedOOS = CATALOG.filter(
-    (c) => isRecommended(c.id) && outOfStock.has(c.id),
-  ).length;
+  const inStockCount = CATALOG.filter((c) => inStockOf(c.id)).length;
 
   return (
     <section className="flex flex-col gap-3">
       <h2 className="font-heading text-xl font-semibold">
-        מלאי צבעים ({CATALOG.length - outOfStock.size}/{CATALOG.length} זמינים)
+        מלאי צבעים ({inStockCount}/{CATALOG.length} זמינים)
       </h2>
-      {recommendedOOS > 0 && (
-        <p className="text-sm text-amber-600">
-          ⚠ {recommendedOOS} צבעים מומלצים אזלו מהמלאי — מומלץ להזמין.
-        </p>
-      )}
       <div className="flex flex-wrap gap-2">
         {CATALOG.map((c) => {
-          const oos = outOfStock.has(c.id);
+          const oos = !inStockOf(c.id);
           return (
             <button
               key={c.id}
               type="button"
               disabled={saving === c.id}
               onClick={() => toggle(c.id)}
-              title={`${c.name}${isRecommended(c.id) ? " · מומלץ" : ""}`}
+              title={`${c.name}${isCore(c.id) ? " · ליבה" : " · בוסט"}`}
               className={`flex h-12 w-12 items-center justify-center rounded-lg border-2 text-xs ${
                 oos
                   ? "border-red-400 opacity-30"
@@ -82,7 +76,8 @@ export function StockManager() {
         })}
       </div>
       <p className="text-xs text-zinc-500">
-        לחצו על צבע כדי לסמן שאזל / חזר למלאי. צבעים שאזלו מוסתרים מהלקוחות.
+        לחצו על צבע כדי לסמן שאזל / חזר למלאי. 17 צבעי הליבה זמינים כברירת מחדל;
+        7 צבעי הבוסט מושבתים עד שתזמינו אותם.
       </p>
     </section>
   );

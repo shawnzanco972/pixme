@@ -1,12 +1,17 @@
 "use client";
 /**
- * Loads the brick color catalog merged with live availability from Supabase
- * (`brick_stock`). Convention: no row == in stock. Returns the colors plus the
- * default-enabled set (recommended ∩ in-stock) the studio starts from.
+ * Loads the 24-color catalog merged with availability.
+ *
+ * Default in-stock = the color's `core` flag (17 true) UNLESS the DB
+ * (`brick_stock`) overrides it. So the 7 booster colors are out of stock by
+ * default until an admin marks them in.
+ *
+ * `forceAllInStock` (dev test mode, ?testPalette=full) bypasses the DB/default
+ * and treats all 24 colors as available.
  */
 import { useEffect, useMemo, useState } from "react";
 
-import { CATALOG, isRecommended } from "@/lib/brick-engine/palette";
+import { CATALOG, isCore } from "@/lib/brick-engine/palette";
 import { createClient } from "@/lib/supabase/client";
 
 export interface PaletteColor {
@@ -15,10 +20,10 @@ export interface PaletteColor {
   hex: string;
   rgb: [number, number, number];
   inStock: boolean;
-  recommended: boolean;
+  core: boolean;
 }
 
-export function usePaletteInventory() {
+export function usePaletteInventory(forceAllInStock = false) {
   const [stock, setStock] = useState<Map<number, boolean> | null>(null);
 
   useEffect(() => {
@@ -45,21 +50,17 @@ export function usePaletteInventory() {
         name: c.name,
         hex: c.hex,
         rgb: c.rgb,
-        inStock: stock?.get(c.id) ?? true,
-        recommended: isRecommended(c.id),
+        // DB override → else the color's core default.
+        inStock: forceAllInStock ? true : (stock?.get(c.id) ?? c.core),
+        core: isCore(c.id),
       })),
-    [stock],
+    [stock, forceAllInStock],
   );
 
-  const defaultEnabledIds = useMemo(() => {
-    const inStockRecommended = colors.filter((c) => c.inStock && c.recommended);
-    // Fall back to all in-stock if nothing recommended is available.
-    const base =
-      inStockRecommended.length >= 4
-        ? inStockRecommended
-        : colors.filter((c) => c.inStock);
-    return new Set(base.map((c) => c.id));
-  }, [colors]);
+  const defaultEnabledIds = useMemo(
+    () => new Set(colors.filter((c) => c.inStock).map((c) => c.id)),
+    [colors],
+  );
 
   return { colors, defaultEnabledIds, loaded: stock !== null };
 }
