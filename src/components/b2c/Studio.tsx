@@ -30,6 +30,8 @@ export function Studio() {
   // Pre-processing controls (defaults bias toward crisp, vivid output).
   const [contrast, setContrast] = useState(1.2);
   const [saturation, setSaturation] = useState(1.1);
+  // Dithering off by default (it reads as speckle at stud resolution).
+  const [dither, setDither] = useState(0);
   const [fulfillment, setFulfillment] = useState<FulfillmentType>("digital");
   const [result, setResult] = useState<BrickifyResult | null>(null);
   const [working, setWorking] = useState(false);
@@ -66,6 +68,7 @@ export function Studio() {
       cols: size,
       rows: size,
       preprocess: { contrast, saturation },
+      dither: dither > 0 ? { amount: dither } : null,
     })
       .then((r) => {
         if (cancelled) return;
@@ -79,7 +82,7 @@ export function Studio() {
     return () => {
       cancelled = true;
     };
-  }, [imageData, size, contrast, saturation, brickify]);
+  }, [imageData, size, contrast, saturation, dither, brickify]);
 
   async function handleOrder() {
     setError(null);
@@ -192,6 +195,9 @@ export function Studio() {
                 }`}
               >
                 {s}×{s}
+                <span className="block text-xs opacity-70">
+                  {s === 24 ? "מיני" : s === 48 ? "רגיל 2×2" : "גדול 3×3"}
+                </span>
               </button>
             ))}
           </div>
@@ -231,6 +237,23 @@ export function Studio() {
               onChange={(e) => {
                 if (imageData) setWorking(true);
                 setSaturation(Number(e.target.value));
+              }}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">
+              פיזור (Dithering): {dither === 0 ? "כבוי" : dither.toFixed(3)}
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={0.05}
+              step={0.005}
+              value={dither}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setDither(Number(e.target.value));
               }}
             />
           </label>

@@ -144,6 +144,34 @@ describe("brickifyImage (refactored)", () => {
     expect(a.pixelMap).toEqual(b.pixelMap);
   });
 
+  it("produces no isolated speckles on a smooth gradient (dither off by default)", () => {
+    // Vertical dark→light gradient; default pipeline should band cleanly.
+    const px: [number, number, number][] = [];
+    for (let y = 0; y < 96; y++)
+      for (let x = 0; x < 96; x++) {
+        const v = Math.round((y / 95) * 255);
+        px.push([v, v, v]);
+      }
+    const { pixelMap, cols, rows } = brickifyImage(img(96, 96, px), {
+      cols: 48,
+      rows: 48,
+    });
+
+    let speckles = 0;
+    for (let y = 0; y < rows; y++)
+      for (let x = 0; x < cols; x++) {
+        const v = pixelMap[y][x];
+        const n = [
+          y > 0 && pixelMap[y - 1][x],
+          y < rows - 1 && pixelMap[y + 1][x],
+          x > 0 && pixelMap[y][x - 1],
+          x < cols - 1 && pixelMap[y][x + 1],
+        ].filter((nv) => nv !== false);
+        if (n.every((nv) => nv !== v)) speckles++;
+      }
+    expect(speckles).toBe(0);
+  });
+
   it("keeps a hard black/white edge crisp (no muddy middle)", () => {
     // 16px wide: left half black, right half white → clean column boundary.
     const px: [number, number, number][] = [];

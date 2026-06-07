@@ -8,9 +8,21 @@
  */
 import type { FulfillmentType } from "@/lib/supabase/types.helpers";
 
-/** Supported square mosaic sizes (studs per side). */
-export const SIZES = [32, 48, 64] as const;
+/**
+ * Supported square mosaic sizes (studs per side), aligned to the modular
+ * 24×24 baseplate model from the Strategic Blueprint:
+ *   24 = Mini   (1×1 baseplate)
+ *   48 = Regular(2×2 baseplates)  → ~₪290 physical
+ *   72 = Big    (3×3 baseplates)  → ~₪450 physical
+ */
+export const SIZES = [24, 48, 72] as const;
 export type MosaicSize = (typeof SIZES)[number];
+
+/** Number of 24×24 baseplates a size tiles into (e.g. 48 → 2×2 = 4). */
+export function baseplateCount(size: MosaicSize): number {
+  const perSide = size / 24;
+  return perSide * perSide;
+}
 
 export interface PriceBreakdown {
   studs: number;
@@ -21,30 +33,32 @@ export interface PriceBreakdown {
   currency: "ILS";
 }
 
-const DIGITAL_BASE = 39; // base for the smallest (digital manual + parts list)
-const PRICE_PER_100_STUDS = 6; // digital scaling by area
-const PHYSICAL_PER_100_STUDS = 9; // bricks + packing (by weight)
-const PHYSICAL_SHIPPING = 29; // flat local logistics (HFD/Chita)
+// Calibrated so Regular(48)→₪290 and Big(72)→₪450 physical, with digital ~half.
+const DIGITAL_FIXED = 85;
+const DIGITAL_PER_STUD = 0.02778;
+const PHYSICAL_FIXED = 162;
+const PHYSICAL_PER_STUD = 0.05556;
+
+const round5 = (n: number) => Math.round(n / 5) * 5;
 
 export function computePrice(
   size: MosaicSize,
   fulfillment: FulfillmentType,
 ): PriceBreakdown {
   const studs = size * size;
-  const hundreds = studs / 100;
 
-  const base = Math.round(DIGITAL_BASE + hundreds * PRICE_PER_100_STUDS);
+  const base = round5(DIGITAL_FIXED + studs * DIGITAL_PER_STUD);
 
-  const physicalSurcharge =
-    fulfillment === "physical"
-      ? Math.round(hundreds * PHYSICAL_PER_100_STUDS + PHYSICAL_SHIPPING)
-      : 0;
+  if (fulfillment !== "physical") {
+    return { studs, base, physicalSurcharge: 0, total: base, currency: "ILS" };
+  }
 
+  const physicalTotal = round5(PHYSICAL_FIXED + studs * PHYSICAL_PER_STUD);
   return {
     studs,
     base,
-    physicalSurcharge,
-    total: base + physicalSurcharge,
+    physicalSurcharge: physicalTotal - base,
+    total: physicalTotal,
     currency: "ILS",
   };
 }

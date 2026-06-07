@@ -65,7 +65,7 @@ export interface BrickifyOptions {
   seed?: number;
 }
 
-const DEFAULT_EDGE_THRESHOLD = 0.085;
+const DEFAULT_EDGE_THRESHOLD = 0.1;
 
 export interface BrickifyResult {
   /** 2D array of palette indexes (row-major: pixelMap[row][col]). */
@@ -102,9 +102,11 @@ export function brickifyImage(
   // 1) Coarse block quantization → grid of average LINEAR-RGB colors.
   const linGrid = quantizeToLinearGrid(src, cols, rows);
 
-  // 2) Dither: add tiny noise in sRGB, then convert to OKLab (breaks banding).
-  const ditherAmount =
-    options.dither === null ? 0 : (options.dither?.amount ?? DEFAULT_DITHER_AMOUNT);
+  // 2) Dither: OFF by default — at stud resolution random noise reads as
+  //    speckle, not smooth gradient. Opt in by passing a `dither` object.
+  const ditherAmount = options.dither
+    ? (options.dither.amount ?? DEFAULT_DITHER_AMOUNT)
+    : 0;
   const targets: OKLab[] = linGrid.map((lin) =>
     ditherLinearToOklab(lin, ditherAmount, rng),
   );
@@ -126,6 +128,9 @@ export function brickifyImage(
         )
       : null;
     indices = despeckleGrid(indices, cols, rows, {
+      // Stronger defaults clean flat-area noise; edge mask keeps faces crisp.
+      minSameNeighbors: 3,
+      passes: 2,
       ...options.despeckle,
       edgeMask,
     });

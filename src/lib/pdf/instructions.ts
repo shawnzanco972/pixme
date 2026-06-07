@@ -56,7 +56,7 @@ export function buildInstructionsPdf(
   options: InstructionsOptions = {},
 ): ArrayBuffer {
   const palette = options.palette ?? DEFAULT_PALETTE;
-  const moduleSize = options.moduleSize ?? 16;
+  const moduleSize = options.moduleSize ?? 24;
   const rows = pixelMap.length;
   const cols = rows > 0 ? pixelMap[0].length : 0;
 
