@@ -282,6 +282,7 @@ export default async function AdminDashboard() {
                 <th className="p-3 text-start">סטטוס</th>
                 <th className="p-3 text-start">רישיונות</th>
                 <th className="p-3 text-start">שולם</th>
+                <th className="p-3 text-start"></th>
               </tr>
             </thead>
             <tbody>
@@ -291,17 +292,32 @@ export default async function AdminDashboard() {
                   className="border-t border-zinc-100 dark:border-zinc-800"
                 >
                   <td className="p-3">{day(o.created_at)}</td>
-                  <td className="p-3">{o.company_name}</td>
+                  <td className="p-3">
+                    <a
+                      href={`/admin/b2b/${o.id}`}
+                      className="font-medium underline"
+                    >
+                      {o.company_name}
+                    </a>
+                  </td>
                   <td className="p-3">
                     {STATUS_HE[o.status as OrderStatus] ?? o.status}
                   </td>
                   <td className="p-3">{o.licenses_purchased}</td>
                   <td className="p-3">{formatILS(Number(o.amount_paid))}</td>
+                  <td className="p-3">
+                    <a
+                      href={`/admin/b2b/${o.id}`}
+                      className="text-sm underline"
+                    >
+                      פתח
+                    </a>
+                  </td>
                 </tr>
               ))}
               {(b2b ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-4 text-center text-zinc-400">
+                  <td colSpan={6} className="p-4 text-center text-zinc-400">
                     אין הזמנות עדיין
                   </td>
                 </tr>
