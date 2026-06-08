@@ -458,7 +458,7 @@ export function Studio() {
 
         {/* Pre-processing: higher contrast keeps edges crisp; saturation keeps
             colors vivid. Disabled until an image is loaded. */}
-        <div className="grid gap-3">
+        <div className="grid gap-3 border-t border-outline pt-5">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">התאמות תמונה</p>
             <button
@@ -553,7 +553,7 @@ export function Studio() {
 
         {/* Color scheme — supply-driven. In-stock colors can be toggled;
             out-of-stock are disabled. Default scheme is our recommended set. */}
-        <div>
+        <div className="border-t border-outline pt-5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-medium">
               צבעים ({enabled.size})
@@ -604,12 +604,13 @@ export function Studio() {
           </p>
         </div>
 
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+        <div className="rounded-lg border border-outline bg-surface-muted px-3 py-2 text-sm text-foreground/70">
           📦 כל הזמנה כוללת ערכה פיזית עם כל הלבנים + חוברת הוראות. קובץ ההוראות
           (PDF) זמין להורדה חינם בעמוד ההזמנה.
         </div>
 
-        <div className="grid gap-3">
+        <div className="grid gap-3 border-t border-outline pt-5">
+          <p className="text-sm font-medium">פרטים ומשלוח</p>
           <input
             className="input"
             placeholder="שם מלא"
