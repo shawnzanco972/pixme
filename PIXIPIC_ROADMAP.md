@@ -50,6 +50,11 @@ plan for the current push; tackled top-down, committed in slices.
 - [x] Order confirmation email (B2C) — `sendOrderConfirmation` on payment
       verification (webhook). Cart/quantity still TODO.
 - [x] Brand customer pages (home, header/footer, /create, order, b2b, workspace)
+- [x] Gift info surfaced on the order page (🎁 recipient/message/wrap/delivery)
+      and the admin fulfillment page (which address, wrap, card message,
+      "no price in parcel" note for ship-to-recipient).
+- [x] Home hero refreshed: two-column with a live brick-mosaic showpiece
+      (`HeroMosaic`).
 - [x] Brand the admin pages to the design system (zinc → `surface`/`outline`/
       `surface-muted`/`success` tokens, `.btn`/`.card`; light-only).
 - [ ] Hebrew PDF — title + customer name already Hebrew (Heebo embedded);
