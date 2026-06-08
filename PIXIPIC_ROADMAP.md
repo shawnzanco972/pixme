@@ -23,14 +23,18 @@ plan for the current push; tackled top-down, committed in slices.
 - [ ] face-aware contrast bias (later; needs detection)
 - [ ] higher-res tiers already exist (up to 5×5 / 120²)
 
-## E. Content / catalog (later)
-- [ ] **Library/gallery** of royalty-free or AI-generated designs the customer
-      can start from (no copyright risk). Seed a `gallery` table + grid on /create.
+## E. Content / catalog
+- [x] **Starter gallery** — copyright-free procedural designs (heart, star,
+      Star of David, smiley, Israeli flag, checkerboard) in `src/lib/starters.ts`,
+      pickable on /create. No copyright risk; no external assets.
+- [ ] DB-backed gallery (`gallery` table + admin CRUD) for curated/AI designs
+      with images — needs content decisions.
 - [ ] "Design-it-for-me" service (manual optimization, paid add-on).
 - [ ] Gifting flow (buy now, send a customize link).
 
-## F. UX/flow polish (later)
+## F. UX/flow polish
 - [ ] Multi-step create flow (Upload → Size → Customize → Details)
 - [ ] Cart/quantity, order confirmation email (needs provider)
-- [ ] Brand the admin + remaining pages (order, b2b, workspace)
+- [x] Brand customer pages (home, header/footer, /create, order, b2b, workspace)
+- [ ] Brand the admin pages to the design system (functional, still zinc)
 - [ ] Hebrew PDF (needs RTL shaping)
