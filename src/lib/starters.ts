@@ -124,6 +124,19 @@ export const STARTERS: Starter[] = [
   { id: "checker", name: "שחמט", draw: checker },
 ];
 
+/** Render a starter to ImageData synchronously (for showcases/previews). */
+export function renderStarterImageData(id: string, size = 256): ImageData | null {
+  const st = STARTERS.find((s) => s.id === id);
+  if (typeof document === "undefined" || !st) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  st.draw(ctx, size);
+  return ctx.getImageData(0, 0, size, size);
+}
+
 /** Render a starter to ImageData + a PNG File (for the upload-on-order step). */
 export async function renderStarter(
   id: string,
