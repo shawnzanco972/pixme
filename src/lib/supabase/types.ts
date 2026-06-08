@@ -6,9 +6,8 @@
  * (or via the Supabase MCP `generate_typescript_types` tool)
  *
  * Domain-friendly aliases (PixelMap, ShippingAddress, FulfillmentType, etc.)
- * live in ./types.helpers.ts so this file stays a clean, overwritable artifact.
+ * live in types.helpers.ts so this file stays a clean, overwritable artifact.
  */
-
 export type Json =
   | string
   | number
@@ -28,34 +27,49 @@ export type Database = {
       b2b_orders: {
         Row: {
           amount_paid: number
+          bundle_id: string | null
           company_name: string
           contact_email: string
           created_at: string
           icount_invoice_id: string | null
           id: string
           licenses_purchased: number
+          owner_token: string
+          plates_x: number
+          plates_y: number
+          project_name: string | null
           status: Database["public"]["Enums"]["order_status"]
           updated_at: string
         }
         Insert: {
           amount_paid?: number
+          bundle_id?: string | null
           company_name: string
           contact_email: string
           created_at?: string
           icount_invoice_id?: string | null
           id?: string
           licenses_purchased: number
+          owner_token?: string
+          plates_x?: number
+          plates_y?: number
+          project_name?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
         }
         Update: {
           amount_paid?: number
+          bundle_id?: string | null
           company_name?: string
           contact_email?: string
           created_at?: string
           icount_invoice_id?: string | null
           id?: string
           licenses_purchased?: number
+          owner_token?: string
+          plates_x?: number
+          plates_y?: number
+          project_name?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
         }
@@ -171,6 +185,54 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_roster: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          invite_token: string
+          name: string
+          submission_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          invite_token?: string
+          name: string
+          submission_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          invite_token?: string
+          name?: string
+          submission_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_roster_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "employee_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_roster_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_submissions: {
         Row: {
           created_at: string
@@ -178,6 +240,7 @@ export type Database = {
           id: string
           image_url: string | null
           pixel_map: Json | null
+          roster_id: string | null
           status: Database["public"]["Enums"]["submission_status"]
           updated_at: string
           workspace_id: string
@@ -188,6 +251,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           pixel_map?: Json | null
+          roster_id?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           updated_at?: string
           workspace_id: string
@@ -198,11 +262,19 @@ export type Database = {
           id?: string
           image_url?: string | null
           pixel_map?: Json | null
+          roster_id?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           updated_at?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "employee_submissions_roster_id_fkey"
+            columns: ["roster_id"]
+            isOneToOne: false
+            referencedRelation: "employee_roster"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "employee_submissions_workspace_id_fkey"
             columns: ["workspace_id"]

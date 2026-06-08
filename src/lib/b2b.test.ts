@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { workspaceStatus, type WorkspaceLike } from "./b2b";
+import {
+  projectProgress,
+  seatStatus,
+  workspaceStatus,
+  type WorkspaceLike,
+} from "./b2b";
+import { B2B_BUNDLES, bundleById, bundlePerSeat } from "./b2b-bundles";
 
 const base: WorkspaceLike = {
   active: true,
@@ -41,5 +47,55 @@ describe("workspaceStatus", () => {
 
   it("handles a missing workspace", () => {
     expect(workspaceStatus(null, NOW).open).toBe(false);
+  });
+});
+
+describe("seatStatus", () => {
+  it("maps submission states to seat lifecycle", () => {
+    expect(seatStatus(null)).toBe("not_started");
+    expect(seatStatus(undefined)).toBe("not_started");
+    expect(seatStatus("pending")).toBe("submitted");
+    expect(seatStatus("processing")).toBe("submitted");
+    expect(seatStatus("ready")).toBe("ready");
+    expect(seatStatus("rejected")).toBe("rejected");
+  });
+});
+
+describe("projectProgress", () => {
+  it("counts seats and computes the done fraction", () => {
+    const p = projectProgress([
+      "not_started",
+      "submitted",
+      "ready",
+      "rejected",
+    ]);
+    expect(p.total).toBe(4);
+    expect(p.notStarted).toBe(1);
+    expect(p.ready).toBe(1);
+    // 3 of 4 have submitted something (anything but not_started).
+    expect(p.doneFraction).toBeCloseTo(0.75, 5);
+  });
+
+  it("is empty-safe", () => {
+    expect(projectProgress([]).doneFraction).toBe(0);
+  });
+});
+
+describe("b2b bundles", () => {
+  it("has exactly one featured tier and positive pricing", () => {
+    expect(B2B_BUNDLES.filter((b) => b.featured)).toHaveLength(1);
+    for (const b of B2B_BUNDLES) {
+      expect(b.seats).toBeGreaterThan(0);
+      expect(b.price).toBeGreaterThan(0);
+      expect(bundlePerSeat(b)).toBeGreaterThan(0);
+    }
+  });
+
+  it("looks up by id and rewards volume (cheaper per seat at scale)", () => {
+    expect(bundleById("company-25")?.seats).toBe(25);
+    expect(bundleById("nope")).toBeUndefined();
+    const small = bundlePerSeat(B2B_BUNDLES[0]);
+    const mid = bundlePerSeat(B2B_BUNDLES[1]);
+    expect(mid).toBeLessThanOrEqual(small);
   });
 });

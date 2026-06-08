@@ -12,6 +12,7 @@
  */
 import { NextResponse } from "next/server";
 
+import { bundleById } from "@/lib/b2b-bundles";
 import { createCheckout } from "@/lib/icount";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
@@ -100,14 +101,15 @@ export async function POST(request: Request) {
     if (track === "b2b") {
       const contactEmail = String(body.contact_email ?? "");
       const companyName = String(body.company_name ?? "");
-      const licenses = Number(body.licenses_purchased ?? 0);
-      const amount = Number(body.amount ?? 0);
-      if (!contactEmail || !companyName || !(licenses > 0) || !(amount > 0)) {
+      const projectName = body.project_name
+        ? String(body.project_name)
+        : null;
+      // The bundle is the source of truth for seats, size and amount — the
+      // client only names which one; pricing is never trusted from the body.
+      const bundle = bundleById(String(body.bundle_id ?? ""));
+      if (!contactEmail || !companyName || !bundle) {
         return NextResponse.json(
-          {
-            error:
-              "Missing company_name, contact_email, licenses_purchased, or amount",
-          },
+          { error: "Missing company_name, contact_email, or a valid bundle_id" },
           { status: 400 },
         );
       }
@@ -117,20 +119,27 @@ export async function POST(request: Request) {
         .insert({
           company_name: companyName,
           contact_email: contactEmail,
-          licenses_purchased: licenses,
+          project_name: projectName,
+          bundle_id: bundle.id,
+          plates_x: bundle.platesX,
+          plates_y: bundle.platesY,
+          licenses_purchased: bundle.seats,
           amount_paid: 0, // set authoritatively on payment confirmation
           status: "pending",
         })
-        .select("id")
+        .select("id, owner_token")
         .single();
 
       if (error || !data) {
         throw new Error(error?.message ?? "Failed to create B2B order");
       }
 
+      const ownerUrl = `${siteUrl()}/b2b/project/${data.owner_token}`;
+
       if (!paymentsConfigured()) {
         return NextResponse.json({
           orderId: data.id,
+          ownerToken: data.owner_token,
           url: `${siteUrl()}/b2b/thank-you?order=${data.id}`,
           paymentConfigured: false,
         });
@@ -139,15 +148,20 @@ export async function POST(request: Request) {
       const checkout = await createCheckout({
         orderId: data.id,
         track: "b2b",
-        amount,
-        description: `Pixipic — ${licenses} רישיונות B2B`,
+        amount: bundle.price,
+        description: `Pixipic — חבילת ${bundle.nameHe} (${bundle.seats} עובדים)`,
         customerEmail: contactEmail,
         customerName: companyName,
         successUrl: `${siteUrl()}/b2b/thank-you?order=${data.id}`,
         ipnUrl: `${siteUrl()}/api/webhooks/icount`,
       });
 
-      return NextResponse.json({ orderId: data.id, url: checkout.url });
+      return NextResponse.json({
+        orderId: data.id,
+        ownerToken: data.owner_token,
+        ownerUrl,
+        url: checkout.url,
+      });
     }
 
     return NextResponse.json(

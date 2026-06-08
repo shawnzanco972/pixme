@@ -1,0 +1,137 @@
+/**
+ * Transactional email (Resend REST API — no SDK dependency).
+ *
+ * Gracefully degrades: when RESEND_API_KEY / EMAIL_FROM aren't set, send*()
+ * functions no-op and return `false` (mirroring the iCount "configured?" gate),
+ * so the whole B2B flow keeps working in dev — links are still shown on-screen.
+ *
+ * All templates are Hebrew RTL. Keep them inline + minimal (no React Email) to
+ * stay dependency-free and fast in serverless routes.
+ */
+
+const RESEND_ENDPOINT = "https://api.resend.com/emails";
+
+export function siteUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    "http://localhost:3000"
+  );
+}
+
+/** Email is "configured" once an API key and a from-address are present. */
+export function isEmailConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+}
+
+export interface SendEmailInput {
+  to: string;
+  subject: string;
+  html: string;
+}
+
+/**
+ * Send one email. Returns true if accepted by the provider, false if email
+ * isn't configured or the send failed (never throws — callers treat email as
+ * best-effort so it can't break provisioning/roster writes).
+ */
+export async function sendEmail(input: SendEmailInput): Promise<boolean> {
+  if (!isEmailConfigured()) return false;
+  try {
+    const res = await fetch(RESEND_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM,
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Minimal RTL HTML shell shared by every template. */
+function shell(bodyHtml: string): string {
+  return `<!doctype html><html dir="rtl" lang="he"><body style="margin:0;background:#f7f9fb;font-family:Arial,Helvetica,sans-serif;color:#191c1e">
+    <div style="max-width:520px;margin:0 auto;padding:32px 24px">
+      <div style="font-size:22px;font-weight:bold;color:#b7102a;margin-bottom:16px">Pixipic</div>
+      <div style="background:#fff;border:1px solid #e0e3e5;border-radius:16px;padding:24px;line-height:1.7">
+        ${bodyHtml}
+      </div>
+      <p style="color:#8a9099;font-size:12px;margin-top:16px">פיקסיפיק — פסיפס הלבנים שלכם</p>
+    </div>
+  </body></html>`;
+}
+
+function button(href: string, label: string): string {
+  return `<a href="${href}" style="display:inline-block;background:#b7102a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:9999px;font-weight:bold;margin-top:8px">${label}</a>`;
+}
+
+/** Send the project owner their private dashboard link after purchase. */
+export async function sendOwnerWelcome(opts: {
+  to: string;
+  companyName: string;
+  projectName: string | null;
+  ownerToken: string;
+}): Promise<boolean> {
+  const url = `${siteUrl()}/b2b/project/${opts.ownerToken}`;
+  const title = opts.projectName
+    ? `הפרויקט "${opts.projectName}" מוכן`
+    : "הפרויקט שלכם מוכן";
+  return sendEmail({
+    to: opts.to,
+    subject: `${title} — לוח הבקרה שלכם ב-Pixipic`,
+    html: shell(
+      `<h1 style="font-size:20px;margin:0 0 8px">${title} 🎉</h1>
+       <p>תודה על הרכישה! זהו לוח הבקרה הפרטי שלכם לניהול הפרויקט: הוסיפו את העובדים, שלחו להם קישורים אישיים ועקבו אחרי מי כבר השלים.</p>
+       <p style="font-weight:bold">שמרו את הקישור — זו הכניסה היחידה לפרויקט.</p>
+       <p>${button(url, "פתחו את לוח הבקרה")}</p>
+       <p style="color:#8a9099;font-size:12px;direction:ltr;text-align:left">${url}</p>`,
+    ),
+  });
+}
+
+/** Confirm a B2C order to the customer once payment is verified. */
+export async function sendOrderConfirmation(opts: {
+  to: string;
+  customerName: string;
+  orderId: string;
+}): Promise<boolean> {
+  const url = `${siteUrl()}/order/${opts.orderId}`;
+  return sendEmail({
+    to: opts.to,
+    subject: "ההזמנה שלכם ב-Pixipic התקבלה",
+    html: shell(
+      `<h1 style="font-size:20px;margin:0 0 8px">תודה ${opts.customerName}! 🎉</h1>
+       <p>קיבלנו את ההזמנה והתשלום אושר. אפשר לעקוב אחרי הסטטוס ולהוריד את מדריך ההרכבה בעמוד ההזמנה:</p>
+       <p>${button(url, "לעמוד ההזמנה")}</p>
+       <p style="color:#8a9099;font-size:12px;direction:ltr;text-align:left">${url}</p>`,
+    ),
+  });
+}
+
+/** Send an employee their personalized seat link to upload a photo. */
+export async function sendSeatInvite(opts: {
+  to: string;
+  employeeName: string;
+  projectLabel: string;
+  inviteToken: string;
+}): Promise<boolean> {
+  const url = `${siteUrl()}/seat/${opts.inviteToken}`;
+  return sendEmail({
+    to: opts.to,
+    subject: `${opts.projectLabel}: הפסיפס האישי שלכם מחכה`,
+    html: shell(
+      `<h1 style="font-size:20px;margin:0 0 8px">שלום ${opts.employeeName}!</h1>
+       <p>במסגרת ${opts.projectLabel} מגיע לכם פסיפס לבנים אישי. כל מה שצריך זה להעלות תמונה אחת — אנחנו נדאג לשאר.</p>
+       <p>${button(url, "להעלאת התמונה")}</p>
+       <p style="color:#8a9099;font-size:12px;direction:ltr;text-align:left">${url}</p>`,
+    ),
+  });
+}

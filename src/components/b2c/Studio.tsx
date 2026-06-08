@@ -41,6 +41,12 @@ export function Studio() {
   const [autoLevels, setAutoLevels] = useState(true);
   // Dithering off by default (it reads as speckle at stud resolution).
   const [dither, setDither] = useState(0);
+  // Floyd–Steinberg error diffusion for smooth photographic gradients.
+  const [smoothGradients, setSmoothGradients] = useState(false);
+  // Face-aware contrast: keep facial features in portraits.
+  const [faceAware, setFaceAware] = useState(false);
+  // Line-art / text mode: crisp edges for logos & lettering.
+  const [lineArt, setLineArt] = useState(false);
   // Zoom/crop (1 = fit; >1 crops tighter so the subject gets more studs).
   const [zoom, setZoom] = useState(1);
   // Crop center (0..1) for drag-to-pan when zoomed in.
@@ -63,6 +69,9 @@ export function Studio() {
     setSaturation(1.1);
     setAutoLevels(true);
     setDither(0);
+    setSmoothGradients(false);
+    setFaceAware(false);
+    setLineArt(false);
     setZoom(1);
     setPanX(0.5);
     setPanY(0.5);
@@ -196,8 +205,9 @@ export function Studio() {
       cols,
       rows,
       palette: activePalette,
-      preprocess: { contrast, saturation, autoLevels },
+      preprocess: { contrast, saturation, autoLevels, faceAware, lineArt },
       dither: dither > 0 ? { amount: dither } : null,
+      fsDither: smoothGradients,
     })
       .then((r) => {
         if (cancelled) return;
@@ -217,6 +227,9 @@ export function Studio() {
     saturation,
     autoLevels,
     dither,
+    smoothGradients,
+    faceAware,
+    lineArt,
     zoom,
     panX,
     panY,
@@ -550,6 +563,42 @@ export function Studio() {
               }}
             />
             שיפור אוטומטי (ניגודיות חכמה)
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={faceAware}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setFaceAware(e.target.checked);
+              }}
+            />
+            הדגשת פנים (לדיוקנאות)
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={smoothGradients}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setSmoothGradients(e.target.checked);
+              }}
+            />
+            מעברי צבע חלקים (לתמונות)
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={lineArt}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setLineArt(e.target.checked);
+              }}
+            />
+            מצב טקסט / קו (ללוגו וכיתוב)
           </label>
         </div>
 

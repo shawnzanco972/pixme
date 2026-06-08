@@ -1,21 +1,18 @@
 "use client";
 /**
- * Admin: manually provision a B2B workspace for an order (what the iCount
- * webhook does on payment). Lets you test the B2B flow before payments are live.
+ * Admin: manually provision a B2B workspace for an order — mirrors the iCount
+ * webhook (mark paid + create workspace + email the owner). Lets you test the
+ * whole B2B flow before payments are live. `maxSlots` is unused now (the server
+ * derives it from the order) but kept for the call-site API.
  */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { createClient } from "@/lib/supabase/client";
-
-const TTL_MS = 365 * 24 * 60 * 60 * 1000;
-
 export function ProvisionWorkspaceButton({
   orderId,
-  maxSlots,
 }: {
   orderId: string;
-  maxSlots: number;
+  maxSlots?: number;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -24,18 +21,22 @@ export function ProvisionWorkspaceButton({
   async function provision() {
     setBusy(true);
     setError(null);
-    const sb = createClient();
-    const { error: insErr } = await sb.from("b2b_workspaces").insert({
-      b2b_order_id: orderId,
-      max_slots: maxSlots,
-      active: true,
-      expiration_date: new Date(Date.now() + TTL_MS).toISOString(),
-    });
-    // Mark the order paid too, so it reflects an active B2B account.
-    await sb.from("b2b_orders").update({ status: "paid" }).eq("id", orderId);
-    setBusy(false);
-    if (insErr) setError(insErr.message);
-    else router.refresh();
+    try {
+      const res = await fetch("/api/b2b/provision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(j.error ?? "שגיאה ביצירת סביבת העבודה.");
+      }
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "שגיאה בלתי צפויה.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
