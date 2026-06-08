@@ -15,6 +15,7 @@ import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
 import { usePaletteInventory } from "@/lib/brick-engine/usePaletteInventory";
 import { renderBricks } from "@/lib/brick-render";
 import { cropToAspect, fileToImageData } from "@/lib/image";
+import { STARTERS, renderStarter } from "@/lib/starters";
 import { computePrice, formatILS, PLATE_STUDS } from "@/lib/pricing";
 
 // Physical size of one 24×24 baseplate (24 studs × 8mm pitch ≈ 19.2 cm).
@@ -29,7 +30,7 @@ export function Studio() {
 
   const [file, setFile] = useState<File | null>(null);
   const [imageData, setImageData] = useState<ImageData | null>(null);
-  // Baseplate grid (like brick.me): horizontal × vertical 24×24 plates.
+  // Baseplate grid: horizontal × vertical 24×24 plates.
   const [platesX, setPlatesX] = useState(2);
   const [platesY, setPlatesY] = useState(2);
   const cols = platesX * PLATE_STUDS;
@@ -158,6 +159,29 @@ export function Studio() {
     }
   }, []);
 
+  const pickStarter = useCallback(async (id: string) => {
+    setError(null);
+    setWorking(true);
+    try {
+      const r = await renderStarter(id);
+      if (!r) throw new Error();
+      setFile(r.file);
+      setImageData(r.imageData);
+    } catch {
+      setWorking(false);
+      setError("שגיאה בטעינת העיצוב.");
+    }
+  }, []);
+
+  const STARTER_EMOJI: Record<string, string> = {
+    heart: "❤️",
+    star: "⭐",
+    "magen-david": "✡️",
+    smiley: "🙂",
+    flag: "🇮🇱",
+    checker: "♟️",
+  };
+
   // Re-run the engine whenever the image or size changes. (`working` is set by
   // the handlers that trigger this, to avoid setState directly in the effect.)
   useEffect(() => {
@@ -285,17 +309,35 @@ export function Studio() {
           />
 
           {!result && (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-500"
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl text-primary">
-                +
-              </span>
-              <span className="font-heading font-medium">העלו תמונה</span>
-              <span className="text-sm">JPG · PNG · WEBP</span>
-            </button>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-zinc-500">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center gap-2"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl text-primary">
+                  +
+                </span>
+                <span className="font-heading font-medium">העלו תמונה</span>
+                <span className="text-xs">JPG · PNG · WEBP</span>
+              </button>
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-xs">או בחרו עיצוב מוכן:</span>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {STARTERS.map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => void pickStarter(st.id)}
+                      className="flex items-center gap-1 rounded-full border border-outline bg-surface px-3 py-1 text-xs text-foreground transition-colors hover:bg-surface-muted"
+                    >
+                      <span>{STARTER_EMOJI[st.id]}</span>
+                      {st.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Zoom controls + drag hint (start/right corner) */}

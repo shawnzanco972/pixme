@@ -1,6 +1,6 @@
 # Pixipic (פיקסיפיק) — Improvement Roadmap
 
-Renamed from "Pixme" (too close to competitor brick.me). This is the working
+Renamed from "Pixme" (the prior working name). This is the working
 plan for the current push; tackled top-down, committed in slices.
 
 ## A. Rebrand → Pixipic  ✅ (this session)
@@ -18,22 +18,19 @@ plan for the current push; tackled top-down, committed in slices.
 
 ## D. Brick engine quality (ongoing)
 - [x] chroma-weighted match, white compositing, Sobel despeckle, swap opt
-- [ ] auto-levels (histogram stretch) option for flat photos
+- [x] auto-levels (histogram stretch) option for flat photos
 - [ ] optional Floyd–Steinberg dithering mode for photographic gradients
 - [ ] face-aware contrast bias (later; needs detection)
 - [ ] higher-res tiers already exist (up to 5×5 / 120²)
 
-## E. Content / catalog (brick.me parity, later)
+## E. Content / catalog (later)
 - [ ] **Library/gallery** of royalty-free or AI-generated designs the customer
       can start from (no copyright risk). Seed a `gallery` table + grid on /create.
 - [ ] "Design-it-for-me" service (manual optimization, paid add-on).
 - [ ] Gifting flow (buy now, send a customize link).
 
 ## F. UX/flow polish (later)
-- [ ] Multi-step create flow (Upload → Size → Customize → Details) like brick.me
+- [ ] Multi-step create flow (Upload → Size → Customize → Details)
 - [ ] Cart/quantity, order confirmation email (needs provider)
 - [ ] Brand the admin + remaining pages (order, b2b, workspace)
 - [ ] Hebrew PDF (needs RTL shaping)
-
-Sources reviewed: brick.me (flow, 50-color palette, library, design-it-for-me,
-gifting, numbered baseplate instructions).
