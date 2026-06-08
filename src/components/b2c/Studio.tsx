@@ -583,24 +583,35 @@ export function Studio() {
                       : `${c.name} — אזל מהמלאי`
                   }
                   onClick={() => toggleColor(c.id, c.inStock)}
-                  className={`h-7 w-7 rounded-md border transition ${
+                  className={`relative h-8 w-8 rounded-md border border-black/20 transition ${
                     on
-                      ? "ring-2 ring-offset-1 ring-black dark:ring-white"
-                      : "opacity-45"
-                  } ${!c.inStock ? "cursor-not-allowed opacity-20" : ""}`}
-                  style={{ backgroundColor: c.hex, borderColor: "#0003" }}
+                      ? "scale-105 ring-2 ring-primary ring-offset-2 ring-offset-surface"
+                      : "opacity-35 grayscale hover:opacity-60"
+                  }`}
+                  style={{ backgroundColor: c.hex }}
                 >
-                  {!c.inStock ? (
-                    <span className="text-[10px] leading-none text-zinc-700">
-                      ✕
+                  {on && (
+                    <span
+                      className="absolute inset-0 flex items-center justify-center text-sm font-bold"
+                      style={{
+                        color:
+                          0.299 * c.rgb[0] +
+                            0.587 * c.rgb[1] +
+                            0.114 * c.rgb[2] >
+                          140
+                            ? "#1b1b1b"
+                            : "#ffffff",
+                      }}
+                    >
+                      ✓
                     </span>
-                  ) : null}
+                  )}
                 </button>
               );
             })}
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            לחצו כדי להוסיף/להסיר צבע. צבעים שאזלו מהמלאי מושבתים.
+            ✓ = צבע פעיל. לחצו כדי להוסיף/להסיר. צבעים מעומעמים אינם בשימוש.
           </p>
         </div>
 

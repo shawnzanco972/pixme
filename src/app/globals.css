@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 /*
+ * Light-only app. Bind the `dark:` variant to an explicit `.dark` class (which
+ * we never add) instead of the default `prefers-color-scheme: dark`, so existing
+ * `dark:*` utilities never activate on dark-mode machines (no black-on-black).
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
  * Pixme global styles — "Creative Workshop" luxe-brick design system.
  * Light, tactile, toy-like. RTL-first (Hebrew): always use logical utilities
  * (ms-*, me-*, ps-*, pe-*, start-*, end-*, text-start/end) so layout mirrors.

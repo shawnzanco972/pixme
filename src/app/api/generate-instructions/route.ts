@@ -34,51 +34,57 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  let pixelMap: number[][] | null = null;
+  try {
+    let pixelMap: number[][] | null = null;
 
-  if (isPixelMap(body.pixelMap)) {
-    pixelMap = body.pixelMap;
-  } else if (typeof body.orderId === "string") {
-    // Fetch the stored map for a paid order (service-role; trusted context).
-    const admin = createAdminClient();
-    const table = body.track === "b2b" ? "employee_submissions" : "b2c_orders";
-    const { data, error } = await admin
-      .from(table)
-      .select("pixel_map")
-      .eq("id", body.orderId)
-      .single();
+    if (isPixelMap(body.pixelMap)) {
+      pixelMap = body.pixelMap;
+    } else if (typeof body.orderId === "string") {
+      // Fetch the stored map for a paid order (service-role; trusted context).
+      const admin = createAdminClient();
+      const table =
+        body.track === "b2b" ? "employee_submissions" : "b2c_orders";
+      const { data, error } = await admin
+        .from(table)
+        .select("pixel_map")
+        .eq("id", body.orderId)
+        .single();
 
-    if (error || !data) {
+      if (error || !data) {
+        return NextResponse.json(
+          { error: `Order ${body.orderId} not found` },
+          { status: 404 },
+        );
+      }
+      const stored = (data as { pixel_map: PixelMap | null }).pixel_map;
+      if (!isPixelMap(stored)) {
+        return NextResponse.json(
+          { error: "Order has no pixel_map yet" },
+          { status: 422 },
+        );
+      }
+      pixelMap = stored;
+    } else {
       return NextResponse.json(
-        { error: `Order ${body.orderId} not found` },
-        { status: 404 },
+        { error: "Provide either pixelMap or orderId" },
+        { status: 400 },
       );
     }
-    const stored = (data as { pixel_map: PixelMap | null }).pixel_map;
-    if (!isPixelMap(stored)) {
-      return NextResponse.json(
-        { error: "Order has no pixel_map yet" },
-        { status: 422 },
-      );
-    }
-    pixelMap = stored;
-  } else {
-    return NextResponse.json(
-      { error: "Provide either pixelMap or orderId" },
-      { status: 400 },
-    );
+
+    const pdf = buildInstructionsPdf(pixelMap, {
+      title: typeof body.title === "string" ? body.title : undefined,
+    });
+
+    return new NextResponse(pdf, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": 'attachment; filename="pixme-instructions.pdf"',
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "PDF generation failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const pdf = buildInstructionsPdf(pixelMap, {
-    title: typeof body.title === "string" ? body.title : undefined,
-  });
-
-  return new NextResponse(pdf, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": 'attachment; filename="pixme-instructions.pdf"',
-      "Cache-Control": "no-store",
-    },
-  });
 }
