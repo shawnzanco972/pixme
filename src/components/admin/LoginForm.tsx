@@ -36,7 +36,7 @@ export function LoginForm() {
       <input
         type="email"
         dir="ltr"
-        className="rounded-lg border border-zinc-300 px-3 py-2 text-start dark:border-zinc-700 dark:bg-zinc-900"
+        className="input text-start"
         placeholder="אימייל"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -44,7 +44,7 @@ export function LoginForm() {
       <input
         type="password"
         dir="ltr"
-        className="rounded-lg border border-zinc-300 px-3 py-2 text-start dark:border-zinc-700 dark:bg-zinc-900"
+        className="input text-start"
         placeholder="סיסמה"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
@@ -54,7 +54,7 @@ export function LoginForm() {
         type="button"
         onClick={() => void handleLogin()}
         disabled={loading}
-        className="rounded-full bg-black px-8 py-3 text-white hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+        className="btn btn-primary"
       >
         {loading ? "מתחבר…" : "כניסה"}
       </button>

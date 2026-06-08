@@ -11,7 +11,7 @@ export function SignOutButton() {
     <button
       type="button"
       onClick={() => void signOut()}
-      className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+      className="btn btn-ghost h-10 min-h-10 px-4 text-sm"
     >
       התנתקות
     </button>
