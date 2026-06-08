@@ -39,6 +39,49 @@ export default async function AdminOverview() {
     loadInventory(supabase),
   ]);
 
+  // B2B production queue: approved ("ready") employee kits we must build.
+  const { data: readySubs } = await supabase
+    .from("employee_submissions")
+    .select("id, employee_name, scheduled_for, workspace_id")
+    .eq("status", "ready");
+
+  const wsIds = [...new Set((readySubs ?? []).map((s) => s.workspace_id))];
+  const { data: wsRows } = wsIds.length
+    ? await supabase
+        .from("b2b_workspaces")
+        .select("id, b2b_order_id")
+        .in("id", wsIds)
+    : { data: [] };
+  const orderIdByWs = new Map(
+    (wsRows ?? []).map((w) => [w.id, w.b2b_order_id]),
+  );
+  const ordIds = [...new Set((wsRows ?? []).map((w) => w.b2b_order_id))];
+  const { data: ordRows } = ordIds.length
+    ? await supabase
+        .from("b2b_orders")
+        .select("id, company_name, project_name")
+        .in("id", ordIds)
+    : { data: [] };
+  const orderById = new Map((ordRows ?? []).map((o) => [o.id, o]));
+
+  const productionQueue = (readySubs ?? [])
+    .map((s) => {
+      const ord = orderById.get(orderIdByWs.get(s.workspace_id) ?? "");
+      return {
+        id: s.id,
+        employee: s.employee_name,
+        company: ord?.project_name || ord?.company_name || "—",
+        scheduledFor: s.scheduled_for,
+      };
+    })
+    // Soonest scheduled first; unscheduled (null) last.
+    .sort((a, b) => {
+      if (a.scheduledFor === b.scheduledFor) return 0;
+      if (!a.scheduledFor) return 1;
+      if (!b.scheduledFor) return -1;
+      return a.scheduledFor < b.scheduledFor ? -1 : 1;
+    });
+
   const orders = b2c ?? [];
   const projects = b2b ?? [];
   const thisMonth = monthKey(new Date().toISOString());
@@ -73,6 +116,7 @@ export default async function AdminOverview() {
     ["הכנסות החודש", formatILS(Math.round(revenueThisMonth))],
     ["הזמנות פתוחות", String(openOrders)],
     ["לאריזה (פיזי, שולם)", String(toPack.length)],
+    ["מתנות עסקיות לייצור", String(productionQueue.length)],
     ["פרויקטים פעילים", String(projectsInProgress)],
     [
       "חוסר במלאי (התראות)",
@@ -85,7 +129,7 @@ export default async function AdminOverview() {
       <h1 className="font-heading text-2xl font-bold">סקירה</h1>
 
       {/* KPI cards */}
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-6">
         {kpis.map(([label, value]) => (
           <div key={label} className="rounded-xl border border-outline p-4">
             <p className="text-xs text-zinc-500">{label}</p>
@@ -190,9 +234,48 @@ export default async function AdminOverview() {
           </div>
         )}
         <p className="text-xs text-zinc-500">
-          חוסר צבעים מחושב לפי דרישת הזמנות פיזיות ששולמו, פחות המלאי הקיים מול
-          הסף שהוגדר.
+          חוסר צבעים מחושב לפי דרישת הזמנות פיזיות ששולמו ומתנות עסקיות מאושרות,
+          פחות המלאי הקיים מול הסף שהוגדר.
         </p>
+      </section>
+
+      {/* B2B production queue — approved employee kits to build, by date */}
+      <section className="flex flex-col gap-3">
+        <h2 className="font-heading text-xl font-semibold">
+          תור ייצור עסקי ({productionQueue.length})
+        </h2>
+        {productionQueue.length === 0 ? (
+          <p className="text-sm text-zinc-400">
+            אין מתנות עסקיות מאושרות לייצור כרגע.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-outline">
+            <table className="w-full text-start text-sm">
+              <thead className="bg-surface-muted text-zinc-600">
+                <tr>
+                  <th className="p-3 text-start">מתוזמן ל־</th>
+                  <th className="p-3 text-start">חברה / פרויקט</th>
+                  <th className="p-3 text-start">עובד</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productionQueue.map((q) => (
+                  <tr key={q.id} className="border-t border-outline">
+                    <td className="p-3">
+                      {q.scheduledFor ? (
+                        day(q.scheduledFor)
+                      ) : (
+                        <span className="text-zinc-400">ללא תאריך</span>
+                      )}
+                    </td>
+                    <td className="p-3 font-medium">{q.company}</td>
+                    <td className="p-3">{q.employee}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </main>
   );

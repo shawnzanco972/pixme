@@ -39,28 +39,40 @@ export interface InventoryData {
 }
 
 /**
- * Load the full inventory picture. Committed demand = grams needed by PAID,
- * unfulfilled physical orders (the orders that will actually drink the stock).
+ * Load the full inventory picture. Committed demand = grams the bricks we're
+ * already on the hook to build will drink, from BOTH tracks:
+ *   - B2C: paid physical orders not yet fulfilled.
+ *   - B2B: employee submissions the owner has APPROVED ("ready") — each is a
+ *     physical kit we must produce. (Submitted-but-unapproved seats are still
+ *     uncertain, so they don't count yet.)
+ * Counting B2B here is essential — it's the high-volume track, and ignoring it
+ * would let the reorder engine under-buy and get caught short.
  */
 export async function loadInventory(
   supabase: SupabaseClient,
 ): Promise<InventoryData> {
-  const [{ data: stockRows }, { data: demandRows }, { data: supplyRows }] =
-    await Promise.all([
-      supabase
-        .from("brick_stock")
-        .select("id, on_hand_grams, reorder_point_grams"),
-      supabase
-        .from("b2c_orders")
-        .select("pixel_map")
-        .eq("fulfillment_type", "physical")
-        .eq("status", "paid"),
-      supabase
-        .from("inventory_supplies")
-        .select("*")
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true }),
-    ]);
+  const [
+    { data: stockRows },
+    { data: b2cDemand },
+    { data: b2bDemand },
+    { data: supplyRows },
+  ] = await Promise.all([
+    supabase.from("brick_stock").select("id, on_hand_grams, reorder_point_grams"),
+    supabase
+      .from("b2c_orders")
+      .select("pixel_map")
+      .eq("fulfillment_type", "physical")
+      .eq("status", "paid"),
+    supabase
+      .from("employee_submissions")
+      .select("pixel_map")
+      .eq("status", "ready"),
+    supabase
+      .from("inventory_supplies")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true }),
+  ]);
 
   const stockById = new Map(
     (stockRows ?? []).map((r) => [
@@ -72,11 +84,10 @@ export async function loadInventory(
     ]),
   );
 
-  const restock = aggregateRestock(
-    (demandRows ?? [])
-      .map((r) => r.pixel_map as PixelMap | null)
-      .filter((m): m is PixelMap => Array.isArray(m)),
-  );
+  const demandMaps = [...(b2cDemand ?? []), ...(b2bDemand ?? [])]
+    .map((r) => r.pixel_map as PixelMap | null)
+    .filter((m): m is PixelMap => Array.isArray(m));
+  const restock = aggregateRestock(demandMaps);
   const demandById = new Map(restock.lines.map((l) => [l.id, l.grams]));
 
   const colors: ColorStockRow[] = CATALOG.map((c) => {

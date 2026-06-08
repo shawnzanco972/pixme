@@ -23,17 +23,23 @@ export default async function AdminInventory() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/admin/login");
 
-  const [{ data: restockRows }, { data: stockRows }] = await Promise.all([
-    supabase
-      .from("b2c_orders")
-      .select("pixel_map")
-      .eq("fulfillment_type", "physical")
-      .in("status", ["pending", "paid"]),
-    supabase.from("brick_stock").select("id, on_hand_grams"),
-  ]);
+  const [{ data: restockRows }, { data: b2bRows }, { data: stockRows }] =
+    await Promise.all([
+      supabase
+        .from("b2c_orders")
+        .select("pixel_map")
+        .eq("fulfillment_type", "physical")
+        .in("status", ["pending", "paid"]),
+      // B2B kits the owner has approved ("ready") are committed production too.
+      supabase
+        .from("employee_submissions")
+        .select("pixel_map")
+        .eq("status", "ready"),
+      supabase.from("brick_stock").select("id, on_hand_grams"),
+    ]);
 
   const restock = aggregateRestock(
-    (restockRows ?? [])
+    [...(restockRows ?? []), ...(b2bRows ?? [])]
       .map((r) => r.pixel_map as PixelMap | null)
       .filter((m): m is PixelMap => Array.isArray(m)),
   );
@@ -64,7 +70,7 @@ export default async function AdminInventory() {
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-xl font-semibold">
-            רכש מלאי — הזמנות פיזיות ממתינות ({restock.orderCount})
+            רכש מלאי — הזמנות פיזיות + מתנות עסקיות מאושרות ({restock.orderCount})
           </h2>
           <ExportRestockCsv rows={reorder} />
         </div>
