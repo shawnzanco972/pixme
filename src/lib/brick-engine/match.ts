@@ -30,19 +30,15 @@ export interface MatchOptions {
    * Neutral-avoidance: when the TARGET is clearly tinted but a candidate is a
    * near-neutral (white/gray/black ≈ 0 chroma), add this × (target chroma) to
    * the distance. Stops pale tints (a cyan sky, pale-blue eyeshadow) from
-   * collapsing to white/gray.
-   *
-   * Default 0 (OFF): only useful when the palette actually contains a
-   * hue-compatible colored brick — otherwise it forces wrong-hue matches (e.g.
-   * a pale cyan → warm Tan when no cool light color is stocked). Turn on once
-   * cool light colors (light blue / azure) are in the active palette.
+   * collapsing to white/gray. Enabled now that the core palette has cool light
+   * colors (Bright Light Blue, Medium Azure) so tints have somewhere to go.
    */
   neutralPenalty?: number;
 }
 
 const DEFAULT_PENALTY = 0.15;
 const DEFAULT_CHROMA_WEIGHT = 1.6;
-const DEFAULT_NEUTRAL_PENALTY = 0;
+const DEFAULT_NEUTRAL_PENALTY = 1.2;
 /** Below this OKLab chroma a color counts as "neutral" (gray/white/black). */
 const NEUTRAL_CHROMA = 0.04;
 

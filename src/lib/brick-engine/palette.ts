@@ -3,9 +3,10 @@
  * against. Modeled on generic GoBricks-style stock. Each entry carries a
  * `material` so the matcher can apply a material-mismatch penalty (CLAUDE.md).
  *
- * Launch strategy: "24 defined, 17 active". We DEFINE 24 colors. The 17 marked
- * `core: true` are stocked in the first GoBricks order (in stock by default);
- * the 7 `core: false` "fidelity boosters" are defined but OUT OF STOCK by
+ * Launch strategy: 25 defined, 19 active. We DEFINE 25 colors. The 19 marked
+ * `core: true` are stocked in the first GoBricks order (in stock by default) —
+ * including cool tones (Bright Light Blue, Medium Azure) for skies/eyes/teal;
+ * the 6 `core: false` "fidelity boosters" are defined but OUT OF STOCK by
  * default until demand (or the full-palette test) justifies ordering them.
  *
  * OKLab values are precomputed once at module load for fast matching.
@@ -67,12 +68,14 @@ const DEFAULT_PALETTE_DEFS: BrickColorDef[] = [
   { id: 17, name: "Blue", hex: "#0055bf", material: "solid", core: true },
   { id: 18, name: "Dark Blue", hex: "#0a3463", material: "solid", core: true },
   { id: 19, name: "Medium Blue", hex: "#5a93db", material: "solid", core: true },
-  { id: 20, name: "Bright Light Blue", hex: "#9fc3e9", material: "solid", core: false },
+  { id: 20, name: "Bright Light Blue", hex: "#9fc3e9", material: "solid", core: true },
   // Pinks
   { id: 21, name: "Dark Pink", hex: "#c870a0", material: "solid", core: false },
   { id: 22, name: "Bright Pink", hex: "#e4adc8", material: "solid", core: true },
   // Sand
   { id: 23, name: "Sand", hex: "#c2b280", material: "solid", core: false },
+  // Cyan / azure — cool tones (skies, eyes, teal backgrounds)
+  { id: 24, name: "Medium Azure", hex: "#36aebf", material: "solid", core: true },
 ];
 
 /** Build a runtime palette (with rgb + precomputed OKLab) from defs. */

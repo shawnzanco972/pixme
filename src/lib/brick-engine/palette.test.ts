@@ -9,18 +9,18 @@ import {
 } from "./palette";
 
 describe("catalog", () => {
-  it("defines exactly 24 colors with unique ids and hex values", () => {
-    expect(CATALOG.length).toBe(24);
+  it("defines 25 colors with unique ids and hex values", () => {
+    expect(CATALOG.length).toBe(25);
     const ids = new Set(CATALOG.map((c) => c.id));
     const hexes = new Set(CATALOG.map((c) => c.hex.toLowerCase()));
-    expect(ids.size).toBe(24);
-    expect(hexes.size).toBe(24); // no duplicate colors
+    expect(ids.size).toBe(25);
+    expect(hexes.size).toBe(25); // no duplicate colors
   });
 
-  it("marks exactly 17 core colors (launch order) in stock by default", () => {
-    expect(CORE_IDS.size).toBe(17);
-    expect(CATALOG.filter((c) => c.core)).toHaveLength(17);
-    expect(CATALOG.filter((c) => !c.core)).toHaveLength(7); // boosters
+  it("marks 19 core colors (launch order) in stock by default", () => {
+    expect(CORE_IDS.size).toBe(19);
+    expect(CATALOG.filter((c) => c.core)).toHaveLength(19);
+    expect(CATALOG.filter((c) => !c.core)).toHaveLength(6); // boosters
   });
 });
 
