@@ -24,6 +24,53 @@ export interface ProvisionOptions {
   notify?: boolean;
 }
 
+/**
+ * Write the money row + CRM client once, on first provisioning. Idempotent via
+ * the (order_track, order_id) unique constraint — duplicate webhook deliveries
+ * never double-record. Best-effort: a ledger/CRM hiccup must not fail payment.
+ */
+async function recordPaymentAndClient(
+  admin: Admin,
+  args: {
+    track: "b2c" | "b2b";
+    orderId: string;
+    invoiceId: string | null;
+    gross: number;
+    email: string;
+    name: string | null;
+    company: string | null;
+  },
+): Promise<void> {
+  try {
+    await admin.from("transactions").upsert(
+      {
+        order_track: args.track,
+        order_id: args.orderId,
+        icount_invoice_id: args.invoiceId,
+        gross: args.gross,
+        status: "paid",
+      },
+      { onConflict: "order_track,order_id", ignoreDuplicates: true },
+    );
+  } catch {
+    /* ledger is best-effort */
+  }
+  if (args.email) {
+    try {
+      await admin.from("clients").upsert(
+        {
+          email: args.email.toLowerCase(),
+          name: args.name,
+          company: args.company,
+        },
+        { onConflict: "email", ignoreDuplicates: false },
+      );
+    } catch {
+      /* CRM is best-effort */
+    }
+  }
+}
+
 /** Idempotently mark a B2C order paid. */
 export async function provisionB2c(
   admin: Admin,
@@ -34,7 +81,7 @@ export async function provisionB2c(
   const { notify = true } = opts;
   const { data: order, error } = await admin
     .from("b2c_orders")
-    .select("id, status, customer_name, contact_email")
+    .select("id, status, customer_name, contact_email, total_price")
     .eq("id", orderId)
     .single();
   if (error || !order) throw new Error(`B2C order ${orderId} not found`);
@@ -46,6 +93,16 @@ export async function provisionB2c(
     .eq("id", orderId)
     .neq("status", "paid");
   if (updErr) throw new Error(updErr.message);
+
+  await recordPaymentAndClient(admin, {
+    track: "b2c",
+    orderId,
+    invoiceId,
+    gross: Number(order.total_price),
+    email: order.contact_email,
+    name: order.customer_name,
+    company: null,
+  });
 
   if (notify) {
     // Best-effort confirmation email (no-op until email is configured).
@@ -86,6 +143,16 @@ export async function provisionB2b(
       .eq("id", orderId)
       .neq("status", "paid");
     if (updErr) throw new Error(updErr.message);
+
+    await recordPaymentAndClient(admin, {
+      track: "b2b",
+      orderId,
+      invoiceId,
+      gross: amountPaid ?? 0,
+      email: order.contact_email,
+      name: order.company_name,
+      company: order.company_name,
+    });
   }
 
   // Idempotency: only create a workspace if none exists for this order.

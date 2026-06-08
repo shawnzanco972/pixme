@@ -10,10 +10,13 @@ import { notFound, redirect } from "next/navigation";
 import { CopyLinkButton } from "@/components/admin/CopyLinkButton";
 import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
 import { ProvisionWorkspaceButton } from "@/components/admin/ProvisionWorkspaceButton";
+import { RosterManager } from "@/components/b2b/RosterManager";
+import type { SeatReviewRow } from "@/components/b2b/SeatRow";
 import { projectProgress, seatStatus, type SeatStatus } from "@/lib/b2b";
+import { isEmailConfigured } from "@/lib/email";
 import { formatILS, presetStuds } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
-import type { OrderStatus } from "@/lib/supabase/types.helpers";
+import type { OrderStatus, PixelMap } from "@/lib/supabase/types.helpers";
 
 const SEAT_HE: Record<SeatStatus, string> = {
   not_started: "טרם התחיל",
@@ -62,30 +65,41 @@ export default async function AdminB2bDetail({
     ? await supabase
         .from("employee_submissions")
         .select(
-          "id, employee_name, status, workspace_id, roster_id, created_at, scheduled_for",
+          "id, employee_name, status, workspace_id, roster_id, created_at, scheduled_for, pixel_map",
         )
         .in("workspace_id", wsIds)
         .order("created_at", { ascending: false })
     : { data: [] };
 
-  // Pre-loaded roster + each seat's derived status, for the project overview.
+  // Pre-loaded roster + each seat's submission, for the assist panel.
   const { data: roster } = wsIds.length
     ? await supabase
         .from("employee_roster")
-        .select("id, name, email, workspace_id")
+        .select("id, name, email, invite_token, workspace_id")
         .in("workspace_id", wsIds)
         .order("created_at", { ascending: true })
     : { data: [] };
 
-  const statusByRoster = new Map<string, string>();
+  const subByRoster = new Map<string, NonNullable<typeof subs>[number]>();
   for (const s of subs ?? []) {
-    if (s.roster_id) statusByRoster.set(s.roster_id, s.status);
+    if (s.roster_id) subByRoster.set(s.roster_id, s);
   }
-  const seats = (roster ?? []).map((r) => ({
-    ...r,
-    seat: seatStatus(statusByRoster.get(r.id)),
-  }));
-  const progress = projectProgress(seats.map((s) => s.seat));
+  const seatRows: SeatReviewRow[] = (roster ?? []).map((r) => {
+    const sub = subByRoster.get(r.id);
+    const pm = sub?.pixel_map as PixelMap | null;
+    return {
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      inviteToken: r.invite_token,
+      status: seatStatus(sub?.status),
+      submissionId: sub?.id ?? null,
+      pixelMap: Array.isArray(pm) ? pm : null,
+      scheduledFor: sub?.scheduled_for ?? null,
+    };
+  });
+  const progress = projectProgress(seatRows.map((s) => s.status));
+  const seatsLeft = order.licenses_purchased - seatRows.length;
 
   const { cols, rows } = presetStuds({
     platesX: order.plates_x,
@@ -137,12 +151,13 @@ export default async function AdminB2bDetail({
         </div>
       )}
 
-      {/* Project roster overview */}
-      {seats.length > 0 && (
+      {/* Project team — full assist toolkit (add employees, approve, schedule,
+          upload on a seat's behalf) via the owner token. */}
+      {(workspaces ?? []).length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-lg font-semibold">
-              צוות הפרויקט ({seats.length})
+              צוות הפרויקט ({seatRows.length}) — סיוע
             </h2>
             <span className="text-sm text-zinc-500">
               {progress.total - progress.notStarted}/{progress.total} שלחו ·{" "}
@@ -155,31 +170,15 @@ export default async function AdminB2bDetail({
               style={{ width: `${Math.round(progress.doneFraction * 100)}%` }}
             />
           </div>
-          <div className="overflow-x-auto rounded-xl border border-outline">
-            <table className="w-full text-start text-sm">
-              <thead className="bg-surface-muted text-zinc-600">
-                <tr>
-                  <th className="p-3 text-start">עובד</th>
-                  <th className="p-3 text-start">אימייל</th>
-                  <th className="p-3 text-start">סטטוס</th>
-                </tr>
-              </thead>
-              <tbody>
-                {seats.map((s) => (
-                  <tr
-                    key={s.id}
-                    className="border-t border-outline"
-                  >
-                    <td className="p-3">{s.name}</td>
-                    <td className="p-3" dir="ltr">
-                      {s.email ?? "—"}
-                    </td>
-                    <td className="p-3">{SEAT_HE[s.seat]}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="text-xs text-zinc-500">
+            פועלים בשם הלקוח — אותן פעולות כמו בלוח מנהל הפרויקט.
+          </p>
+          <RosterManager
+            token={order.owner_token}
+            rows={seatRows}
+            seatsLeft={Math.max(0, seatsLeft)}
+            emailConfigured={isEmailConfigured()}
+          />
         </section>
       )}
 

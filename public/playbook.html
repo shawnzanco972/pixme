@@ -1,0 +1,639 @@
+<!doctype html>
+<html dir="rtl" lang="he">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pixipic — מדריך הקמה ותפעול מיום ראשון</title>
+    <meta
+      name="description"
+      content="מדריך הקמה ותפעול לעסק פסיפסי הלבנים Pixipic — עלויות פתיחה, מלאי, תמחור, רכש ולוח ניהול."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Heebo:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f7f9fb;
+        --surface: #ffffff;
+        --muted: #f2f4f6;
+        --outline: #e0e3e5;
+        --ink: #191c1e;
+        --ink-soft: #51585d;
+        --red: #b7102a;
+        --red-dark: #92001c;
+        --blue: #1d4ed8;
+        --blue-dark: #0039b5;
+        --gold: #f3bf2f;
+        --green: #2e7d32;
+        --radius: 16px;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Heebo", system-ui, sans-serif;
+        line-height: 1.7;
+        background-image: radial-gradient(circle, rgba(0, 0, 0, 0.025) 1.2px, transparent 1.4px);
+        background-size: 22px 22px;
+      }
+      h1, h2, h3, .font-head { font-family: "Rubik", system-ui, sans-serif; line-height: 1.25; }
+      a { color: var(--blue); }
+      header.hero {
+        background: linear-gradient(135deg, #fff 0%, #f3f6fb 100%);
+        border-bottom: 1px solid var(--outline);
+        padding: 56px 24px 40px;
+      }
+      .hero-inner { max-width: 1000px; margin: 0 auto; }
+      .brand-chip {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--red); color: #fff; font-family: "Rubik";
+        font-weight: 700; font-size: 14px; padding: 6px 14px;
+        border-radius: 999px; letter-spacing: 0.3px;
+      }
+      .hero h1 { font-size: clamp(28px, 5vw, 46px); font-weight: 800; margin: 18px 0 10px; }
+      .hero p.lead { font-size: clamp(16px, 2.4vw, 20px); color: var(--ink-soft); max-width: 720px; margin: 0; }
+      .hero .meta { margin-top: 18px; font-size: 13px; color: var(--ink-soft); }
+      .wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px 80px; }
+      nav.toc {
+        background: var(--surface); border: 1px solid var(--outline);
+        border-radius: var(--radius); box-shadow: var(--shadow);
+        padding: 20px 24px; margin: -28px auto 40px; max-width: 1000px; position: relative;
+      }
+      nav.toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-soft); margin: 0 0 12px; }
+      nav.toc ol {
+        margin: 0; padding: 0; list-style: none;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 6px 20px; counter-reset: toc;
+      }
+      nav.toc li { counter-increment: toc; }
+      nav.toc a { text-decoration: none; color: var(--ink); font-weight: 500; display: flex; gap: 10px; padding: 6px 8px; border-radius: 8px; }
+      nav.toc a::before { content: counter(toc); color: var(--red); font-family: "Rubik"; font-weight: 700; min-width: 18px; }
+      nav.toc a:hover { background: var(--muted); }
+      section.block {
+        background: var(--surface); border: 1px solid var(--outline);
+        border-radius: var(--radius); box-shadow: var(--shadow);
+        padding: 32px; margin-bottom: 28px; scroll-margin-top: 20px;
+      }
+      section.block > h2 { font-size: 24px; font-weight: 700; margin: 0 0 6px; display: flex; align-items: center; gap: 12px; }
+      .sec-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border-radius: 12px; background: var(--red);
+        color: #fff; font-family: "Rubik"; font-weight: 800; font-size: 18px; flex: none;
+      }
+      section.block > p.intro { color: var(--ink-soft); margin-top: 4px; }
+      h3 { font-size: 18px; margin: 26px 0 10px; }
+      .callout { border-radius: 12px; padding: 16px 18px; margin: 18px 0; border: 1px solid; font-size: 15px; }
+      .callout .tag { font-family: "Rubik"; font-weight: 700; font-size: 12px; letter-spacing: 0.3px; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+      .callout.report { background: #eef3fe; border-color: #c7d7fb; }
+      .callout.report .tag { color: var(--blue-dark); }
+      .callout.system { background: #fdeef0; border-color: #f6c9d0; }
+      .callout.system .tag { color: var(--red-dark); }
+      .callout.tip { background: #fff8e6; border-color: #f5e3a8; }
+      .callout.tip .tag { color: #8a6d00; }
+      .callout p:last-child { margin-bottom: 0; }
+      table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14.5px; overflow: hidden; border-radius: 12px; border: 1px solid var(--outline); }
+      thead { background: var(--muted); }
+      th, td { text-align: start; padding: 11px 14px; border-bottom: 1px solid var(--outline); vertical-align: top; }
+      th { font-family: "Rubik"; font-weight: 600; color: var(--ink-soft); }
+      tbody tr:last-child td { border-bottom: none; }
+      tfoot td { background: var(--muted); font-family: "Rubik"; font-weight: 700; }
+      td.win { color: var(--green); font-weight: 600; }
+      td.warn { color: var(--red); font-weight: 600; }
+      td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+      ul.check { list-style: none; padding: 0; margin: 14px 0; }
+      ul.check li { position: relative; padding-inline-start: 30px; margin-bottom: 10px; }
+      ul.check li::before {
+        content: "✓"; position: absolute; inset-inline-start: 0; top: 0; color: #fff;
+        background: var(--green); width: 20px; height: 20px; border-radius: 6px;
+        display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+      }
+      ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 16px 0; }
+      ol.steps li { counter-increment: step; position: relative; padding-inline-start: 46px; margin-bottom: 16px; min-height: 32px; }
+      ol.steps li::before {
+        content: counter(step); position: absolute; inset-inline-start: 0; top: 0;
+        width: 32px; height: 32px; background: var(--blue); color: #fff; border-radius: 10px;
+        font-family: "Rubik"; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+      }
+      ol.steps li b { font-family: "Rubik"; }
+      .tabgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin: 18px 0; }
+      .tabcard { border: 1px solid var(--outline); border-radius: 12px; padding: 16px; background: linear-gradient(180deg, #fff, #fcfdfe); }
+      .tabcard .he { font-family: "Rubik"; font-weight: 700; font-size: 16px; }
+      .tabcard .path { direction: ltr; font-family: ui-monospace, monospace; font-size: 12px; color: var(--ink-soft); background: var(--muted); padding: 2px 7px; border-radius: 6px; display: inline-block; margin: 4px 0 8px; }
+      .tabcard p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+      .pill { display: inline-block; font-size: 11px; font-weight: 700; font-family: "Rubik"; padding: 2px 9px; border-radius: 999px; margin-inline-start: 6px; }
+      .pill.live { background: #e3f5e6; color: var(--green); }
+      .pill.soon { background: #fff1d6; color: #8a6d00; }
+      .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
+      .kpi { border: 1px solid var(--outline); border-radius: 12px; padding: 14px; text-align: center; background: var(--surface); }
+      .kpi .big { font-family: "Rubik"; font-weight: 800; font-size: 26px; color: var(--red); }
+      .kpi .lbl { font-size: 12px; color: var(--ink-soft); }
+      .bignum { font-family: "Rubik"; font-weight: 800; color: var(--green); }
+      footer { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 30px 24px 60px; }
+      .divider { height: 1px; background: var(--outline); margin: 26px 0; }
+      @media print {
+        body { background: #fff; }
+        nav.toc, .hero { box-shadow: none; }
+        section.block { box-shadow: none; break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <span class="brand-chip">פיקסיפיק · Pixipic</span>
+        <h1>מדריך הקמה ותפעול — מיום ראשון</h1>
+        <p class="lead">
+          איך מתחילים את העסק של פסיפסי הלבנים לשוק הישראלי, כמה זה עולה להקים,
+          איך מתמחרים ומרוויחים, ואיך מנהלים הכל בפועל דרך לוח הניהול שנבנה.
+          המסמך משלב את הדוח האסטרטגי עם המערכת האמיתית — ומדייק היכן שצריך.
+        </p>
+        <p class="meta">
+          מקורות: דוח אסטרטגי + ניתוח עלויות · לוח הניהול והמנוע שנבנו בקוד ·
+          עודכן ביוני 2026
+        </p>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <h2>תוכן עניינים</h2>
+      <ol>
+        <li><a href="#model">המודל העסקי והבידול</a></li>
+        <li><a href="#dayone">יום ראשון — מה מקימים</a></li>
+        <li><a href="#startup-cost">עלויות הקמה ומלאי פתיחה</a></li>
+        <li><a href="#capacity">כמה אפשר למכור — ורווחיות</a></li>
+        <li><a href="#dashboard">לוח הניהול — מרכז השליטה</a></li>
+        <li><a href="#inventory">מלאי לפי משקל + התראות חוסר</a></li>
+        <li><a href="#procurement">רכש חכם — פרוטוקול ה־$75</a></li>
+        <li><a href="#pricing">תמחור וכלכלת יחידה</a></li>
+        <li><a href="#b2b">B2B — רישיונות וזרימת עובדים</a></li>
+        <li><a href="#systems">iCount + Supabase — חלוקת אחריות</a></li>
+        <li><a href="#order-flow">תהליך הזמנה מקצה לקצה</a></li>
+        <li><a href="#roadmap">מפת דרכים והרחבה</a></li>
+      </ol>
+    </nav>
+
+    <main class="wrap">
+      <!-- 1 -->
+      <section class="block" id="model">
+        <h2><span class="sec-num">1</span> המודל העסקי והבידול</h2>
+        <p class="intro">
+          עסק של פסיפסי לבנים בהזמנה אישית לשוק הישראלי, עם אספקה מקומית
+          ואוטומציה. הבידול מול מתחרים מחו״ל נשען על מחיר, מס ומהירות.
+        </p>
+        <table>
+          <thead>
+            <tr><th>פרמטר</th><th>המודל שלנו (מקומי)</th><th>מתחרה מחו״ל</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>מע״מ ומכס</td><td class="win">מכירה מקומית — ללא מע״מ נוסף לצרכן</td><td class="warn">17% מע״מ + דמי טיפול ביבוא אישי</td></tr>
+            <tr><td>משלוח</td><td class="win">תעריף מקומי קבוע (₪) — HFD / צ׳יטה / דואר</td><td class="warn">שילוח בינלאומי תנודתי</td></tr>
+            <tr><td>זמן אספקה</td><td class="win">2–5 ימי עסקים</td><td class="warn">14–30+ ימים</td></tr>
+            <tr><td>חוויה</td><td class="win">עברית מלאה (RTL), תצוגה חיה, PDF הוראות</td><td class="warn">ממשק זר, ללא תמיכה מקומית</td></tr>
+          </tbody>
+        </table>
+        <div class="callout system">
+          <div class="tag">⚙️ מהמערכת שבניתי</div>
+          <p>
+            הבידול הטכנולוגי כבר מובנֶה: מנוע ה״לבנים״ ממיר את התמונה במרחב צבע
+            <b>OKLab</b> (תפיסתית אחיד) עם קנס חוסר־התאמה לחומר, כך שגווני עור
+            ומעברים לא הופכים עכורים — יתרון איכותי שקשה לחקות בערכות גנריות.
+          </p>
+        </div>
+      </section>
+
+      <!-- 2 -->
+      <section class="block" id="dayone">
+        <h2><span class="sec-num">2</span> יום ראשון — מה מקימים</h2>
+        <p class="intro">רשימת ההפעלה המינימלית כדי לקבל הזמנה אמיתית ולארוז אותה מהבית.</p>
+        <h3>תשתית טכנית</h3>
+        <ul class="check">
+          <li>פרויקט <b>Supabase</b> פעיל (DB + אחסון תמונות) — מקור האמת לקטלוג, מלאי, הזמנות ופרויקטי B2B.</li>
+          <li>פריסה ל־<b>Vercel</b> (Next.js) — האתר, ה־API והוובהוקים.</li>
+          <li>חשבון מנהל יחיד ל<b>לוח הניהול</b> (אין הרשמה ציבורית — מי שמחובר = מנהל).</li>
+          <li>מפתחות <b>iCount</b> + שער תשלום (Payme/Rapyd) לכשתעברו לתשלומים אמיתיים (עד אז — ארגז החול).</li>
+          <li>הגדרת <code>RESEND_API_KEY</code> + <code>EMAIL_FROM</code> לאימיילים (אופציונלי בהתחלה).</li>
+        </ul>
+        <h3>תשתית פיזית (אצל אמא, האריזה מהבית)</h3>
+        <ul class="check">
+          <li>מלאי לבנים 1×1 — כ־<b>19–20 צבעי ליבה</b> בפתיחה (מתוך 25 מוגדרים; צבעי בוסט נשארים מחוץ למלאי בשלב א׳).</li>
+          <li>לוחות בסיס 24×24, מחברים/מפרידי לבנים, וחומרי אריזה (קופסאות, שכבות הפרדה, סרט מתנה).</li>
+          <li><b>משקל דיגיטלי</b> — מודל האריזה הוא <u>לפי משקל</u>, לא לפי ספירת לבנים.</li>
+        </ul>
+        <div class="callout tip">
+          <div class="tag">💡 כיוונון תפעולי</div>
+          <p>
+            לפני שמוכרים — היכנסו ל<b>לשונית המלאי</b> בלוח הניהול ועדכנו לכל צבע
+            <b>משקל במלאי (גרם)</b> ו<b>סף התראה (גרם)</b>. בלי ספים, מנוע ההתראות
+            שותק. עם ספים — תקבלו אזהרת חוסר אוטומטית עוד לפני שנגמר.
+          </p>
+        </div>
+      </section>
+
+      <!-- 3 (NEW) -->
+      <section class="block" id="startup-cost">
+        <h2><span class="sec-num">3</span> עלויות הקמה ומלאי פתיחה</h2>
+        <p class="intro">
+          גם אם פותחים עם 19–20 צבעים, היעד הוא <b>״מלאי מינימלי בר־קיימא״</b> של
+          כ־<b>300,000 לבנים</b> ו־<b>400 לוחות בסיס</b>. אי אפשר לנחש מראש אילו
+          צבעים יידרשו לרקעים, ולכן נפח כזה נותן בריכה עמוקה דייה לספוג קפיצות
+          ביקוש בלי להיתקע בצבעי ליבה.
+        </p>
+
+        <h3>הזמנת הבולק הראשונה ממפעל בסין (Alibaba)</h3>
+        <table>
+          <thead>
+            <tr><th>פריט</th><th>כמות</th><th>מחיר ליחידה</th><th class="num">עלות</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>לבנים 1×1</td><td>300,000</td><td>~$0.002</td><td class="num">$600</td></tr>
+            <tr><td>לוחות בסיס 24×24</td><td>400</td><td>~$0.30</td><td class="num">$120</td></tr>
+            <tr><td>מפרידי לבנים</td><td>100</td><td>~$0.10</td><td class="num">$10</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="3">סה״כ סחורה</td><td class="num">$730</td></tr>
+          </tfoot>
+        </table>
+
+        <table>
+          <thead>
+            <tr><th>תוספת</th><th>פירוט</th><th class="num">עלות</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>שילוח אווירי + מע״מ 17% + שחרור מכס</td><td>~80 ק״ג פלסטיק מחייבים Air Cargo</td><td class="num">~$740</td></tr>
+            <tr><td>ציוד מקומי</td><td>משקל דיגיטלי, ארגזי אחסון, קופסאות שילוח</td><td class="num">~$280</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="2">סה״כ עלות הקמה ראשונית</td><td class="num">~$1,750 (₪6,520)</td></tr>
+          </tfoot>
+        </table>
+
+        <div class="callout tip">
+          <div class="tag">💡 איך לחלק את 300,000 הלבנים</div>
+          <p>
+            <b>אל תחלקו שווה בשווה.</b> קנו שקים ענקיים של <b>שחור, לבן, אפורים
+            וגווני עור</b> (צבעי הרקע והבסיס של רוב הדיוקנאות), ושקים קטנים יותר
+            של צבעי <b>אקסנט</b> בהירים. זה משקף את הביקוש האמיתי ומונע היתקעות
+            דווקא בצבעים שנגמרים הכי מהר.
+          </p>
+        </div>
+        <div class="callout system">
+          <div class="tag">⚙️ בלוח הניהול</div>
+          <p>
+            הזינו את הכמויות הראשוניות כ<b>משקל</b> בלשונית המלאי (צבעים), ואת 400
+            לוחות הבסיס + 100 המפרידים בטבלת <b>הציוד והאריזה</b>. משם והלאה כל
+            צריכה והתראה מתנהלות אוטומטית.
+          </p>
+        </div>
+      </section>
+
+      <!-- 4 (NEW) -->
+      <section class="block" id="capacity">
+        <h2><span class="sec-num">4</span> כמה אפשר למכור — ורווחיות</h2>
+        <p class="intro">
+          אי אפשר למכור את כל 300,000 הלבנים עד אפס: צריך להשאיר <b>~15% מרווח
+          ביטחון</b> בכל צבע, כדי לא להיתקע בשחור בזמן שיש עוד אלפי אדומים. בפועל,
+          מהמלאי הראשוני אפשר למכור בנוחות <b>~65 יצירות</b>.
+        </p>
+
+        <h3>תמהיל מכירות ריאלי</h3>
+        <table>
+          <thead>
+            <tr><th>סוג</th><th>כמות</th><th class="num">לוחות בסיס</th><th class="num">לבנים</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>״רגיל״ 2×2</td><td>40</td><td class="num">160</td><td class="num">~100,000</td></tr>
+            <tr><td>״גדול״ 3×3</td><td>25</td><td class="num">225</td><td class="num">~142,500</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td>סה״כ נצרך</td><td>65</td><td class="num">385 / 400</td><td class="num">242,500</td></tr>
+          </tfoot>
+        </table>
+        <p style="font-size: 14px; color: var(--ink-soft)">
+          נשאר מרווח בטוח של <b>57,500 לבנים</b> ו־15 לוחות — בדיוק כרית הביטחון
+          של ~15%.
+        </p>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="big">~65</div><div class="lbl">יצירות מהמלאי הראשוני</div></div>
+          <div class="kpi"><div class="big">₪22,850</div><div class="lbl">הכנסה גולמית</div></div>
+          <div class="kpi"><div class="big">₪14,000+</div><div class="lbl">רווח נקי (אחרי החזר ההקמה)</div></div>
+        </div>
+        <div class="callout report">
+          <div class="tag">📋 מהניתוח הכלכלי</div>
+          <p>
+            מכירת 65 הערכות מכניסה כ־<b>₪22,850</b> ברוטו, ומשאירה <b>מעל ₪14,000
+            רווח נקי</b> — אחרי שכיסיתם את כל עלות ההקמה של $1,750. כלומר ההזמנה
+            הראשונה מחזירה את עצמה הרבה לפני שהמלאי נגמר.
+          </p>
+        </div>
+      </section>
+
+      <!-- 5 -->
+      <section class="block" id="dashboard">
+        <h2><span class="sec-num">5</span> לוח הניהול — מרכז השליטה</h2>
+        <p class="intro">
+          הקונסולה התפעולית תחת <code>/admin</code> — סרגל צד (RTL → מימין),
+          כל לשונית במסלול נפרד. כאן מנהלים את העסק יום־יום.
+        </p>
+        <div class="tabgrid">
+          <div class="tabcard"><div class="he">סקירה <span class="pill live">פעיל</span></div><span class="path">/admin</span><p>כרטיסי KPI (הכנסות החודש, הזמנות פתוחות, לאריזה, פרויקטים פעילים), פאנל 🔔 התראות מלאי, ותור האריזה.</p></div>
+          <div class="tabcard"><div class="he">הזמנות <span class="pill live">פעיל</span></div><span class="path">/admin/orders</span><p>הזמנות פרטיות + עסקיות + הגשות עובדים, עם תיוג הזמנות בדיקה.</p></div>
+          <div class="tabcard"><div class="he">מלאי <span class="pill live">פעיל</span></div><span class="path">/admin/inventory</span><p>צבעים (לפי משקל + סף), ציוד ואריזה (לפי כמות), ודוח רכש עם ייצוא CSV לספק.</p></div>
+          <div class="tabcard"><div class="he">עסקים <span class="pill live">פעיל</span></div><span class="path">/admin/b2b</span><p>רשימת פרויקטים, סטטוס, מושבים, וכלי סיוע ללוח מנהל הפרויקט.</p></div>
+          <div class="tabcard"><div class="he">כספים <span class="pill live">פעיל</span></div><span class="path">/admin/finance</span><p>ספר הכנסות — חשבוניות iCount, הכנסה לפי חודש, וסכומים פתוחים.</p></div>
+          <div class="tabcard"><div class="he">לקוחות <span class="pill live">פעיל</span></div><span class="path">/admin/clients</span><p>כל לקוח, היסטוריית הזמנות, ערך כולל, והערות CRM.</p></div>
+          <div class="tabcard"><div class="he">מסמכים <span class="pill live">פעיל</span></div><span class="path">/admin/docs</span><p>תצוגה מקדימה של חוברת ההוראות ורשימת האריזה, וקבועי האריזה.</p></div>
+          <div class="tabcard"><div class="he">ארגז חול <span class="pill live">פעיל</span></div><span class="path">/admin/sandbox</span><p>בדיקת רכישה מלאה (B2C + B2B) ללא חיוב iCount — מריץ את אותו מסלול ההקצאה האמיתי.</p></div>
+        </div>
+        <div class="callout system">
+          <div class="tag">⚙️ מהמערכת שבניתי</div>
+          <p>
+            <b>ארגז החול</b> הוא הכלי הכי חשוב ביום ראשון: הוא יוצר הזמנת אמת
+            מסומנת <code>is_test</code>, מסמן אותה כשולמה, יוצר סביבת עבודה ומושב
+            עובד — ומחזיר את כל הקישורים (עמוד ההזמנה, לוח מנהל הפרויקט, וקישור
+            ההעלאה של העובד). כך בודקים את כל הזרימה לפני שמחברים תשלומים,
+            <b>בלי שינוי קוד</b> כשעוברים ל־iCount אמיתי.
+          </p>
+        </div>
+      </section>
+
+      <!-- 6 -->
+      <section class="block" id="inventory">
+        <h2><span class="sec-num">6</span> מלאי לפי משקל + התראות חוסר</h2>
+        <p class="intro">
+          הדוח מדבר על ״סף בטיחות 15%״ ועל מודול מלאי ב־iCount. במערכת שלנו
+          הלוגיקה מדויקת יותר ומתבססת על <b>ביקוש אמיתי</b>.
+        </p>
+        <div class="callout report">
+          <div class="tag">📋 מהדוח האסטרטגי</div>
+          <p>כשצבע יורד מתחת ל־15% מלאי בטיחות — להזמין מחדש; ביקורת התאמת קופסה (Box Fitment Audit) למעבר ל־24 צבעים.</p>
+        </div>
+        <div class="callout system">
+          <div class="tag">⚙️ כיוונון — איך זה באמת עובד אצלנו</div>
+          <p>
+            המלאי נמדד ב<b>גרמים</b>, לא בספירה. לכל צבע יש <code>on_hand_grams</code>
+            ו־<code>reorder_point_grams</code>. מנוע ההתראות
+            (<code>inventoryAlerts</code>) הוא <b>מודע־ביקוש</b>: הוא מחשב
+            <i>זמין = במלאי − ביקוש מחויב</i> (מהזמנות פיזיות ששולמו וטרם נארזו),
+            ומזהיר כש<u>הזמנות נכנסות</u> עומדות לרוקן את המלאי — לא רק כשהוא כבר נמוך.
+          </p>
+        </div>
+        <h3>שלושת מקורות המלאי בלוח</h3>
+        <table>
+          <thead><tr><th>קטגוריה</th><th>נמדד לפי</th><th>איפה</th></tr></thead>
+          <tbody>
+            <tr><td>צבעים / לבנים 1×1</td><td>משקל (גרם)</td><td><code>brick_stock</code></td></tr>
+            <tr><td>לוחות בסיס</td><td>כמות</td><td><code>inventory_supplies</code></td></tr>
+            <tr><td>מחברים / חומרה</td><td>כמות</td><td><code>inventory_supplies</code></td></tr>
+            <tr><td>אריזה (קופסאות, סרט)</td><td>כמות</td><td><code>inventory_supplies</code></td></tr>
+          </tbody>
+        </table>
+        <div class="callout tip">
+          <div class="tag">💡 זרימת רכש בפועל</div>
+          <p>
+            <b>דוח הרכש</b> בלשונית המלאי מסכם כמה גרם של כל צבע צריך להזמין (כולל
+            רזרבה) ומאפשר <b>ייצוא CSV</b> לספק. זה הקלט הישיר לפרוטוקול הרכש בסעיף הבא.
+          </p>
+        </div>
+      </section>
+
+      <!-- 7 -->
+      <section class="block" id="procurement">
+        <h2><span class="sec-num">7</span> רכש חכם — פרוטוקול ה־$75</h2>
+        <p class="intro">
+          טקטיקת ה־$70–$75: ניצול סף הפטור הישראלי (יבוא אישי מתחת ל־$75 פטור
+          ממע״מ ומכס) כדי לחדש צבעים שנגמרים — מהר ובזול.
+        </p>
+        <div class="callout report">
+          <div class="tag">📋 מהניתוח</div>
+          <p>
+            אם לקוח מזמין פסיפס עם רקע כחול אחיד ומרוקן את מלאי הכחול — קופצים
+            ל<b>AliExpress</b> (חנויות סיטונאיות כמו <b>Smartable</b> או
+            <b>Aquaryta</b>) או ל־<b>Webrick</b>. ב־$0.0025–$0.003 ליחידה,
+            <b>$75 קונים 25,000–35,000 לבנים</b> (מארזים של 1,000–2,300 יח׳),
+            ומגיעים תוך <b>10–14 יום</b>. הזמנת ה־Alibaba היא ה״יסוד״; הזמנות
+            ה־$74 הפטורות הן חידוש כירורגי של צבע ספציפי.
+          </p>
+        </div>
+        <ol class="steps">
+          <li><b>זיהוי חוסר —</b> פאנל ההתראות בלוח מצביע על הצבע שמתחת לסף (מודע־ביקוש).</li>
+          <li><b>כמה להזמין —</b> דוח הרכש נותן את הגרמים החסרים; CSV מוכן לספק.</li>
+          <li><b>בדיקת שער —</b> מודול המטבע ב־iCount → תקרת ₪ שתשמור על &lt; $74.99 כולל משלוח.</li>
+          <li><b>מקסום כמות —</b> לחשב יחידות שממלאות את חלון ה־$75 בלי לחצות אותו.</li>
+          <li><b>ביצוע + רישום —</b> הזמנה, ואז רישום הקבלה כ־הוצאה ב־iCount כדי שה־COGS ישקף את חיסכון המע״מ.</li>
+        </ol>
+        <div class="callout tip">
+          <div class="tag">💡 כיוונון</div>
+          <p>
+            נהלו לכל פריט שדה <b>ספק</b> ו<b>מק״ט</b> (כבר קיימים בטבלת הציוד) כדי
+            שה־CSV יהפוך להזמנה בלחיצה. ככל שהנפח גדל — שווה לעבור לרכש סיטונאי
+            מתוכנן (Alibaba) ולא רק מיקרו־הזמנות.
+          </p>
+        </div>
+      </section>
+
+      <!-- 8 -->
+      <section class="block" id="pricing">
+        <h2><span class="sec-num">8</span> תמחור וכלכלת יחידה</h2>
+        <p class="intro">
+          כאן הלב הכלכלי: עלות מדויקת ליחידה, אסטרטגיית ה־₪399, ו־2×2 כבסיס.
+        </p>
+
+        <h3>עלות ייצור ומימוש של פסיפס 3×3 (״גדול״, 72×72 אריחים)</h3>
+        <p style="font-size: 14px; color: var(--ink-soft)">
+          נדרשים 5,184 לבנים; עם 10% רזרבה אורזים ~5,700.
+        </p>
+        <table>
+          <thead><tr><th>רכיב</th><th class="num">₪</th><th class="num">$</th></tr></thead>
+          <tbody>
+            <tr><td>לבנים 1×1 (~5,700)</td><td class="num">42.20</td><td class="num">11.40</td></tr>
+            <tr><td>לוחות בסיס שקופים (9)</td><td class="num">11.65</td><td class="num">3.15</td></tr>
+            <tr><td>מפריד לבנים (1)</td><td class="num">0.55</td><td class="num">0.15</td></tr>
+            <tr><td>פסי הדבקה לקיר (Nano Tape)</td><td class="num">1.85</td><td class="num">0.50</td></tr>
+            <tr><td>שקיות Ziploc + מדבקות (~30)</td><td class="num">2.20</td><td class="num">0.60</td></tr>
+            <tr><td>קופסת שילוח</td><td class="num">5.00</td><td class="num">1.35</td></tr>
+            <tr><td>חוברת הוראות מודפסת (9 עמ׳ A4)</td><td class="num">2.00</td><td class="num">0.55</td></tr>
+            <tr><td>רזרבת יבוא (שילוח+מכס מופחת)</td><td class="num">12.20</td><td class="num">3.30</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td>סה״כ עלות ייצור (COGS)</td><td class="num">77.65</td><td class="num">21.00</td></tr>
+          </tfoot>
+        </table>
+
+        <table>
+          <thead><tr><th>עלות מימוש (לכל הזמנה)</th><th class="num">₪</th></tr></thead>
+          <tbody>
+            <tr><td>עמלת שער תשלום (Payme/Rapyd)</td><td class="num">~10.00</td></tr>
+            <tr><td>משלוח מקומי (צ׳יטה / לוקר Boxit)</td><td class="num">~18.00</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td>סה״כ עלות נחיתה + מימוש ל־3×3</td><td class="num">~105.65</td></tr>
+          </tfoot>
+        </table>
+
+        <div class="callout system">
+          <div class="tag">⚙️ אסטרטגיית ה־₪399 (3×3, 57×57 ס״מ)</div>
+          <p>
+            תמחור ה־3×3 ב־<b>₪399</b> תחרותי מצוין: 99 ליש״ט ≈ ₪470, כך שאתם
+            <b>חותכים את המתחרה מחו״ל</b> וגם חוסכים ללקוח שילוח בינלאומי ועיכובי
+            מכס. מכיוון שהעלות הכוללת היא ~₪105.65, נשאר <b class="bignum">רווח נקי
+            של כ־₪294 להזמנה</b>. צעד מעשי במערכת: לכייל את מנוע התמחור כך
+            ש־3×3 ינחת על ₪399.
+          </p>
+        </div>
+
+        <h3>2×2 כבסיס הכניסה</h3>
+        <div class="callout report">
+          <div class="tag">📋 מהניתוח</div>
+          <p>
+            נכון להפוך את <b>2×2</b> (48×48 אריחים ≈ 38×38 ס״מ) לאופציית הכניסה:
+            המידה תואמת בדיוק את הטביעה של ערכות הפסיפס הקמעוניות הרשמיות, ומושלמת
+            לדיוקן קלוז־אפ של פנים בודדות או חיית מחמד — מוצר כניסה מצוין למשיכת
+            לקוחות.
+          </p>
+        </div>
+
+        <h3>מסגרות, מחברים ועטיפת מתנה (העלאת AOV)</h3>
+        <ul class="check">
+          <li><b>מסגרת ״פרימיום״ מתפרקת:</b> רכיבי אלומיניום/פלסטיק שמגיעים מפורקים — נכנסים שטוח לאותה קופסת ״פיצה״, הלקוח מצמיד את הלוחות לגב קשיח ומרכיב את המסגרת. אפס פגיעה באסטרטגיית הקופסה האחת.</li>
+          <li><b>עטיפת מתנה:</b> משקל זניח, פרמיה של 30–50 ₪. <i>כרגע במערכת <code>GIFT_WRAP_FEE = ₪25</code> — שווה להעלות ל־₪35–45.</i></li>
+        </ul>
+
+        <div class="callout tip">
+          <div class="tag">💡 הבהרת ״עמלת ה־₪10 של iCount״</div>
+          <p>
+            לא משלמים ל־iCount עמלת עסקה. אינטגרציית ה־API הבסיסית של iCount
+            <b>חינמית</b> למנויים. ה־~₪10 הוא עמלת <b>שער התשלום</b> (Payme/Rapyd) —
+            כ־1.5%–2.5% + ₪1 לעסקה. כלומר על מכירה של ₪399, השער גובה כ־₪7–10
+            לסליקה, ו־iCount רק מפיק את החשבונית אוטומטית — בחינם.
+          </p>
+        </div>
+      </section>
+
+      <!-- 9 -->
+      <section class="block" id="b2b">
+        <h2><span class="sec-num">9</span> B2B — רישיונות וזרימת עובדים</h2>
+        <p class="intro">
+          מנוע ההכנסה בנפח גבוה: חברות קונות בלוקים של רישיונות, וכל עובד מעצב
+          פסיפס משלו. הזרימה כבר בנויה מקצה לקצה.
+        </p>
+        <ol class="steps">
+          <li><b>רכישה —</b> החברה קונה N רישיונות בגודל קבוע (מחיר = N × מחיר פיזי + עמלת ניהול אופציונלית).</li>
+          <li><b>הקצאה —</b> תשלום (או ארגז חול / ״סמן כשולם״ בלוח) יוצר סביבת עבודה ופותח את <b>לוח מנהל הפרויקט</b>.</li>
+          <li><b>לוח מנהל הפרויקט —</b> קישור פרטי (הטוקן הוא המפתח, בלי התחברות). מוסיפים עובדים → כל אחד מקבל קישור אישי.</li>
+          <li><b>עובד מעצב —</b> חוויית הסטודיו המלאה (לא רק העלאה): מסגור, צבעים, התאמות — בתוך <b>תקציב הלוחות שנרכש</b>.</li>
+          <li><b>אישור ותזמון —</b> המנהל רואה תצוגה מקדימה, מאשר/מבקש שינוי, ויכול לתזמן הזמנה לכל עובד בנפרד (יום הולדת) או לאשר הכל.</li>
+        </ol>
+        <div class="callout system">
+          <div class="tag">⚙️ הלוגיקה ש״נאטמה״ — מימדי העובד</div>
+          <p>
+            עובד לא בוחר גודל חופשי, אבל גם לא נעול לכיוון יחיד. הוא יכול
+            <b>לסדר מחדש</b> את אותו מספר לוחות שהחברה רכשה — לפי <b>זוגות
+            המחלקים</b> של התקציב. תקציב 9 לוחות (3×3) ⇐ רק <b>1×9, 3×3, 9×1</b>
+            (3 אפשרויות), ולעולם לא 3×2. כך החברה מקבלת בדיוק את מה ששילמה עליו.
+          </p>
+        </div>
+        <div class="callout tip">
+          <div class="tag">💡 עריכה חוזרת עד אישור</div>
+          <p>
+            עובד יכול לחזור ולערוך כל עוד המנהל לא אישר. ברגע האישור — הסטטוס
+            ״מוכן״ נועל את המושב. כך אפשר להתחיל לעבוד על מי שכבר אושר בלי לחכות
+            שכל הרשימה תסתיים.
+          </p>
+        </div>
+      </section>
+
+      <!-- 10 -->
+      <section class="block" id="systems">
+        <h2><span class="sec-num">10</span> iCount + Supabase — חלוקת אחריות</h2>
+        <p class="intro">
+          הדוח מציב את iCount כ״מקור האמת״. בפועל יש שני מקורות אמת משלימים —
+          וחשוב לא לבלבל ביניהם.
+        </p>
+        <table>
+          <thead><tr><th>תחום</th><th>מקור האמת</th><th>למה</th></tr></thead>
+          <tbody>
+            <tr><td>קטלוג, מלאי, הזמנות, B2B, pixel_map</td><td><b>Supabase</b> (לוח הניהול)</td><td>תפעול יום־יום, RLS, מחובר ישירות למחולל ולמנוע ההתראות.</td></tr>
+            <tr><td>חשבוניות, תעודות משלוח, הוצאות, שערי מטבע</td><td><b>iCount</b></td><td>חשבונאות, ציות, ופרוטוקול ה־$75.</td></tr>
+            <tr><td>סליקת אשראי</td><td><b>שער תשלום</b> (Payme/Rapyd) → וובהוק</td><td>הכסף הופך לסמכותי רק כשהוובהוק מאמת ומקצה.</td></tr>
+          </tbody>
+        </table>
+        <div class="callout system">
+          <div class="tag">⚙️ דיוק חשוב</div>
+          <p>
+            הזרימה: <b>Checkout → וובהוק → אימות בצד שרת → הקצאה</b>
+            (<code>provision.ts</code>, אידמפוטנטי). אותו קוד משרת תשלום אמיתי
+            וגם ארגז חול. אל תתחזקו ספירת מלאי כפולה: המלאי הפיזי חי בלוח הניהול,
+            וה־COGS/חשבוניות ב־iCount.
+          </p>
+        </div>
+      </section>
+
+      <!-- 11 -->
+      <section class="block" id="order-flow">
+        <h2><span class="sec-num">11</span> תהליך הזמנה מקצה לקצה</h2>
+        <p class="intro">מה קורה מרגע שלקוח לוחץ ״הזמנה״ ועד שהחבילה יוצאת.</p>
+        <ol class="steps">
+          <li><b>עיצוב —</b> הלקוח מעלה תמונה, רואה תצוגת לבנים חיה (OKLab), בוחר גודל וצבעים.</li>
+          <li><b>הזמנה —</b> נוצרת הזמנת <code>pending</code> בשרת; המחיר מחושב מה־pixel_map (לא נסמך על הלקוח).</li>
+          <li><b>תשלום —</b> הפניה ל־iCount Hosted Checkout (עוקף טפסי אשראי מורכבים).</li>
+          <li><b>אימות —</b> וובהוק → אימות עסקה בצד שרת → הקצאה אידמפוטנטית (״שולם״, אימייל אישור).</li>
+          <li><b>אריזה —</b> ההזמנה נכנסת ל<b>תור האריזה</b>; אמא שוקלת לפי דוח האריזה (משקל) ומורידה PDF הוראות.</li>
+          <li><b>משלוח —</b> מסירה ל־HFD / צ׳יטה / Boxit; 2–5 ימי עסקים.</li>
+        </ol>
+        <div class="callout tip">
+          <div class="tag">💡 דיגיטלי מול פיזי</div>
+          <p>
+            שני מסלולי מימוש: <b>דיגיטלי</b> (PDF + רשימת חלקים) ו<b>פיזי</b>
+            (ערכת 1×1 + הוראות). רק הזמנות פיזיות ששולמו מזינות את דוח הרכש ואת
+            מנוע ההתראות.
+          </p>
+        </div>
+      </section>
+
+      <!-- 12 -->
+      <section class="block" id="roadmap">
+        <h2><span class="sec-num">12</span> מפת דרכים והרחבה</h2>
+        <h3>טריגרים למעבר 19 → 24 צבעים</h3>
+        <ul class="check">
+          <li>עקביות שבועית בהזמנות מעל סף מוגדר.</li>
+          <li>ניתוח ביקוש צבע — זיהוי דרישה חוזרת לגוונים מחוץ לליבה.</li>
+          <li>יציבות מדרגה — אחרי ביקורת התאמת קופסה, כדי לשמור על מרווחים.</li>
+        </ul>
+        <div class="callout system">
+          <div class="tag">⚙️ זה כבר נתמך בקוד</div>
+          <p>
+            המעבר ל־24 הוא דגל מלאי, לא פריסה: סימון צבע כ״זמין״ פותח אותו למחולל
+            (<code>getActivePalette</code> מסנן לפי מלאי, ו־<code>remapPixelMap</code>
+            ממפה צבעים שאזלו). אפשר להריץ <code>?testPalette=full</code> כדי לראות
+            את כל 25 הצבעים בלי להזמין.
+          </p>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="big">~19</div><div class="lbl">צבעי ליבה בפתיחה</div></div>
+          <div class="kpi"><div class="big">2–5</div><div class="lbl">ימי אספקה</div></div>
+          <div class="kpi"><div class="big">$74.99</div><div class="lbl">תקרת רכש פטורה</div></div>
+          <div class="kpi"><div class="big">₪294</div><div class="lbl">רווח נקי ל־3×3</div></div>
+        </div>
+        <div class="divider"></div>
+        <p style="color: var(--ink-soft); font-size: 14px">
+          <b>שורה תחתונה:</b> בהשקעת הקמה של ~$1,750, המלאי הראשוני מייצר ~65
+          יצירות ומחזיר את עצמו עם מעל ₪14,000 רווח. תמחור 3×3 ב־₪399 משאיר ~₪294
+          רווח להזמנה. שילוב של רכש יעיל־מס, מלאי מדורג ולוח ניהול מבוסס־Supabase
+          המחובר למנוע ה״לבנים״ — יוצר עסק עם ״חפיר״ גבוה ומסלול סקלבילי ל־B2B.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      Pixipic · פיקסיפיק — מדריך הקמה ותפעול · מסונתז מהדוח האסטרטגי + ניתוח
+      העלויות + לוח הניהול והמנוע שנבנו · יוני 2026
+    </footer>
+  </body>
+</html>

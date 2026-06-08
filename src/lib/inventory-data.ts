@@ -14,10 +14,13 @@ import {
   type InventoryItem,
 } from "@/lib/inventory-alerts";
 import { aggregateRestock } from "@/lib/restock";
-import type { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient as SupabaseJsClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 import type { InventorySupply, PixelMap } from "@/lib/supabase/types.helpers";
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+// Either the cookie-bound (RLS) client or the service-role admin client — both
+// are SupabaseClient<Database>, so the cron route can reuse this.
+type SupabaseClient = SupabaseJsClient<Database>;
 
 export interface ColorStockRow {
   id: number;

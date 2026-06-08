@@ -13,6 +13,14 @@ badges, and an **admin-gated sandbox** (`/admin/sandbox`) that runs the real
 B2C/B2B purchase→provision path without iCount. Still open: email digest +
 cron (phase 4), B2B assist actions (phase 5), finance/clients **tables**
 (phases 6–7, user chose durable tables), PDFs tab + settings (phase 8).
+**Update (2026-06-08): phases 4–8 are now built too.** Low-stock email digest
+(`sendLowStockDigest`) + `/api/cron/low-stock` (Vercel Cron, `CRON_SECRET`);
+B2B admin assist (the owner `RosterManager` is embedded in `/admin/b2b/[id]`);
+finance ledger (`transactions` table written on provision → `/admin/finance`);
+clients CRM (`clients` table upserted on provision → `/admin/clients` with notes);
+docs/settings tab (`settings` table + `/admin/docs` PDF preview). Migration
+`0012_finance_clients_settings`.
+
 RTL Hebrew, design-system tokens (`.card`/`.btn`/`surface`/`outline`),
 light-only — same rules as the rest of the app (CLAUDE.md).
 

@@ -147,6 +147,57 @@ export async function sendQuoteRequest(opts: {
   });
 }
 
+/**
+ * Daily low-stock digest to the operator. Sent to LOW_STOCK_EMAIL (falling back
+ * to EMAIL_FROM). No-ops when email isn't configured or there are no alerts.
+ */
+export async function sendLowStockDigest(opts: {
+  alerts: Array<{
+    name: string;
+    category: string;
+    unit: string;
+    available: number;
+    threshold: number;
+    shortfall: number;
+  }>;
+}): Promise<boolean> {
+  const to = process.env.LOW_STOCK_EMAIL || process.env.EMAIL_FROM;
+  if (!to || opts.alerts.length === 0) return false;
+
+  const fmt = (n: number, unit: string) =>
+    unit === "g" ? `${Math.round(n)} ג׳` : `${n} ${unit}`;
+  const rows = opts.alerts
+    .map(
+      (a) =>
+        `<tr>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee">${a.name}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee">${fmt(a.available, a.unit)}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee">${fmt(a.threshold, a.unit)}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee;color:#b7102a;font-weight:bold">${fmt(a.shortfall, a.unit)}</td>
+        </tr>`,
+    )
+    .join("");
+
+  return sendEmail({
+    to,
+    subject: `🔔 התראת מלאי — ${opts.alerts.length} פריטים מתחת לסף`,
+    html: shell(
+      `<h1 style="font-size:20px;margin:0 0 8px">התראת מלאי נמוך</h1>
+       <p>${opts.alerts.length} פריטים ירדו מתחת לסף ההזמנה מחדש (כולל ביקוש מהזמנות ששולמו):</p>
+       <table style="width:100%;border-collapse:collapse;font-size:14px">
+         <tr style="text-align:right;color:#51585d">
+           <th style="padding:6px 8px;border-bottom:2px solid #e0e3e5">פריט</th>
+           <th style="padding:6px 8px;border-bottom:2px solid #e0e3e5">זמין</th>
+           <th style="padding:6px 8px;border-bottom:2px solid #e0e3e5">סף</th>
+           <th style="padding:6px 8px;border-bottom:2px solid #e0e3e5">חוסר</th>
+         </tr>
+         ${rows}
+       </table>
+       <p>${button(`${siteUrl()}/admin/inventory`, "לניהול המלאי")}</p>`,
+    ),
+  });
+}
+
 /** Send an employee their personalized seat link to upload a photo. */
 export async function sendSeatInvite(opts: {
   to: string;

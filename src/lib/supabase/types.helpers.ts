@@ -31,6 +31,9 @@ export type EmployeeSubmission = Tables<"employee_submissions">;
 export type EmployeeRoster = Tables<"employee_roster">;
 export type B2cOrder = Tables<"b2c_orders">;
 export type InventorySupply = Tables<"inventory_supplies">;
+export type Transaction = Tables<"transactions">;
+export type Client = Tables<"clients">;
+export type Setting = Tables<"settings">;
 
 /** inventory_supplies.category is a CHECK-constrained text column, not an enum. */
 export type SupplyCategory = "baseplate" | "connector" | "packaging" | "other";

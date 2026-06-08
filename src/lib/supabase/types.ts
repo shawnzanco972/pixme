@@ -215,6 +215,36 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employee_roster: {
         Row: {
           created_at: string
@@ -362,6 +392,57 @@ export type Database = {
           supplier?: string | null
           unit?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          created_at: string
+          gross: number
+          icount_invoice_id: string | null
+          id: string
+          order_id: string
+          order_track: string
+          raw: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          gross?: number
+          icount_invoice_id?: string | null
+          id?: string
+          order_id: string
+          order_track: string
+          raw?: Json | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          gross?: number
+          icount_invoice_id?: string | null
+          id?: string
+          order_id?: string
+          order_track?: string
+          raw?: Json | null
+          status?: string
         }
         Relationships: []
       }
