@@ -12,8 +12,9 @@
  */
 import { NextResponse } from "next/server";
 
-import { bundleById } from "@/lib/b2b-bundles";
+import { computeB2bQuote } from "@/lib/b2b-pricing";
 import { createCheckout } from "@/lib/icount";
+import { presetById } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
 
@@ -104,13 +105,27 @@ export async function POST(request: Request) {
       const projectName = body.project_name
         ? String(body.project_name)
         : null;
-      // The bundle is the source of truth for seats, size and amount — the
-      // client only names which one; pricing is never trusted from the body.
-      const bundle = bundleById(String(body.bundle_id ?? ""));
-      if (!contactEmail || !companyName || !bundle) {
+      // Size + employee count + upsell are the inputs; the price is recomputed
+      // authoritatively here (never trusted from the body) so it always equals
+      // employees × the regular physical mosaic price (+ managed fee).
+      const preset = presetById(String(body.preset_id ?? ""));
+      const employees = Number(body.employees ?? 0);
+      const managed = body.managed === true;
+      if (!contactEmail || !companyName || !preset || !(employees > 0)) {
         return NextResponse.json(
-          { error: "Missing company_name, contact_email, or a valid bundle_id" },
+          {
+            error:
+              "Missing company_name, contact_email, a valid preset_id, or employees",
+          },
           { status: 400 },
+        );
+      }
+
+      const quote = computeB2bQuote(employees, preset.id, managed);
+      if (quote.requiresQuote) {
+        return NextResponse.json(
+          { error: "Order exceeds self-serve limit — request a quote instead" },
+          { status: 422 },
         );
       }
 
@@ -120,10 +135,10 @@ export async function POST(request: Request) {
           company_name: companyName,
           contact_email: contactEmail,
           project_name: projectName,
-          bundle_id: bundle.id,
-          plates_x: bundle.platesX,
-          plates_y: bundle.platesY,
-          licenses_purchased: bundle.seats,
+          plates_x: preset.platesX,
+          plates_y: preset.platesY,
+          licenses_purchased: quote.employees,
+          managed,
           amount_paid: 0, // set authoritatively on payment confirmation
           status: "pending",
         })
@@ -148,8 +163,8 @@ export async function POST(request: Request) {
       const checkout = await createCheckout({
         orderId: data.id,
         track: "b2b",
-        amount: bundle.price,
-        description: `Pixipic — חבילת ${bundle.nameHe} (${bundle.seats} עובדים)`,
+        amount: quote.total,
+        description: `Pixipic — ${quote.employees} מתנות לעובדים (${quote.cols}×${quote.rows})`,
         customerEmail: contactEmail,
         customerName: companyName,
         successUrl: `${siteUrl()}/b2b/thank-you?order=${data.id}`,

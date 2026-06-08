@@ -11,8 +11,7 @@ import { CopyLinkButton } from "@/components/admin/CopyLinkButton";
 import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
 import { ProvisionWorkspaceButton } from "@/components/admin/ProvisionWorkspaceButton";
 import { projectProgress, seatStatus, type SeatStatus } from "@/lib/b2b";
-import { bundleStuds } from "@/lib/b2b-bundles";
-import { formatILS } from "@/lib/pricing";
+import { formatILS, presetStuds } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/supabase/types.helpers";
 
@@ -86,7 +85,7 @@ export default async function AdminB2bDetail({
   }));
   const progress = projectProgress(seats.map((s) => s.seat));
 
-  const { cols, rows } = bundleStuds({
+  const { cols, rows } = presetStuds({
     platesX: order.plates_x,
     platesY: order.plates_y,
   });

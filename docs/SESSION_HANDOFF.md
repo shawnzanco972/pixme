@@ -40,16 +40,24 @@ All in `src/lib/brick-engine/`, wired through `BrickifyOptions` → worker →
   Sobel edge threshold so logos/lettering stay legible. Toggle: "מצב טקסט / קו".
 
 ### C. B2B → owned "Projects" (the big one)
-Migration `supabase/migrations/0007_b2b_projects.sql` — **already applied to the
+Migrations `0007_b2b_projects.sql` + `0008_b2b_managed.sql` — **applied to the
 live `pixme` Supabase project**, and `src/lib/supabase/types.ts` regenerated.
 
-- **Landing page** `/b2b` (`src/app/b2b/page.tsx`) — hero, how-it-works, and
-  three fixed **deal bundles** (`src/lib/b2b-bundles.ts`): Team 10 (₪390),
-  Company 25 (₪875, featured), Enterprise 50 (₪1,950). Each bundle **locks the
-  mosaic size** for all employees.
-- **Bundle checkout** (`src/app/api/checkout/route.ts`) — seats/size/amount
-  derived **server-side from the bundle id** (never trusted from client). Order
-  gets a secret `owner_token`.
+**Pricing model (corrected):** B2B is PHYSICAL — every employee gets their own
+gift set — so the price **scales**: `employees × the regular physical mosaic
+price for the chosen size`. It is NOT a cheap "license bundle" (that earlier
+model under-priced ~7× and lost money on every kit). The optional **"managed"
+upsell** (₪18/seat) adds a dedicated upload link per employee + the dashboard.
+All in `src/lib/b2b-pricing.ts` (`computeB2bQuote`). Over **100 employees** the
+calculator switches to a **price-quote request** (`/api/b2b/quote`).
+
+- **Landing page** `/b2b` (`src/app/b2b/page.tsx`) — hero, how-it-works, a live
+  **price calculator** (`B2bCalculator.tsx`: size × employees × managed upsell),
+  and an FAQ (plate ≈19 cm / 576 bricks / ~45 min, family-activity framing).
+- **Checkout** (`src/app/api/checkout/route.ts`) — amount recomputed
+  **server-side from size + employees + managed** (never trusted from the
+  client). Order stores `plates_x/y`, `licenses_purchased` (= employees),
+  `managed`, and a secret `owner_token`.
 - **Owner dashboard** `/b2b/project/[ownerToken]` — secret-link access (no
   login), progress bar, roster table with per-seat status, add-employees box.
 - **Pre-loaded roster** (`employee_roster` table) — owner adds names/emails →
@@ -84,6 +92,7 @@ live `pixme` Supabase project**, and `src/lib/supabase/types.ts` regenerated.
 | `EMAIL_FROM` | sending email | a **verified** sender, e.g. `Pixipic <hello@yourdomain.co.il>` |
 | `ICOUNT_API_TOKEN` | real payments (hosted checkout) | until set, checkout skips payment (see testing) |
 | `ICOUNT_WEBHOOK_SECRET` | webhook signature check | optional; without it we rely on server-side tx verification |
+| `B2B_QUOTE_EMAIL` | where >100-employee quote requests are sent | optional; falls back to `EMAIL_FROM` |
 
 - I **couldn't edit `.env.example`** (permission-denied directory) — please add
   the `RESEND_API_KEY` / `EMAIL_FROM` lines there yourself.
@@ -120,7 +129,8 @@ created as `pending`; nothing is charged. You then "provision" manually.
 
 ### B2B — full project flow (recommended end-to-end test)
 1. Make sure you're logged into the admin (`/admin/login`).
-2. Go to **`/b2b`**, pick a bundle, fill company + email, click "לרכישה".
+2. Go to **`/b2b`**, set size + employee count in the calculator (≤100), fill
+   company + email, click "המשך".
    → You land on `/b2b/thank-you` showing the **owner dashboard link**. (The
    dashboard will say "payment pending" because no workspace exists yet.)
 3. Go to **`/admin`** → open the new B2B order → click **"צור סביבת עבודה"**.
@@ -171,7 +181,7 @@ src/lib/packing.ts                           packCount, formatWeightAscii
 src/lib/brick-engine/fsdither.ts             Floyd–Steinberg
 src/lib/brick-engine/face.ts                 face-aware contrast
 src/lib/brick-engine/unsharp.ts              line-art/text sharpening
-src/lib/b2b-bundles.ts                       deal bundles (pricing source of truth)
+src/lib/b2b-pricing.ts                       scaling B2B price (source of truth)
 src/lib/b2b.ts                               seatStatus / projectProgress
 src/lib/email.ts                             Resend email + templates
 supabase/migrations/0007_b2b_projects.sql    schema (applied to live)

@@ -116,6 +116,37 @@ export async function sendOrderConfirmation(opts: {
   });
 }
 
+/**
+ * Notify the Pixipic team of a large-order quote request. Sent to
+ * B2B_QUOTE_EMAIL (falling back to EMAIL_FROM). Returns false if email isn't
+ * configured — callers should still acknowledge the user but surface that we
+ * may need a manual follow-up.
+ */
+export async function sendQuoteRequest(opts: {
+  companyName: string;
+  contactEmail: string;
+  employees: number;
+  size: string;
+  managed: boolean;
+  message?: string;
+}): Promise<boolean> {
+  const to = process.env.B2B_QUOTE_EMAIL || process.env.EMAIL_FROM;
+  if (!to) return false;
+  return sendEmail({
+    to,
+    subject: `בקשת הצעת מחיר B2B — ${opts.companyName} (${opts.employees} עובדים)`,
+    html: shell(
+      `<h1 style="font-size:20px;margin:0 0 8px">בקשת הצעת מחיר</h1>
+       <p><b>חברה:</b> ${opts.companyName}<br/>
+       <b>אימייל:</b> <span style="direction:ltr">${opts.contactEmail}</span><br/>
+       <b>עובדים:</b> ${opts.employees}<br/>
+       <b>גודל:</b> ${opts.size}<br/>
+       <b>ניהול מלא:</b> ${opts.managed ? "כן" : "לא"}</p>
+       ${opts.message ? `<p><b>הערות:</b><br/>${opts.message}</p>` : ""}`,
+    ),
+  });
+}
+
 /** Send an employee their personalized seat link to upload a photo. */
 export async function sendSeatInvite(opts: {
   to: string;

@@ -8,7 +8,7 @@
  */
 import { SeatSubmit } from "@/components/b2b/SeatSubmit";
 import { workspaceStatus } from "@/lib/b2b";
-import { bundleStuds } from "@/lib/b2b-bundles";
+import { presetStuds } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +48,7 @@ export default async function SeatPage({
         .maybeSingle();
       if (order) {
         companyName = order.project_name || order.company_name;
-        ({ cols, rows } = bundleStuds({
+        ({ cols, rows } = presetStuds({
           platesX: order.plates_x,
           platesY: order.plates_y,
         }));

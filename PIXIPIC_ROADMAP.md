@@ -49,11 +49,17 @@ plan for the current push; tackled top-down, committed in slices.
 
 ## G. B2B → owned "Projects" (this session)
 Reframed B2B from a loose license batch into an owned project with a real
-owner experience. Migration `0007_b2b_projects.sql` (applied + types regen'd).
-- [x] **Landing page** (`/b2b`): hero + how-it-works + fixed deal **bundles**
-      (`b2b-bundles.ts`: Team 10 / Company 25 / Enterprise 50, size-locked).
-- [x] **Bundle checkout**: amount/seats/size derived authoritatively from the
-      bundle id server-side; order gets a secret `owner_token`.
+owner experience. Migrations `0007_b2b_projects.sql` + `0008_b2b_managed.sql`
+(applied + types regen'd).
+- [x] **Scaling price** (`b2b-pricing.ts`): physical product, so price =
+      employees × the regular per-mosaic price (NOT a cheap bundle — the old
+      bundle model under-priced ~7×). Optional **managed upsell** (₪18/seat:
+      dedicated per-employee links + dashboard). Over 100 employees →
+      price-quote request (`/api/b2b/quote`).
+- [x] **Landing page** (`/b2b`): hero + how-it-works + live **calculator**
+      (`B2bCalculator.tsx`) + FAQ (plate ≈19cm / 576 bricks / ~45 min).
+- [x] **Checkout**: amount recomputed authoritatively server-side from size +
+      employees + managed; order gets a secret `owner_token`.
 - [x] **Owner dashboard** (`/b2b/project/[ownerToken]`): secret-link access
       (no login), progress bar, roster table with per-employee status.
 - [x] **Pre-loaded roster** (`employee_roster`): owner adds names/emails →

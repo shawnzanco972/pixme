@@ -34,6 +34,7 @@ export type Database = {
           icount_invoice_id: string | null
           id: string
           licenses_purchased: number
+          managed: boolean
           owner_token: string
           plates_x: number
           plates_y: number
@@ -50,6 +51,7 @@ export type Database = {
           icount_invoice_id?: string | null
           id?: string
           licenses_purchased: number
+          managed?: boolean
           owner_token?: string
           plates_x?: number
           plates_y?: number
@@ -66,6 +68,7 @@ export type Database = {
           icount_invoice_id?: string | null
           id?: string
           licenses_purchased?: number
+          managed?: boolean
           owner_token?: string
           plates_x?: number
           plates_y?: number

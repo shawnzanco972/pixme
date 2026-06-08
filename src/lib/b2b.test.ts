@@ -6,7 +6,12 @@ import {
   workspaceStatus,
   type WorkspaceLike,
 } from "./b2b";
-import { B2B_BUNDLES, bundleById, bundlePerSeat } from "./b2b-bundles";
+import {
+  computeB2bQuote,
+  MANAGED_FEE_PER_SEAT,
+  MAX_SELF_SERVE_SEATS,
+} from "./b2b-pricing";
+import { computePrice } from "./pricing";
 
 const base: WorkspaceLike = {
   active: true,
@@ -81,21 +86,41 @@ describe("projectProgress", () => {
   });
 });
 
-describe("b2b bundles", () => {
-  it("has exactly one featured tier and positive pricing", () => {
-    expect(B2B_BUNDLES.filter((b) => b.featured)).toHaveLength(1);
-    for (const b of B2B_BUNDLES) {
-      expect(b.seats).toBeGreaterThan(0);
-      expect(b.price).toBeGreaterThan(0);
-      expect(bundlePerSeat(b)).toBeGreaterThan(0);
-    }
+describe("computeB2bQuote", () => {
+  it("prices a B2B set as employees × the regular physical mosaic price", () => {
+    const q = computeB2bQuote(10, "2x2", false);
+    const perMosaic = computePrice(q.cols, q.rows, "physical").total;
+    expect(q.perMosaic).toBe(perMosaic);
+    expect(q.mosaicsTotal).toBe(perMosaic * 10);
+    // The whole point of the fix: NOT dramatically cheaper than B2C.
+    expect(q.total).toBe(perMosaic * 10);
   });
 
-  it("looks up by id and rewards volume (cheaper per seat at scale)", () => {
-    expect(bundleById("company-25")?.seats).toBe(25);
-    expect(bundleById("nope")).toBeUndefined();
-    const small = bundlePerSeat(B2B_BUNDLES[0]);
-    const mid = bundlePerSeat(B2B_BUNDLES[1]);
-    expect(mid).toBeLessThanOrEqual(small);
+  it("adds the managed upsell per seat when enabled", () => {
+    const plain = computeB2bQuote(20, "2x2", false);
+    const managed = computeB2bQuote(20, "2x2", true);
+    expect(managed.managementTotal).toBe(20 * MANAGED_FEE_PER_SEAT);
+    expect(managed.total - plain.total).toBe(20 * MANAGED_FEE_PER_SEAT);
+  });
+
+  it("flags orders over the self-serve cap for a quote", () => {
+    expect(computeB2bQuote(MAX_SELF_SERVE_SEATS, "2x2", false).requiresQuote).toBe(
+      false,
+    );
+    expect(
+      computeB2bQuote(MAX_SELF_SERVE_SEATS + 1, "2x2", false).requiresQuote,
+    ).toBe(true);
+  });
+
+  it("clamps employees to at least 1 and falls back for unknown sizes", () => {
+    const q = computeB2bQuote(0, "nope", false);
+    expect(q.employees).toBe(1);
+    expect(q.cols).toBeGreaterThan(0);
+  });
+
+  it("larger sizes cost more per mosaic", () => {
+    const small = computeB2bQuote(5, "1x1", false).perMosaic;
+    const big = computeB2bQuote(5, "3x3", false).perMosaic;
+    expect(big).toBeGreaterThan(small);
   });
 });

@@ -11,8 +11,8 @@ import { notFound } from "next/navigation";
 
 import { RosterManager } from "@/components/b2b/RosterManager";
 import { projectProgress, seatStatus, type SeatStatus } from "@/lib/b2b";
-import { bundleStuds } from "@/lib/b2b-bundles";
 import { isEmailConfigured } from "@/lib/email";
+import { presetStuds } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +49,7 @@ export default async function ProjectDashboard({
     .eq("b2b_order_id", order.id)
     .maybeSingle();
 
-  const { cols, rows } = bundleStuds({
+  const { cols, rows } = presetStuds({
     platesX: order.plates_x,
     platesY: order.plates_y,
   });
