@@ -22,7 +22,7 @@ import {
   DEFAULT_DITHER_AMOUNT,
   type DitherOptions,
 } from "./dither";
-import { nearestColorIndex, type MatchOptions } from "./match";
+import { effectiveDistanceSq, nearestColorIndex, type MatchOptions } from "./match";
 import { swapOptimize, type SwapOptions } from "./optimize";
 import { DEFAULT_PALETTE, type BrickColor } from "./palette";
 import { preprocessImage, type PreprocessOptions } from "./preprocess";
@@ -136,12 +136,16 @@ export function brickifyImage(
     });
   }
 
-  // 5) Phase 2 — swap optimization (repairs accuracy lost to despeckle).
+  // 5) Phase 2 — swap optimization, using the SAME cost as the greedy matcher
+  //    (chroma weight + neutral-avoidance + material penalty) so it can't undo
+  //    the matcher's choices.
   if (options.optimize?.enabled ?? true) {
-    const oklabById = new Map<number, OKLab>(
-      palette.map((c) => [c.id, c.oklab]),
-    );
-    indices = swapOptimize(indices, targets, oklabById, {
+    const byId = new Map<number, BrickColor>(palette.map((c) => [c.id, c]));
+    const cost = (cell: number, id: number): number => {
+      const c = byId.get(id);
+      return c ? effectiveDistanceSq(targets[cell], c, options.match) : 0;
+    };
+    indices = swapOptimize(indices, cost, {
       iterations: options.optimize?.iterations,
       rng,
     });

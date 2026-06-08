@@ -125,26 +125,24 @@ describe("swapOptimize", () => {
     [0, A],
     [1, B],
   ]);
+  const targets = [A, B];
+  // cost(cell, id) = plain OKLab distance to that cell's target.
+  const cost = (cell: number, id: number) =>
+    oklabDistanceSq(targets[cell], oklabById.get(id)!);
 
   it("fixes a beneficial swap and lowers total error", () => {
-    const targets = [A, B];
     const wrong = [1, 0]; // each cell assigned the other's color
-    const err = (idx: number[]) =>
-      oklabDistanceSq(targets[0], oklabById.get(idx[0])!) +
-      oklabDistanceSq(targets[1], oklabById.get(idx[1])!);
-
-    const fixed = swapOptimize(wrong, targets, oklabById, {
+    const err = (idx: number[]) => cost(0, idx[0]) + cost(1, idx[1]);
+    const fixed = swapOptimize(wrong, cost, {
       iterations: 50,
       rng: mulberry32(7),
     });
     expect(fixed).toEqual([0, 1]);
-    expect(err(fixed)).toBeLessThan(err(wrong));
+    expect(err(fixed)).toBeLessThan(err([1, 0]));
   });
 
   it("never increases error on an already-optimal assignment", () => {
-    const targets = [A, B];
-    const optimal = [0, 1];
-    const out = swapOptimize(optimal, targets, oklabById, {
+    const out = swapOptimize([0, 1], cost, {
       iterations: 50,
       rng: mulberry32(7),
     });

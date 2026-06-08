@@ -52,6 +52,24 @@ describe("nearestColorIndex", () => {
     expect(nearestColorIndex(mutedRed, palette)).toBe(0); // Red, not Gray
   });
 
+  it("does not collapse a pale tint to white/gray (neutral-avoidance)", () => {
+    // Pale cyan/teal between White, Light Gray, and Sand Green.
+    const defs: BrickColorDef[] = [
+      { id: 0, name: "White", hex: "#f2f3f2", material: "solid", core: true },
+      { id: 1, name: "Light Gray", hex: "#bcbcb9", material: "solid", core: true },
+      { id: 2, name: "Sand Green", hex: "#a0bcac", material: "solid", core: true },
+      { id: 3, name: "Bright Light Blue", hex: "#9fc3e9", material: "solid", core: true },
+    ];
+    const palette = buildPalette(defs);
+    const paleTeal = srgbToOklab(170, 215, 200);
+    // With neutral-avoidance ON and hue-compatible cool bricks available, a
+    // pale teal lands on a tinted brick, not white/gray.
+    const idx = nearestColorIndex(paleTeal, palette, { neutralPenalty: 1.6 });
+    expect(idx).not.toBe(0); // not White
+    expect(idx).not.toBe(1); // not gray
+    expect([2, 3]).toContain(idx); // a tinted brick
+  });
+
   it("penalizes material mismatches", () => {
     // Two near-identical reds: one solid, one transparent. Prefer solid.
     const defs: BrickColorDef[] = [

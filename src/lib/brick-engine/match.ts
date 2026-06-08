@@ -26,10 +26,27 @@ export interface MatchOptions {
    * far away. Default 1.6.
    */
   chromaWeight?: number;
+  /**
+   * Neutral-avoidance: when the TARGET is clearly tinted but a candidate is a
+   * near-neutral (white/gray/black ≈ 0 chroma), add this × (target chroma) to
+   * the distance. Stops pale tints (a cyan sky, pale-blue eyeshadow) from
+   * collapsing to white/gray.
+   *
+   * Default 0 (OFF): only useful when the palette actually contains a
+   * hue-compatible colored brick — otherwise it forces wrong-hue matches (e.g.
+   * a pale cyan → warm Tan when no cool light color is stocked). Turn on once
+   * cool light colors (light blue / azure) are in the active palette.
+   */
+  neutralPenalty?: number;
 }
 
 const DEFAULT_PENALTY = 0.15;
 const DEFAULT_CHROMA_WEIGHT = 1.6;
+const DEFAULT_NEUTRAL_PENALTY = 0;
+/** Below this OKLab chroma a color counts as "neutral" (gray/white/black). */
+const NEUTRAL_CHROMA = 0.04;
+
+const chromaOf = (c: OKLab) => Math.hypot(c.a, c.b);
 
 /** Chroma-weighted squared OKLab distance. */
 function weightedDistanceSq(x: OKLab, y: OKLab, chromaWeight: number): number {
@@ -41,8 +58,8 @@ function weightedDistanceSq(x: OKLab, y: OKLab, chromaWeight: number): number {
 
 /**
  * Effective squared distance from a target OKLab color to a palette entry,
- * including the material penalty (penalty applied in linear distance space,
- * then squared for comparison consistency).
+ * including chroma weighting, neutral-avoidance, and the material penalty (all
+ * applied in linear distance space, then squared for comparison consistency).
  */
 export function effectiveDistanceSq(
   target: OKLab,
@@ -50,16 +67,24 @@ export function effectiveDistanceSq(
   opts: MatchOptions = {},
 ): number {
   const preferred = opts.preferredMaterial ?? "solid";
-  const penalty = opts.materialPenalty ?? DEFAULT_PENALTY;
+  const materialPenalty = opts.materialPenalty ?? DEFAULT_PENALTY;
   const chromaWeight = opts.chromaWeight ?? DEFAULT_CHROMA_WEIGHT;
+  const neutralPenalty = opts.neutralPenalty ?? DEFAULT_NEUTRAL_PENALTY;
 
-  const baseSq = weightedDistanceSq(target, candidate.oklab, chromaWeight);
-  if (candidate.material === preferred) return baseSq;
+  let dist = Math.sqrt(weightedDistanceSq(target, candidate.oklab, chromaWeight));
 
-  // Add penalty in distance (not squared) space, then re-square.
-  const base = Math.sqrt(baseSq);
-  const eff = base + penalty;
-  return eff * eff;
+  // Push clearly-tinted targets away from neutral (gray/white/black) bricks.
+  const targetChroma = chromaOf(target);
+  if (
+    targetChroma > NEUTRAL_CHROMA &&
+    chromaOf(candidate.oklab) < NEUTRAL_CHROMA
+  ) {
+    dist += neutralPenalty * (targetChroma - NEUTRAL_CHROMA);
+  }
+
+  if (candidate.material !== preferred) dist += materialPenalty;
+
+  return dist * dist;
 }
 
 /** Return the palette index of the nearest color to `target`. */
