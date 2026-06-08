@@ -10,20 +10,14 @@
 import { notFound } from "next/navigation";
 
 import { RosterManager } from "@/components/b2b/RosterManager";
-import { projectProgress, seatStatus, type SeatStatus } from "@/lib/b2b";
+import type { SeatReviewRow } from "@/components/b2b/SeatRow";
+import { projectProgress, seatStatus } from "@/lib/b2b";
 import { isEmailConfigured } from "@/lib/email";
 import { presetStuds } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
+import type { PixelMap } from "@/lib/supabase/types.helpers";
 
 export const dynamic = "force-dynamic";
-
-export interface RosterRow {
-  id: string;
-  name: string;
-  email: string | null;
-  inviteToken: string;
-  status: SeatStatus;
-}
 
 export default async function ProjectDashboard({
   params,
@@ -82,21 +76,28 @@ export default async function ProjectDashboard({
 
   const { data: subs } = await admin
     .from("employee_submissions")
-    .select("roster_id, status")
+    .select("id, roster_id, status, pixel_map, scheduled_for")
     .eq("workspace_id", ws.id);
 
-  const statusByRoster = new Map<string, string>();
+  const subByRoster = new Map<string, NonNullable<typeof subs>[number]>();
   for (const s of subs ?? []) {
-    if (s.roster_id) statusByRoster.set(s.roster_id, s.status);
+    if (s.roster_id) subByRoster.set(s.roster_id, s);
   }
 
-  const rosterRows: RosterRow[] = (roster ?? []).map((r) => ({
-    id: r.id,
-    name: r.name,
-    email: r.email,
-    inviteToken: r.invite_token,
-    status: seatStatus(statusByRoster.get(r.id)),
-  }));
+  const rosterRows: SeatReviewRow[] = (roster ?? []).map((r) => {
+    const sub = subByRoster.get(r.id);
+    const pm = sub?.pixel_map as PixelMap | null;
+    return {
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      inviteToken: r.invite_token,
+      status: seatStatus(sub?.status),
+      submissionId: sub?.id ?? null,
+      pixelMap: Array.isArray(pm) ? pm : null,
+      scheduledFor: sub?.scheduled_for ?? null,
+    };
+  });
 
   const progress = projectProgress(rosterRows.map((r) => r.status));
   const seatsLeft = order.licenses_purchased - rosterRows.length;
@@ -110,6 +111,15 @@ export default async function ProjectDashboard({
         cols={cols}
         rows={rows}
       />
+
+      <div className="mt-4 rounded-xl border border-secondary/30 bg-secondary/5 p-4 text-sm text-foreground/80">
+        <p className="font-medium">זהו לוח הבקרה הפרטי של הפרויקט שלכם 🔒</p>
+        <p className="mt-1 text-zinc-600">
+          שמרו את הקישור הזה (מומלץ להוסיף לסימניות) — דרכו מוסיפים עובדים,
+          שולחים להם קישור אישי לעיצוב, מאשרים את העיצובים ומזמינים. כל מי שיש לו
+          את הקישור יכול לנהל את הפרויקט, אז שתפו אותו רק עם מי שאחראי מטעמכם.
+        </p>
+      </div>
 
       {/* Progress */}
       <div className="card mt-6 flex flex-col gap-3 p-6">

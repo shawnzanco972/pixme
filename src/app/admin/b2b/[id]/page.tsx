@@ -61,7 +61,9 @@ export default async function AdminB2bDetail({
   const { data: subs } = wsIds.length
     ? await supabase
         .from("employee_submissions")
-        .select("id, employee_name, status, workspace_id, roster_id, created_at")
+        .select(
+          "id, employee_name, status, workspace_id, roster_id, created_at, scheduled_for",
+        )
         .in("workspace_id", wsIds)
         .order("created_at", { ascending: false })
     : { data: [] };
@@ -114,6 +116,26 @@ export default async function AdminB2bDetail({
           <CopyLinkButton path={`/b2b/project/${order.owner_token}`} />
         </div>
       </header>
+
+      {/* Pending → not provisioned. Surface the one action that unblocks the
+          whole flow (mark paid + create workspace + owner link). */}
+      {order.status === "pending" && (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
+          <div>
+            <p className="font-medium text-amber-900">
+              ההזמנה ממתינה לתשלום — הפרויקט עדיין לא הופעל
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              עד שיחובר iCount, סמנו כשולם והפעילו ידנית. הפעולה תיצור את סביבת
+              העבודה ותפתח את לוח הבקרה של הלקוח (להוספת עובדים ושליחת קישורים).
+            </p>
+          </div>
+          <ProvisionWorkspaceButton
+            orderId={order.id}
+            maxSlots={order.licenses_purchased}
+          />
+        </div>
+      )}
 
       {/* Project roster overview */}
       {seats.length > 0 && (
@@ -213,6 +235,7 @@ export default async function AdminB2bDetail({
                   <th className="p-3 text-start">תאריך</th>
                   <th className="p-3 text-start">עובד</th>
                   <th className="p-3 text-start">סטטוס</th>
+                  <th className="p-3 text-start">מתוזמן ל־</th>
                   <th className="p-3 text-start">הוראות</th>
                 </tr>
               </thead>
@@ -224,7 +247,10 @@ export default async function AdminB2bDetail({
                   >
                     <td className="p-3">{s.created_at.slice(0, 10)}</td>
                     <td className="p-3">{s.employee_name}</td>
-                    <td className="p-3">{s.status}</td>
+                    <td className="p-3">{SEAT_HE[seatStatus(s.status)]}</td>
+                    <td className="p-3 text-zinc-500">
+                      {s.scheduled_for ? s.scheduled_for.slice(0, 10) : "—"}
+                    </td>
                     <td className="p-3">
                       <DownloadInstructions
                         orderId={s.id}
