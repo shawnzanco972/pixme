@@ -57,7 +57,7 @@ export function B2bPurchase() {
       </p>
 
       <input
-        className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+        className="input"
         placeholder="שם החברה"
         value={company}
         onChange={(e) => setCompany(e.target.value)}
@@ -65,7 +65,7 @@ export function B2bPurchase() {
       <input
         type="email"
         dir="ltr"
-        className="rounded-lg border border-zinc-300 px-3 py-2 text-start dark:border-zinc-700 dark:bg-zinc-900"
+        className="input text-start"
         placeholder="אימייל ליצירת קשר"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -91,7 +91,7 @@ export function B2bPurchase() {
           type="button"
           onClick={() => void handleBuy()}
           disabled={submitting}
-          className="rounded-full bg-black px-8 py-3 text-white transition-colors hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          className="btn btn-primary"
         >
           {submitting ? "מעבד…" : "לרכישה"}
         </button>

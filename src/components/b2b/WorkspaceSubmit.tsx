@@ -112,7 +112,7 @@ export function WorkspaceSubmit({ workspaceId }: { workspaceId: string }) {
       {working && <p className="text-sm text-zinc-500">מעבד…</p>}
 
       <input
-        className="rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+        className="input"
         placeholder="השם שלך"
         value={employeeName}
         onChange={(e) => setEmployeeName(e.target.value)}
@@ -122,7 +122,7 @@ export function WorkspaceSubmit({ workspaceId }: { workspaceId: string }) {
         type="button"
         onClick={() => void handleSubmit()}
         disabled={submitting || !pixelMap}
-        className="rounded-full bg-black px-8 py-3 text-white transition-colors hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+        className="btn btn-primary"
       >
         {submitting ? "שולח…" : "שליחה"}
       </button>
