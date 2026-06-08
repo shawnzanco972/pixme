@@ -111,6 +111,39 @@ function checker(ctx: CanvasRenderingContext2D, s: number) {
     }
 }
 
+function paw(ctx: CanvasRenderingContext2D, s: number) {
+  ctx.fillStyle = "#582a12";
+  // main pad
+  ctx.beginPath();
+  ctx.ellipse(s / 2, s * 0.62, s * 0.2, s * 0.17, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // toes
+  const toes: [number, number, number][] = [
+    [0.32, 0.36, 0.07],
+    [0.45, 0.3, 0.075],
+    [0.58, 0.3, 0.075],
+    [0.7, 0.38, 0.07],
+  ];
+  for (const [tx, ty, r] of toes) {
+    ctx.beginPath();
+    ctx.ellipse(s * tx, s * ty, s * r, s * (r + 0.02), 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function gift(ctx: CanvasRenderingContext2D, s: number) {
+  ctx.fillStyle = "#c91a09"; // box
+  ctx.fillRect(s * 0.22, s * 0.38, s * 0.56, s * 0.42);
+  ctx.fillStyle = "#f2cd37"; // ribbon
+  ctx.fillRect(s * 0.46, s * 0.38, s * 0.08, s * 0.42);
+  ctx.fillRect(s * 0.22, s * 0.55, s * 0.56, s * 0.08);
+  // bow
+  ctx.beginPath();
+  ctx.ellipse(s * 0.42, s * 0.32, s * 0.1, s * 0.07, 0, 0, Math.PI * 2);
+  ctx.ellipse(s * 0.58, s * 0.32, s * 0.1, s * 0.07, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 export const STARTERS: Starter[] = [
   { id: "heart", name: "לב", draw: (ctx, s) => (bg(ctx, s), heart(ctx, s)) },
   { id: "star", name: "כוכב", draw: (ctx, s) => (bg(ctx, s), star(ctx, s)) },
@@ -121,6 +154,8 @@ export const STARTERS: Starter[] = [
   },
   { id: "smiley", name: "סמיילי", draw: (ctx, s) => (bg(ctx, s), smiley(ctx, s)) },
   { id: "flag", name: "דגל ישראל", draw: israelFlag },
+  { id: "paw", name: "כף רגל", draw: (ctx, s) => (bg(ctx, s), paw(ctx, s)) },
+  { id: "gift", name: "מתנה", draw: (ctx, s) => (bg(ctx, s), gift(ctx, s)) },
   { id: "checker", name: "שחמט", draw: checker },
 ];
 

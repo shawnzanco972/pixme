@@ -179,6 +179,8 @@ export function Studio() {
     "magen-david": "✡️",
     smiley: "🙂",
     flag: "🇮🇱",
+    paw: "🐾",
+    gift: "🎁",
     checker: "♟️",
   };
 
