@@ -44,8 +44,11 @@ plan for the current push; tackled top-down, committed in slices.
 - [x] Order confirmation email (B2C) — `sendOrderConfirmation` on payment
       verification (webhook). Cart/quantity still TODO.
 - [x] Brand customer pages (home, header/footer, /create, order, b2b, workspace)
-- [ ] Brand the admin pages to the design system (functional, still zinc)
-- [ ] Hebrew PDF (needs RTL shaping)
+- [x] Brand the admin pages to the design system (zinc → `surface`/`outline`/
+      `surface-muted`/`success` tokens, `.btn`/`.card`; light-only).
+- [ ] Hebrew PDF — title + customer name already Hebrew (Heebo embedded);
+      full body translation needs a bidi-shaping lib (jsPDF has none) so digits
+      next to Hebrew don't reorder. Deferred.
 
 ## G. B2B → owned "Projects" (this session)
 Reframed B2B from a loose license batch into an owned project with a real
@@ -74,3 +77,7 @@ owner experience. Migrations `0007_b2b_projects.sql` + `0008_b2b_managed.sql`
       "resend" button (`/api/b2b/invite`).
 - [x] Admin B2B page now shows project name/bundle/size, the customer's owner
       dashboard link, and a roster overview with progress + per-seat status.
+- [x] **Manager-upload / surprise mode**: each roster row has an "העלו עבורו"
+      link to the seat page, so a non-managed project's owner can upload images
+      on employees' behalf (incl. as a surprise) — closes the gap where
+      non-managed projects had no inbound image path.

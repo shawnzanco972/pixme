@@ -129,7 +129,7 @@ export default async function AdminDashboard() {
         ).map(([label, value]) => (
           <div
             key={label}
-            className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
+            className="rounded-xl border border-outline p-4"
           >
             <p className="text-xs text-zinc-500">{label}</p>
             <p className="mt-1 text-xl font-bold">{value}</p>
@@ -150,9 +150,9 @@ export default async function AdminDashboard() {
         {reorder.length === 0 ? (
           <p className="text-sm text-zinc-400">אין הזמנות פיזיות לרכש כרגע.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto rounded-xl border border-outline">
             <table className="w-full text-start text-sm">
-              <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+              <thead className="bg-surface-muted text-zinc-600">
                 <tr>
                   <th className="p-3 text-start">צבע</th>
                   <th className="p-3 text-start">נדרש (כולל רזרבה)</th>
@@ -164,7 +164,7 @@ export default async function AdminDashboard() {
                 {reorder.map((l) => (
                   <tr
                     key={l.id}
-                    className="border-t border-zinc-100 dark:border-zinc-800"
+                    className="border-t border-outline"
                   >
                     <td className="p-3">
                       <span className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default async function AdminDashboard() {
                     </td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-zinc-300 font-semibold dark:border-zinc-700">
+                <tr className="border-t-2 border-outline font-semibold">
                   <td className="p-3">סה״כ ({reorder.length} צבעים)</td>
                   <td className="p-3">{formatWeight(restock.totalGrams)}</td>
                   <td className="p-3" />
@@ -212,9 +212,9 @@ export default async function AdminDashboard() {
         <h2 className="font-heading text-xl font-semibold">
           הזמנות פרטיות ({b2c?.length ?? 0})
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-xl border border-outline">
           <table className="w-full text-start text-sm">
-            <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+            <thead className="bg-surface-muted text-zinc-600">
               <tr>
                 <th className="p-3 text-start">תאריך</th>
                 <th className="p-3 text-start">לקוח</th>
@@ -228,7 +228,7 @@ export default async function AdminDashboard() {
               {(b2c ?? []).map((o) => (
                 <tr
                   key={o.id}
-                  className="border-t border-zinc-100 dark:border-zinc-800"
+                  className="border-t border-outline"
                 >
                   <td className="p-3">{day(o.created_at)}</td>
                   <td className="p-3">
@@ -273,9 +273,9 @@ export default async function AdminDashboard() {
         <h2 className="font-heading text-xl font-semibold">
           הזמנות עסקיות ({b2b?.length ?? 0})
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-xl border border-outline">
           <table className="w-full text-start text-sm">
-            <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+            <thead className="bg-surface-muted text-zinc-600">
               <tr>
                 <th className="p-3 text-start">תאריך</th>
                 <th className="p-3 text-start">חברה</th>
@@ -289,7 +289,7 @@ export default async function AdminDashboard() {
               {(b2b ?? []).map((o) => (
                 <tr
                   key={o.id}
-                  className="border-t border-zinc-100 dark:border-zinc-800"
+                  className="border-t border-outline"
                 >
                   <td className="p-3">{day(o.created_at)}</td>
                   <td className="p-3">
@@ -332,9 +332,9 @@ export default async function AdminDashboard() {
         <h2 className="font-heading text-xl font-semibold">
           הגשות עובדים ({subs?.length ?? 0})
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto rounded-xl border border-outline">
           <table className="w-full text-start text-sm">
-            <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+            <thead className="bg-surface-muted text-zinc-600">
               <tr>
                 <th className="p-3 text-start">תאריך</th>
                 <th className="p-3 text-start">עובד</th>
@@ -346,7 +346,7 @@ export default async function AdminDashboard() {
               {(subs ?? []).map((s) => (
                 <tr
                   key={s.id}
-                  className="border-t border-zinc-100 dark:border-zinc-800"
+                  className="border-t border-outline"
                 >
                   <td className="p-3">{day(s.created_at)}</td>
                   <td className="p-3">{s.employee_name}</td>

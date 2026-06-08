@@ -142,6 +142,17 @@ export function RosterManager({
                 >
                   {STATUS_LABEL[r.status]}
                 </span>
+                {r.status === "not_started" && (
+                  <a
+                    href={`/seat/${r.inviteToken}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost text-xs"
+                    title="העלו תמונה במקום העובד (גם להפתעה)"
+                  >
+                    העלו עבורו
+                  </a>
+                )}
                 <button
                   type="button"
                   onClick={() => void copy(r.inviteToken)}

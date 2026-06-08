@@ -127,15 +127,15 @@ export default async function AdminB2bDetail({
               {progress.ready} מוכנים
             </span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
             <div
-              className="h-full rounded-full bg-green-600"
+              className="h-full rounded-full bg-success"
               style={{ width: `${Math.round(progress.doneFraction * 100)}%` }}
             />
           </div>
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto rounded-xl border border-outline">
             <table className="w-full text-start text-sm">
-              <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+              <thead className="bg-surface-muted text-zinc-600">
                 <tr>
                   <th className="p-3 text-start">עובד</th>
                   <th className="p-3 text-start">אימייל</th>
@@ -146,7 +146,7 @@ export default async function AdminB2bDetail({
                 {seats.map((s) => (
                   <tr
                     key={s.id}
-                    className="border-t border-zinc-100 dark:border-zinc-800"
+                    className="border-t border-outline"
                   >
                     <td className="p-3">{s.name}</td>
                     <td className="p-3" dir="ltr">
@@ -181,7 +181,7 @@ export default async function AdminB2bDetail({
           (workspaces ?? []).map((w) => (
             <div
               key={w.id}
-              className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
+              className="flex flex-col gap-2 rounded-xl border border-outline p-4"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm">
@@ -190,7 +190,7 @@ export default async function AdminB2bDetail({
                 </span>
                 <CopyLinkButton path={`/workspace/${w.id}`} />
               </div>
-              <code className="break-all rounded bg-zinc-100 p-2 text-xs dark:bg-zinc-900" dir="ltr">
+              <code className="break-all rounded bg-surface-muted p-2 text-xs" dir="ltr">
                 /workspace/{w.id}
               </code>
             </div>
@@ -206,9 +206,9 @@ export default async function AdminB2bDetail({
         {(subs ?? []).length === 0 ? (
           <p className="text-sm text-zinc-400">אין הגשות עדיין.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto rounded-xl border border-outline">
             <table className="w-full text-start text-sm">
-              <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+              <thead className="bg-surface-muted text-zinc-600">
                 <tr>
                   <th className="p-3 text-start">תאריך</th>
                   <th className="p-3 text-start">עובד</th>
@@ -220,7 +220,7 @@ export default async function AdminB2bDetail({
                 {(subs ?? []).map((s) => (
                   <tr
                     key={s.id}
-                    className="border-t border-zinc-100 dark:border-zinc-800"
+                    className="border-t border-outline"
                   >
                     <td className="p-3">{s.created_at.slice(0, 10)}</td>
                     <td className="p-3">{s.employee_name}</td>

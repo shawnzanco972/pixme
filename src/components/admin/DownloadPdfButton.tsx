@@ -48,7 +48,7 @@ export function DownloadPdfButton({
         type="button"
         onClick={() => void download()}
         disabled={loading}
-        className="rounded-full border border-zinc-300 px-4 py-2 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        className="rounded-full border border-outline px-4 py-2 text-sm transition-colors hover:bg-surface-muted disabled:opacity-40"
       >
         {loading ? "מכין…" : label}
       </button>
