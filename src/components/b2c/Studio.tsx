@@ -35,24 +35,57 @@ export interface DesignPayload {
 
 export interface StudioProps {
   /**
-   * Embedded in the /create wizard: hides the details/checkout form and shows a
-   * "next step" CTA that reports the design up via `onProceed`.
+   * Embedded in the /create wizard (and the employee seat flow): hides the
+   * details/checkout form and shows a CTA that reports the design up via
+   * `onProceed`.
    */
   embedded?: boolean;
   onProceed?: (data: DesignPayload) => void;
+  /**
+   * Cap the total number of 24×24 plates (platesX × platesY). Used by the
+   * employee seat flow so a worker can reframe within their company's purchased
+   * budget (e.g. a 3×3 = 9-plate budget can be spent as 4×2) but never exceed it.
+   */
+  plateBudget?: number;
+  /** Initial baseplate grid (defaults to 2×2). */
+  initialPlatesX?: number;
+  initialPlatesY?: number;
+  /** Hide the price (employees don't pay — the company already did). */
+  hidePricing?: boolean;
+  /** Label for the embedded CTA (defaults to "המשך לשלב הבא ←"). */
+  proceedLabel?: string;
 }
 
-export function Studio({ embedded = false, onProceed }: StudioProps = {}) {
+export function Studio({
+  embedded = false,
+  onProceed,
+  plateBudget,
+  initialPlatesX,
+  initialPlatesY,
+  hidePricing = false,
+  proceedLabel,
+}: StudioProps = {}) {
   const { brickify } = useBrickWorker();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [imageData, setImageData] = useState<ImageData | null>(null);
   // Baseplate grid: horizontal × vertical 24×24 plates.
-  const [platesX, setPlatesX] = useState(2);
-  const [platesY, setPlatesY] = useState(2);
+  const [platesX, setPlatesX] = useState(initialPlatesX ?? 2);
+  const [platesY, setPlatesY] = useState(initialPlatesY ?? 2);
   const cols = platesX * PLATE_STUDS;
   const rows = platesY * PLATE_STUDS;
+  // Employee seat flow: the company paid for a fixed number of plates, so the
+  // employee may only REARRANGE that exact count (e.g. a 9-plate / 3×3 budget →
+  // 1×9, 3×3, 9×1). The valid orientations are the divisor pairs of the budget.
+  const orientationOptions = useMemo(() => {
+    if (plateBudget == null) return null;
+    const pairs: Array<[number, number]> = [];
+    for (let x = 1; x <= plateBudget; x++) {
+      if (plateBudget % x === 0) pairs.push([x, plateBudget / x]);
+    }
+    return pairs;
+  }, [plateBudget]);
   // Pre-processing controls (defaults bias toward crisp, vivid output).
   const [contrast, setContrast] = useState(1.2);
   const [saturation, setSaturation] = useState(1.1);
@@ -427,7 +460,9 @@ export function Studio({ embedded = false, onProceed }: StudioProps = {}) {
 
       {/* Controls */}
       <section className="card flex flex-col gap-5 p-6">
-        <h2 className="font-heading text-2xl font-bold">הזמינו את הפסיפס שלכם</h2>
+        <h2 className="font-heading text-2xl font-bold">
+          {hidePricing ? "עצבו את הפסיפס שלכם" : "הזמינו את הפסיפס שלכם"}
+        </h2>
 
         {testFull && (
           <div className="rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
@@ -438,54 +473,99 @@ export function Studio({ embedded = false, onProceed }: StudioProps = {}) {
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium">מספר לוחות בסיס</p>
+            <p className="text-sm font-medium">
+              {orientationOptions ? "כיוון הפסיפס" : "מספר לוחות בסיס"}
+            </p>
             <span className="text-xs text-zinc-500">
               {cols}×{rows} אריחים
             </span>
           </div>
-          <div className="flex flex-wrap gap-6">
-            {(
-              [
-                ["לרוחב", platesX, setPlatesX] as const,
-                ["לגובה", platesY, setPlatesY] as const,
-              ] as const
-            ).map(([label, value, setter]) => (
-              <div key={label} className="flex items-center gap-3">
-                <span className="text-sm text-zinc-500">{label}</span>
-                <div className="flex items-center gap-2">
+
+          {orientationOptions ? (
+            // Employee: pick one arrangement of the company's purchased plates.
+            <div className="flex flex-wrap gap-2">
+              {orientationOptions.map(([px, py]) => {
+                const on = px === platesX && py === platesY;
+                return (
                   <button
+                    key={`${px}x${py}`}
                     type="button"
-                    aria-label="הפחת"
-                    disabled={value <= 1}
                     onClick={() => {
+                      if (px === platesX && py === platesY) return;
                       if (imageData) setWorking(true);
-                      setter(Math.max(1, value - 1));
+                      setPlatesX(px);
+                      setPlatesY(py);
                     }}
-                    className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
+                    className={`flex flex-col items-center gap-0.5 rounded-lg border px-3 py-2 text-sm transition ${
+                      on
+                        ? "border-primary bg-primary/10 font-semibold text-primary"
+                        : "border-outline hover:bg-surface-muted"
+                    }`}
                   >
-                    −
+                    <span>
+                      {px}×{py}
+                    </span>
+                    <span className="text-[10px] text-zinc-500">
+                      {Math.round(px * CM_PER_PLATE)}×
+                      {Math.round(py * CM_PER_PLATE)} ס&quot;מ
+                    </span>
                   </button>
-                  <span className="w-5 text-center font-medium">{value}</span>
-                  <button
-                    type="button"
-                    aria-label="הוסף"
-                    disabled={value >= MAX_PLATES}
-                    onClick={() => {
-                      if (imageData) setWorking(true);
-                      setter(Math.min(MAX_PLATES, value + 1));
-                    }}
-                    className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-6">
+              {(
+                [
+                  ["לרוחב", "x"] as const,
+                  ["לגובה", "y"] as const,
+                ] as const
+              ).map(([label, axis]) => {
+                const value = axis === "x" ? platesX : platesY;
+                const setter = axis === "x" ? setPlatesX : setPlatesY;
+                return (
+                  <div key={label} className="flex items-center gap-3">
+                    <span className="text-sm text-zinc-500">{label}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label="הפחת"
+                        disabled={value <= 1}
+                        onClick={() => {
+                          if (imageData) setWorking(true);
+                          setter(Math.max(1, value - 1));
+                        }}
+                        className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
+                      >
+                        −
+                      </button>
+                      <span className="w-5 text-center font-medium">
+                        {value}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="הוסף"
+                        disabled={value >= MAX_PLATES}
+                        onClick={() => {
+                          if (imageData) setWorking(true);
+                          setter(Math.min(MAX_PLATES, value + 1));
+                        }}
+                        className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <p className="mt-2 text-xs text-zinc-500">
             גודל סופי: {Math.round(platesX * CM_PER_PLATE)}×
             {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ ·{" "}
             {platesX * platesY} לוחות
+            {plateBudget != null ? ` (מתוך ${plateBudget})` : ""}
           </p>
         </div>
 
@@ -684,10 +764,12 @@ export function Studio({ embedded = false, onProceed }: StudioProps = {}) {
           </p>
         </div>
 
-        <div className="rounded-lg border border-outline bg-surface-muted px-3 py-2 text-sm text-foreground/70">
-          📦 כל הזמנה כוללת ערכה פיזית עם כל הלבנים + חוברת הוראות. קובץ ההוראות
-          (PDF) זמין להורדה חינם בעמוד ההזמנה.
-        </div>
+        {!hidePricing && (
+          <div className="rounded-lg border border-outline bg-surface-muted px-3 py-2 text-sm text-foreground/70">
+            📦 כל הזמנה כוללת ערכה פיזית עם כל הלבנים + חוברת הוראות. קובץ ההוראות
+            (PDF) זמין להורדה חינם בעמוד ההזמנה.
+          </div>
+        )}
 
         {!embedded && (
           <div className="grid gap-3 border-t border-outline pt-5">
@@ -730,9 +812,15 @@ export function Studio({ embedded = false, onProceed }: StudioProps = {}) {
         )}
 
         <div className="mt-2 flex items-center justify-between border-t border-outline pt-4">
-          <span className="font-heading text-2xl font-bold">
-            {formatILS(price.total)}
-          </span>
+          {hidePricing ? (
+            <span className="text-sm text-zinc-500">
+              {result ? `${result.cols}×${result.rows} אריחים` : ""}
+            </span>
+          ) : (
+            <span className="font-heading text-2xl font-bold">
+              {formatILS(price.total)}
+            </span>
+          )}
           {embedded ? (
             <button
               type="button"
@@ -749,7 +837,7 @@ export function Studio({ embedded = false, onProceed }: StudioProps = {}) {
               disabled={!result}
               className="btn btn-primary"
             >
-              המשך לשלב הבא ←
+              {proceedLabel ?? "המשך לשלב הבא ←"}
             </button>
           ) : (
             <button

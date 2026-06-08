@@ -15,11 +15,15 @@ import { createClient } from "@/lib/supabase/client";
 interface Row {
   in_stock: boolean;
   on_hand_grams: number;
+  reorder_point_grams: number;
 }
 
 export function StockManager() {
   const [rows, setRows] = useState<Map<number, Row>>(new Map());
   const [drafts, setDrafts] = useState<Map<number, string>>(new Map());
+  const [thresholdDrafts, setThresholdDrafts] = useState<Map<number, string>>(
+    new Map(),
+  );
   const [savingId, setSavingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -28,13 +32,17 @@ export function StockManager() {
       const sb = createClient();
       const { data } = await sb
         .from("brick_stock")
-        .select("id, in_stock, on_hand_grams");
+        .select("id, in_stock, on_hand_grams, reorder_point_grams");
       if (!cancelled) {
         setRows(
           new Map(
             (data ?? []).map((r) => [
               r.id,
-              { in_stock: r.in_stock, on_hand_grams: Number(r.on_hand_grams) },
+              {
+                in_stock: r.in_stock,
+                on_hand_grams: Number(r.on_hand_grams),
+                reorder_point_grams: Number(r.reorder_point_grams),
+              },
             ]),
           ),
         );
@@ -47,12 +55,14 @@ export function StockManager() {
 
   const inStockOf = (id: number) => rows.get(id)?.in_stock ?? isCore(id);
   const onHandOf = (id: number) => rows.get(id)?.on_hand_grams ?? 0;
+  const thresholdOf = (id: number) => rows.get(id)?.reorder_point_grams ?? 0;
 
   async function save(id: number, patch: Partial<Row>) {
     setSavingId(id);
     const next: Row = {
       in_stock: patch.in_stock ?? inStockOf(id),
       on_hand_grams: patch.on_hand_grams ?? onHandOf(id),
+      reorder_point_grams: patch.reorder_point_grams ?? thresholdOf(id),
     };
     const sb = createClient();
     const { error } = await sb
@@ -79,16 +89,23 @@ export function StockManager() {
               <th className="p-2 text-start">סוג</th>
               <th className="p-2 text-start">זמין</th>
               <th className="p-2 text-start">במלאי (גרם)</th>
+              <th className="p-2 text-start">סף התראה (גרם)</th>
             </tr>
           </thead>
           <tbody>
             {CATALOG.map((c) => {
               const draft = drafts.get(c.id);
               const value = draft ?? String(onHandOf(c.id));
+              const tDraft = thresholdDrafts.get(c.id);
+              const tValue = tDraft ?? String(thresholdOf(c.id));
+              const below =
+                thresholdOf(c.id) > 0 && onHandOf(c.id) < thresholdOf(c.id);
               return (
                 <tr
                   key={c.id}
-                  className="border-t border-outline"
+                  className={`border-t border-outline ${
+                    below ? "bg-red-50" : ""
+                  }`}
                 >
                   <td className="p-2">
                     <span className="flex items-center gap-2">
@@ -142,6 +159,32 @@ export function StockManager() {
                       }}
                     />
                   </td>
+                  <td className="p-2">
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="decimal"
+                      className="w-24 rounded border border-outline px-2 py-1 bg-surface"
+                      value={tValue}
+                      onChange={(e) =>
+                        setThresholdDrafts((d) =>
+                          new Map(d).set(c.id, e.target.value),
+                        )
+                      }
+                      onBlur={() => {
+                        if (tDraft === undefined) return;
+                        const n = Number(tDraft);
+                        setThresholdDrafts((d) => {
+                          const nd = new Map(d);
+                          nd.delete(c.id);
+                          return nd;
+                        });
+                        if (!Number.isNaN(n) && n !== thresholdOf(c.id)) {
+                          void save(c.id, { reorder_point_grams: n });
+                        }
+                      }}
+                    />
+                  </td>
                 </tr>
               );
             })}
@@ -150,7 +193,8 @@ export function StockManager() {
       </div>
       <p className="text-xs text-zinc-500">
         17 צבעי ליבה זמינים כברירת מחדל. עדכנו משקל במלאי כדי לראות חוסרים בדוח
-        הרכש.
+        הרכש. הגדירו &quot;סף התראה&quot; כדי לקבל התראת מלאי נמוך (שורה אדומה)
+        בלשונית הסקירה.
       </p>
     </section>
   );

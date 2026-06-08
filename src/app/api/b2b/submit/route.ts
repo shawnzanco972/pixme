@@ -49,11 +49,34 @@ export async function POST(request: Request) {
   if (!seat) {
     return NextResponse.json({ error: "Invalid seat link" }, { status: 404 });
   }
+
+  // Re-edit path: a seat may revise its design until the owner approves it
+  // (status "ready"). Update in place so the slot count isn't touched.
   if (seat.submission_id) {
-    return NextResponse.json(
-      { error: "This seat has already submitted" },
-      { status: 409 },
-    );
+    const { data: existing } = await admin
+      .from("employee_submissions")
+      .select("status")
+      .eq("id", seat.submission_id)
+      .maybeSingle();
+    if (existing?.status === "ready") {
+      return NextResponse.json(
+        { error: "This submission was already approved and is locked" },
+        { status: 409 },
+      );
+    }
+    const { error: updErr } = await admin
+      .from("employee_submissions")
+      .update({
+        image_url: body.imagePath ?? null,
+        pixel_map: body.pixelMap as Json,
+        status: "pending",
+        approved_at: null,
+      })
+      .eq("id", seat.submission_id);
+    if (updErr) {
+      return NextResponse.json({ error: updErr.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, submissionId: seat.submission_id });
   }
 
   // Insert the submission (trigger validates workspace + increments slots).

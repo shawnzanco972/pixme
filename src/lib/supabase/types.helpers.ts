@@ -30,10 +30,18 @@ export type B2bWorkspace = Tables<"b2b_workspaces">;
 export type EmployeeSubmission = Tables<"employee_submissions">;
 export type EmployeeRoster = Tables<"employee_roster">;
 export type B2cOrder = Tables<"b2c_orders">;
+export type InventorySupply = Tables<"inventory_supplies">;
+export type Transaction = Tables<"transactions">;
+export type Client = Tables<"clients">;
+export type Setting = Tables<"settings">;
+
+/** inventory_supplies.category is a CHECK-constrained text column, not an enum. */
+export type SupplyCategory = "baseplate" | "connector" | "packaging" | "other";
 
 // --- Insert aliases --------------------------------------------------------
 export type B2cOrderInsert = TablesInsert<"b2c_orders">;
 export type EmployeeSubmissionInsert = TablesInsert<"employee_submissions">;
 export type EmployeeRosterInsert = TablesInsert<"employee_roster">;
+export type InventorySupplyInsert = TablesInsert<"inventory_supplies">;
 
 export type { Database };

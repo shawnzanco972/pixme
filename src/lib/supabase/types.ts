@@ -33,6 +33,7 @@ export type Database = {
           created_at: string
           icount_invoice_id: string | null
           id: string
+          is_test: boolean
           licenses_purchased: number
           managed: boolean
           owner_token: string
@@ -50,6 +51,7 @@ export type Database = {
           created_at?: string
           icount_invoice_id?: string | null
           id?: string
+          is_test?: boolean
           licenses_purchased: number
           managed?: boolean
           owner_token?: string
@@ -67,6 +69,7 @@ export type Database = {
           created_at?: string
           icount_invoice_id?: string | null
           id?: string
+          is_test?: boolean
           licenses_purchased?: number
           managed?: boolean
           owner_token?: string
@@ -132,6 +135,7 @@ export type Database = {
           id: string
           image_url: string | null
           intent: string
+          is_test: boolean
           pixel_map: Json | null
           recipient_address: Json | null
           recipient_name: string | null
@@ -152,6 +156,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           intent?: string
+          is_test?: boolean
           pixel_map?: Json | null
           recipient_address?: Json | null
           recipient_name?: string | null
@@ -172,6 +177,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           intent?: string
+          is_test?: boolean
           pixel_map?: Json | null
           recipient_address?: Json | null
           recipient_name?: string | null
@@ -187,6 +193,7 @@ export type Database = {
           id: number
           in_stock: boolean
           on_hand_grams: number
+          reorder_point_grams: number
           sort_order: number
           updated_at: string
         }
@@ -194,6 +201,7 @@ export type Database = {
           id: number
           in_stock?: boolean
           on_hand_grams?: number
+          reorder_point_grams?: number
           sort_order?: number
           updated_at?: string
         }
@@ -201,7 +209,38 @@ export type Database = {
           id?: number
           in_stock?: boolean
           on_hand_grams?: number
+          reorder_point_grams?: number
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          notes?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -256,34 +295,40 @@ export type Database = {
       }
       employee_submissions: {
         Row: {
+          approved_at: string | null
           created_at: string
           employee_name: string
           id: string
           image_url: string | null
           pixel_map: Json | null
           roster_id: string | null
+          scheduled_for: string | null
           status: Database["public"]["Enums"]["submission_status"]
           updated_at: string
           workspace_id: string
         }
         Insert: {
+          approved_at?: string | null
           created_at?: string
           employee_name: string
           id?: string
           image_url?: string | null
           pixel_map?: Json | null
           roster_id?: string | null
+          scheduled_for?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           updated_at?: string
           workspace_id: string
         }
         Update: {
+          approved_at?: string | null
           created_at?: string
           employee_name?: string
           id?: string
           image_url?: string | null
           pixel_map?: Json | null
           roster_id?: string | null
+          scheduled_for?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           updated_at?: string
           workspace_id?: string
@@ -304,6 +349,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventory_supplies: {
+        Row: {
+          category: string
+          id: string
+          name: string
+          notes: string | null
+          on_hand: number
+          reorder_point: number
+          reorder_qty: number | null
+          sku: string | null
+          sort_order: number
+          supplier: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          id?: string
+          name: string
+          notes?: string | null
+          on_hand?: number
+          reorder_point?: number
+          reorder_qty?: number | null
+          sku?: string | null
+          sort_order?: number
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          on_hand?: number
+          reorder_point?: number
+          reorder_qty?: number | null
+          sku?: string | null
+          sort_order?: number
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          created_at: string
+          gross: number
+          icount_invoice_id: string | null
+          id: string
+          order_id: string
+          order_track: string
+          raw: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          gross?: number
+          icount_invoice_id?: string | null
+          id?: string
+          order_id: string
+          order_track: string
+          raw?: Json | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          gross?: number
+          icount_invoice_id?: string | null
+          id?: string
+          order_id?: string
+          order_track?: string
+          raw?: Json | null
+          status?: string
+        }
+        Relationships: []
       }
     }
     Views: {

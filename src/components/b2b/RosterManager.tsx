@@ -1,29 +1,14 @@
 "use client";
 /**
- * Owner-side roster management: list employees with their status + personalized
- * seat link, and add new employees (up to the purchased seat count). Writes go
- * through /api/b2b/roster (service-role, owner_token-gated); after a change we
- * refresh the server component to re-read statuses.
+ * Owner-side roster management: review each employee's submission (preview,
+ * approve/schedule/reject via SeatRow) and add new employees (up to the
+ * purchased seat count). Writes go through the owner_token-gated API; after a
+ * change we refresh the server component to re-read statuses.
  */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import type { RosterRow } from "@/app/b2b/project/[token]/page";
-import type { SeatStatus } from "@/lib/b2b";
-
-const STATUS_LABEL: Record<SeatStatus, string> = {
-  not_started: "טרם התחיל",
-  submitted: "נשלח",
-  ready: "מוכן",
-  rejected: "נדחה",
-};
-
-const STATUS_CLASS: Record<SeatStatus, string> = {
-  not_started: "bg-surface-muted text-zinc-600",
-  submitted: "bg-secondary/10 text-secondary",
-  ready: "bg-success/15 text-success",
-  rejected: "bg-red-100 text-red-700",
-};
+import { SeatRow, type SeatReviewRow } from "@/components/b2b/SeatRow";
 
 export function RosterManager({
   token,
@@ -32,43 +17,38 @@ export function RosterManager({
   emailConfigured,
 }: {
   token: string;
-  rows: RosterRow[];
+  rows: SeatReviewRow[];
   seatsLeft: number;
   emailConfigured: boolean;
 }) {
   const router = useRouter();
   const [names, setNames] = useState("");
   const [adding, setAdding] = useState(false);
+  const [approvingAll, setApprovingAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
-  const [invited, setInvited] = useState<string | null>(null);
 
-  async function sendInvite(rosterId: string) {
+  const pendingReview = rows.filter((r) => r.status === "submitted");
+
+  async function approveAll() {
+    if (pendingReview.length === 0) return;
+    setApprovingAll(true);
     try {
-      const res = await fetch("/api/b2b/invite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerToken: token, rosterId }),
-      });
-      if (res.ok) {
-        setInvited(rosterId);
-        setTimeout(() => setInvited(null), 1500);
+      for (const r of pendingReview) {
+        if (!r.submissionId) continue;
+        await fetch("/api/b2b/owner/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ownerToken: token,
+            submissionId: r.submissionId,
+            action: "approve",
+            scheduledFor: null,
+          }),
+        });
       }
-    } catch {
-      /* best-effort */
-    }
-  }
-
-  const seatUrl = (inviteToken: string) =>
-    `${typeof window !== "undefined" ? window.location.origin : ""}/seat/${inviteToken}`;
-
-  async function copy(inviteToken: string) {
-    try {
-      await navigator.clipboard.writeText(seatUrl(inviteToken));
-      setCopied(inviteToken);
-      setTimeout(() => setCopied(null), 1500);
-    } catch {
-      /* clipboard unavailable — ignore */
+      router.refresh();
+    } finally {
+      setApprovingAll(false);
     }
   }
 
@@ -111,66 +91,41 @@ export function RosterManager({
 
   return (
     <section className="mt-6 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="font-heading text-xl font-bold">העובדים</h2>
-        <span className="text-sm text-zinc-500">{seatsLeft} מקומות פנויים</span>
+        <div className="flex items-center gap-3">
+          {pendingReview.length > 0 && (
+            <button
+              type="button"
+              onClick={() => void approveAll()}
+              disabled={approvingAll}
+              className="btn btn-primary text-xs"
+            >
+              {approvingAll
+                ? "מאשר…"
+                : `אישור הכל (${pendingReview.length})`}
+            </button>
+          )}
+          <span className="text-sm text-zinc-500">
+            {seatsLeft} מקומות פנויים
+          </span>
+        </div>
       </div>
 
       {rows.length === 0 ? (
         <p className="card p-6 text-center text-zinc-500">
           עדיין לא הוספתם עובדים. הוסיפו שמות למטה — כל עובד יקבל קישור אישי
-          להעלאת תמונה.
+          לעיצוב הפסיפס שלו.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
           {rows.map((r) => (
-            <li
+            <SeatRow
               key={r.id}
-              className="card flex items-center justify-between gap-3 p-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium">{r.name}</p>
-                {r.email && (
-                  <p className="truncate text-xs text-zinc-500" dir="ltr">
-                    {r.email}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[r.status]}`}
-                >
-                  {STATUS_LABEL[r.status]}
-                </span>
-                {r.status === "not_started" && (
-                  <a
-                    href={`/seat/${r.inviteToken}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-ghost text-xs"
-                    title="העלו תמונה במקום העובד (גם להפתעה)"
-                  >
-                    העלו עבורו
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void copy(r.inviteToken)}
-                  className="btn btn-ghost text-xs"
-                >
-                  {copied === r.inviteToken ? "הועתק!" : "העתקת קישור"}
-                </button>
-                {emailConfigured && r.email && (
-                  <button
-                    type="button"
-                    onClick={() => void sendInvite(r.id)}
-                    className="btn btn-ghost text-xs"
-                  >
-                    {invited === r.id ? "נשלח!" : "שליחת הזמנה"}
-                  </button>
-                )}
-              </div>
-            </li>
+              token={token}
+              row={r}
+              emailConfigured={emailConfigured}
+            />
           ))}
         </ul>
       )}
@@ -187,11 +142,7 @@ export function RosterManager({
             onChange={(e) => setNames(e.target.value)}
           />
           <div className="flex items-center justify-between">
-            {error ? (
-              <p className="text-sm text-red-600">{error}</p>
-            ) : (
-              <span />
-            )}
+            {error ? <p className="text-sm text-red-600">{error}</p> : <span />}
             <button
               type="button"
               onClick={() => void addEmployees()}

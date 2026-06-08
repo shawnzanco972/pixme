@@ -1,14 +1,16 @@
 /**
  * Employee seat portal — /seat/[token].
  *
- * The token is a roster invite_token. We validate it server-side (service
- * role), look up the locked mosaic size from the project's bundle, and render a
- * single-photo upload. The employee can't choose a size — the company already
- * paid for it. Re-opening after submitting shows a done state.
+ * The token is a roster invite_token. We validate it server-side (service role),
+ * find the company's purchased size, and render the FULL design studio scoped to
+ * that plate budget — the employee gets the same experience as a retail customer
+ * (reframe, recolor, adjust), just capped to the paid size and without payment.
+ *
+ * The seat stays editable until the project owner approves it (status "ready"),
+ * at which point this locks to a done state.
  */
-import { SeatSubmit } from "@/components/b2b/SeatSubmit";
+import { SeatStudio } from "@/components/b2b/SeatStudio";
 import { workspaceStatus } from "@/lib/b2b";
-import { presetStuds } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +29,12 @@ export default async function SeatPage({
     .eq("invite_token", token)
     .maybeSingle();
 
-  let cols = 48;
-  let rows = 48;
-  let open = false;
+  let platesX = 2;
+  let platesY = 2;
   let companyName = "";
+  let live = false;
+  let slotOpen = false;
+  let status: string | null = null;
 
   if (seat) {
     const { data: ws } = await admin
@@ -38,7 +42,9 @@ export default async function SeatPage({
       .select("id, active, expiration_date, max_slots, slots_used, b2b_order_id")
       .eq("id", seat.workspace_id)
       .maybeSingle();
-    open = workspaceStatus(ws).open;
+    const wsStatus = workspaceStatus(ws);
+    slotOpen = wsStatus.open;
+    live = Boolean(ws?.active) && !wsStatus.expired;
 
     if (ws) {
       const { data: order } = await admin
@@ -48,18 +54,30 @@ export default async function SeatPage({
         .maybeSingle();
       if (order) {
         companyName = order.project_name || order.company_name;
-        ({ cols, rows } = presetStuds({
-          platesX: order.plates_x,
-          platesY: order.plates_y,
-        }));
+        platesX = order.plates_x;
+        platesY = order.plates_y;
       }
+    }
+
+    if (seat.submission_id) {
+      const { data: sub } = await admin
+        .from("employee_submissions")
+        .select("status")
+        .eq("id", seat.submission_id)
+        .maybeSingle();
+      status = sub?.status ?? null;
     }
   }
 
-  const alreadyDone = Boolean(seat?.submission_id);
+  const hasSubmission = Boolean(seat?.submission_id);
+  const approved = status === "ready";
+  const rejected = status === "rejected";
+  // New submitters need a free slot; an existing submission can always be edited
+  // (it already holds a slot) until the owner approves it.
+  const canEdit = live && !approved && (hasSubmission || slotOpen);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-8">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-6 sm:p-8">
       <header className="text-center">
         <h1 className="font-heading text-3xl font-bold">
           {seat ? `שלום ${seat.name}!` : "העלאת תמונה לפסיפס"}
@@ -70,26 +88,35 @@ export default async function SeatPage({
       </header>
 
       {!seat && (
-        <p className="rounded-xl bg-red-50 p-4 text-center text-red-700">
+        <p className="mx-auto max-w-md rounded-xl bg-red-50 p-4 text-center text-red-700">
           הקישור אינו תקין.
         </p>
       )}
 
-      {seat && alreadyDone && (
-        <div className="card p-8 text-center">
-          <h2 className="font-heading text-2xl font-bold">כבר שלחת! ✅</h2>
-          <p className="mt-2 text-zinc-600">התמונה שלך התקבלה. תודה!</p>
+      {seat && approved && (
+        <div className="card mx-auto max-w-md p-8 text-center">
+          <h2 className="font-heading text-2xl font-bold">העיצוב אושר! ✅</h2>
+          <p className="mt-2 text-zinc-600">
+            מנהל הפרויקט אישר את הפסיפס שלך. אי אפשר עוד לערוך.
+          </p>
         </div>
       )}
 
-      {seat && !alreadyDone && !open && (
-        <p className="rounded-xl bg-amber-50 p-4 text-center text-amber-800">
+      {seat && !approved && !canEdit && (
+        <p className="mx-auto max-w-md rounded-xl bg-amber-50 p-4 text-center text-amber-800">
           הפרויקט אינו פעיל כרגע. פנו למנהל הפרויקט בחברה.
         </p>
       )}
 
-      {seat && !alreadyDone && open && (
-        <SeatSubmit inviteToken={token} cols={cols} rows={rows} />
+      {seat && canEdit && (
+        <SeatStudio
+          inviteToken={token}
+          plateBudget={platesX * platesY}
+          initialPlatesX={platesX}
+          initialPlatesY={platesY}
+          alreadySubmitted={hasSubmission && !rejected}
+          rejected={rejected}
+        />
       )}
     </main>
   );
