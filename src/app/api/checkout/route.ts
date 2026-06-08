@@ -14,9 +14,19 @@ import { NextResponse } from "next/server";
 
 import { computeB2bQuote } from "@/lib/b2b-pricing";
 import { createCheckout } from "@/lib/icount";
-import { presetById } from "@/lib/pricing";
+import { computePrice, GIFT_WRAP_FEE, presetById } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
+import type { FulfillmentType } from "@/lib/supabase/types.helpers";
+
+/** Minimal pixel_map shape guard (row-major 2D number array). */
+function isPixelMap(v: unknown): v is number[][] {
+  return (
+    Array.isArray(v) &&
+    v.length > 0 &&
+    v.every((row) => Array.isArray(row) && row.every((n) => typeof n === "number"))
+  );
+}
 
 export const runtime = "nodejs";
 
@@ -47,10 +57,31 @@ export async function POST(request: Request) {
     if (track === "b2c") {
       const contactEmail = String(body.contact_email ?? "");
       const customerName = String(body.customer_name ?? "");
-      const totalPrice = Number(body.total_price ?? 0);
+      const fulfillment: FulfillmentType =
+        body.fulfillment_type === "physical" ? "physical" : "digital";
+      const intent = body.intent === "gift" ? "gift" : "self";
+      const giftWrap = intent === "gift" && body.gift_wrap === true;
+      const deliverTo =
+        intent === "gift" && body.deliver_to === "recipient"
+          ? "recipient"
+          : "buyer";
+
+      // Price is authoritative here: derived from the pixel_map's size, never
+      // trusted from the client. Falls back to total_price only if no map.
+      const pixelMap = isPixelMap(body.pixel_map) ? body.pixel_map : null;
+      let totalPrice: number;
+      if (pixelMap) {
+        const rows = pixelMap.length;
+        const cols = rows > 0 ? pixelMap[0].length : 0;
+        totalPrice =
+          computePrice(cols, rows, fulfillment).total +
+          (giftWrap ? GIFT_WRAP_FEE : 0);
+      } else {
+        totalPrice = Number(body.total_price ?? 0);
+      }
       if (!contactEmail || !customerName || !(totalPrice > 0)) {
         return NextResponse.json(
-          { error: "Missing customer_name, contact_email, or total_price" },
+          { error: "Missing customer_name, contact_email, or a priced design" },
           { status: 400 },
         );
       }
@@ -61,11 +92,20 @@ export async function POST(request: Request) {
           customer_name: customerName,
           contact_email: contactEmail,
           total_price: totalPrice,
-          fulfillment_type:
-            body.fulfillment_type === "physical" ? "physical" : "digital",
+          fulfillment_type: fulfillment,
           image_url: (body.image_url as string) ?? null,
           pixel_map: (body.pixel_map as Json) ?? null,
           shipping_address: (body.shipping_address as Json) ?? null,
+          intent,
+          gift_message:
+            typeof body.gift_message === "string" ? body.gift_message : null,
+          gift_wrap: giftWrap,
+          deliver_to: deliverTo,
+          recipient_name:
+            typeof body.recipient_name === "string"
+              ? body.recipient_name
+              : null,
+          recipient_address: (body.recipient_address as Json) ?? null,
           status: "pending",
         })
         .select("id")

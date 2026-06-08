@@ -40,7 +40,13 @@ plan for the current push; tackled top-down, committed in slices.
 - [ ] Gifting flow (buy now, send a customize link).
 
 ## F. UX/flow polish
-- [ ] Multi-step create flow (Upload → Size → Customize → Details)
+- [x] Multi-step create flow: **Design → Who's it for → Details** wizard
+      (`components/b2c/create/`), reusing the Studio engine (embedded mode) for
+      step 1. Step 2 sets self/gift intent; step 3 adapts fields — gift adds a
+      message, gift-wrap upsell (₪25), and ship-to-me/ship-to-recipient with a
+      separate address. Price recomputed authoritatively in checkout from the
+      pixel_map size + gift-wrap. Migration `0009_b2c_gift.sql` (applied). The
+      kit/parcel never prints price, so gift-to-recipient stays price-free.
 - [x] Order confirmation email (B2C) — `sendOrderConfirmation` on payment
       verification (webhook). Cart/quantity still TODO.
 - [x] Brand customer pages (home, header/footer, /create, order, b2b, workspace)

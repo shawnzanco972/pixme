@@ -124,11 +124,17 @@ export type Database = {
           contact_email: string
           created_at: string
           customer_name: string
+          deliver_to: string
           fulfillment_type: string
+          gift_message: string | null
+          gift_wrap: boolean
           icount_invoice_id: string | null
           id: string
           image_url: string | null
+          intent: string
           pixel_map: Json | null
+          recipient_address: Json | null
+          recipient_name: string | null
           shipping_address: Json | null
           status: Database["public"]["Enums"]["order_status"]
           total_price: number
@@ -138,11 +144,17 @@ export type Database = {
           contact_email: string
           created_at?: string
           customer_name: string
+          deliver_to?: string
           fulfillment_type?: string
+          gift_message?: string | null
+          gift_wrap?: boolean
           icount_invoice_id?: string | null
           id?: string
           image_url?: string | null
+          intent?: string
           pixel_map?: Json | null
+          recipient_address?: Json | null
+          recipient_name?: string | null
           shipping_address?: Json | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
@@ -152,11 +164,17 @@ export type Database = {
           contact_email?: string
           created_at?: string
           customer_name?: string
+          deliver_to?: string
           fulfillment_type?: string
+          gift_message?: string | null
+          gift_wrap?: boolean
           icount_invoice_id?: string | null
           id?: string
           image_url?: string | null
+          intent?: string
           pixel_map?: Json | null
+          recipient_address?: Json | null
+          recipient_name?: string | null
           shipping_address?: Json | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number

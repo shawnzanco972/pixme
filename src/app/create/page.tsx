@@ -1,13 +1,9 @@
-import { Studio } from "@/components/b2c/Studio";
+import { CreateWizard } from "@/components/b2c/create/CreateWizard";
 
 export const metadata = {
   title: "צרו פסיפס — Pixipic",
 };
 
 export default function CreatePage() {
-  return (
-    <main className="flex flex-1 flex-col py-8">
-      <Studio />
-    </main>
-  );
+  return <CreateWizard />;
 }

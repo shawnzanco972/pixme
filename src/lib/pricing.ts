@@ -105,6 +105,9 @@ export function formatILS(amount: number): string {
   return `${amount.toLocaleString("he-IL")} ₪`;
 }
 
+/** Optional gift-wrap add-on (festive box + ribbon + card insert), ILS. */
+export const GIFT_WRAP_FEE = 25;
+
 // --- B2B (license batches) -------------------------------------------------
 
 const B2B_PER_LICENSE = 35; // base per digital license

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html class="h-full" dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Creative Workshop - Build Mosaic</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Plus Jakarta Sans & Rubik -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Rubik:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#5b403f",
+                    "surface-tint": "#bb152c",
+                    "on-tertiary-fixed": "#251a00",
+                    "on-primary-fixed": "#410007",
+                    "inverse-surface": "#2d3133",
+                    "primary": "#b7102a",
+                    "tertiary-container": "#926f00",
+                    "secondary-container": "#4069f2",
+                    "on-secondary": "#ffffff",
+                    "secondary": "#1d4ed8",
+                    "on-surface": "#191c1e",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-fixed": "#ffdad8",
+                    "primary-container": "#db313f",
+                    "on-primary-container": "#fffbff",
+                    "secondary-fixed-dim": "#b7c4ff",
+                    "inverse-primary": "#ffb3b1",
+                    "surface-container-high": "#e6e8ea",
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#f3bf2f",
+                    "on-tertiary-fixed-variant": "#5a4300",
+                    "on-secondary-fixed-variant": "#0039b5",
+                    "inverse-on-surface": "#eff1f3",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary-fixed": "#dce1ff",
+                    "surface": "#f7f9fb",
+                    "outline-variant": "#e4bebc",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary": "#745800",
+                    "surface-bright": "#f7f9fb",
+                    "tertiary-fixed": "#ffdf98",
+                    "surface-variant": "#e0e3e5",
+                    "on-secondary-fixed": "#001551",
+                    "on-primary-fixed-variant": "#92001c",
+                    "outline": "#8f6f6e",
+                    "surface-dim": "#d8dadc",
+                    "surface-container": "#eceef0",
+                    "on-secondary-container": "#fffbff",
+                    "on-background": "#191c1e",
+                    "on-primary": "#ffffff",
+                    "background": "#f7f9fb",
+                    "on-tertiary": "#ffffff",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-xl": "64px",
+                    "base": "8px",
+                    "stack-xs": "4px",
+                    "grid-margin": "24px",
+                    "stack-lg": "32px",
+                    "stack-sm": "8px",
+                    "stack-md": "16px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Rubik"],
+                    "headline-sm": ["Rubik"],
+                    "display-lg-mobile": ["Rubik"],
+                    "display-lg": ["Rubik"],
+                    "headline-md": ["Rubik"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "label-md": ["Rubik"],
+                    "body-md": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                    "headline-sm": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                    "display-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                    "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                    "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "label-md": ["14px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                    "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        /* Tactile & Skeuomorphic Utilities */
+        .btn-tactile {
+            transition: all 0.1s ease;
+        }
+        .btn-tactile:active {
+            transform: translateY(2px);
+            border-bottom-width: 0px !important;
+            margin-top: 2px;
+        }
+        
+        /* Stud Pattern Background */
+        .bg-studs {
+            background-image: radial-gradient(var(--tw-colors-on-surface-variant) 1px, transparent 1px);
+            background-size: 16px 16px;
+            opacity: 0.03;
+        }
+
+        /* Custom Scrollbar for Sidebar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--tw-colors-surface-container-low);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--tw-colors-surface-variant);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--tw-colors-outline-variant);
+        }
+
+        /* Range Slider Tactile Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--tw-colors-surface-container-lowest);
+            border: 3px solid var(--tw-colors-secondary);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: var(--tw-colors-surface-variant);
+            border-radius: 4px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface h-full flex flex-col overflow-hidden relative selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+<!-- Global Stud Texture -->
+<div class="absolute inset-0 pointer-events-none bg-studs z-0"></div>
+<!-- Flow Header (Suppressed standard nav, linear intent) -->
+<header class="relative z-20 flex justify-between items-center px-grid-margin py-base bg-surface-container-lowest border-b-2 border-surface-variant shadow-sm h-20 shrink-0">
+<!-- Brand / Logo Area -->
+<div class="font-headline-md text-headline-md text-primary tracking-tight flex items-center gap-2 cursor-default">
+<span aria-hidden="true" class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">extension</span>
+            Creative Workshop
+        </div>
+<!-- Progress Indicator -->
+<nav aria-label="Progress" class="flex items-center">
+<ol class="flex items-center gap-stack-md" role="list">
+<!-- Step 1 (Active) -->
+<li class="relative flex items-center gap-2 bg-secondary-fixed text-on-secondary-fixed px-4 py-2 rounded-full border-b-[3px] border-secondary-fixed-dim font-label-md text-label-md shadow-sm">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-secondary text-on-secondary text-xs font-bold">1</span>
+                    עיצוב
+                </li>
+<li class="text-surface-variant font-bold">·</li>
+<!-- Step 2 -->
+<li class="relative flex items-center gap-2 text-on-surface-variant opacity-70 font-label-md text-label-md">
+<span class="flex items-center justify-center w-6 h-6 rounded-full border-2 border-surface-variant text-surface-variant text-xs font-bold">2</span>
+                    למי
+                </li>
+<li class="text-surface-variant font-bold">·</li>
+<!-- Step 3 -->
+<li class="relative flex items-center gap-2 text-on-surface-variant opacity-70 font-label-md text-label-md">
+<span class="flex items-center justify-center w-6 h-6 rounded-full border-2 border-surface-variant text-surface-variant text-xs font-bold">3</span>
+                    פרטים
+                </li>
+</ol>
+</nav>
+<!-- Balance placeholder (empty action area) -->
+<div class="w-[200px] flex justify-end">
+<button aria-label="Close flow" class="text-on-surface-variant hover:bg-surface-variant p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</header>
+<!-- Main Workspace -->
+<main class="flex-1 flex overflow-hidden relative z-10 w-full max-w-[1920px] mx-auto">
+<!-- Sidebar Controls (Right in RTL) -->
+<aside class="w-[420px] bg-surface-container-lowest border-l-2 border-surface-variant flex flex-col shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-20 shrink-0">
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-grid-margin space-y-stack-xl">
+<!-- Upload / Image Selection Section -->
+<section aria-labelledby="upload-heading" class="bg-surface rounded-xl border-2 border-outline-variant p-stack-md relative group hover:border-secondary transition-colors cursor-pointer">
+<div class="absolute -top-3 right-4 bg-surface-container-lowest px-2 font-label-sm text-label-sm text-on-surface-variant">התחלה</div>
+<div class="flex flex-col items-center justify-center gap-stack-sm py-stack-md text-center border-2 border-dashed border-outline-variant rounded-lg bg-surface-container-low group-hover:bg-secondary-fixed transition-colors">
+<div class="w-12 h-12 bg-surface-container-lowest rounded-full flex items-center justify-center shadow-sm text-secondary">
+<span class="material-symbols-outlined text-3xl">add_photo_alternate</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface" id="upload-heading">העלה תמונה</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">או בחר מגלריית הדוגמאות</p>
+</div>
+</div>
+</section>
+<!-- Plate Size Stepper Section -->
+<section aria-labelledby="size-heading">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-stack-md flex items-center gap-2" id="size-heading">
+<span class="material-symbols-outlined text-tertiary">grid_view</span>
+                        גודל הלוח
+                    </h3>
+<div class="bg-surface rounded-xl border-2 border-outline-variant p-stack-md shadow-sm flex flex-col gap-stack-md">
+<div class="flex justify-between items-center bg-surface-container-low p-2 rounded-lg border-2 border-surface-variant">
+<!-- Width Control -->
+<div class="flex items-center gap-2">
+<button aria-label="Decrease width" class="w-10 h-10 flex items-center justify-center bg-surface-container-lowest rounded-md border-b-[3px] border-surface-variant text-on-surface hover:bg-surface transition-colors btn-tactile">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<div aria-live="polite" class="w-12 text-center font-headline-md text-headline-md text-on-surface">2</div>
+<button aria-label="Increase width" class="w-10 h-10 flex items-center justify-center bg-surface-container-lowest rounded-md border-b-[3px] border-surface-variant text-on-surface hover:bg-surface transition-colors btn-tactile">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-50">close</span>
+<!-- Height Control -->
+<div class="flex items-center gap-2">
+<button aria-label="Decrease height" class="w-10 h-10 flex items-center justify-center bg-surface-container-lowest rounded-md border-b-[3px] border-surface-variant text-on-surface hover:bg-surface transition-colors btn-tactile">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<div aria-live="polite" class="w-12 text-center font-headline-md text-headline-md text-on-surface">2</div>
+<button aria-label="Increase height" class="w-10 h-10 flex items-center justify-center bg-surface-container-lowest rounded-md border-b-[3px] border-surface-variant text-on-surface hover:bg-surface transition-colors btn-tactile">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant font-label-md text-label-md px-2">
+<span>סך הכל לוחות: <strong class="text-on-surface">4</strong></span>
+<span>מידות פיזיות: <strong class="text-on-surface">76x76 ס"מ</strong></span>
+</div>
+</div>
+</section>
+<!-- Color Palette Section -->
+<section aria-labelledby="palette-heading">
+<div class="flex justify-between items-center mb-stack-md">
+<h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2" id="palette-heading">
+<span class="material-symbols-outlined text-secondary">palette</span>
+                            פלטת צבעים
+                        </h3>
+<span class="bg-surface-container-high px-2 py-1 rounded font-label-sm text-label-sm text-on-surface-variant">45 צבעים</span>
+</div>
+<div class="grid grid-cols-2 gap-stack-sm">
+<!-- Palette Option 1 (Active) -->
+<button class="bg-surface-container-lowest border-[3px] border-secondary rounded-lg p-3 text-right text-on-surface font-label-md text-label-md relative overflow-hidden transition-all shadow-sm">
+<span class="block mb-2">קלאסי</span>
+<div class="flex h-4 rounded overflow-hidden">
+<div class="flex-1 bg-red-500"></div>
+<div class="flex-1 bg-blue-500"></div>
+<div class="flex-1 bg-yellow-400"></div>
+<div class="flex-1 bg-green-500"></div>
+<div class="flex-1 bg-white border border-gray-200"></div>
+<div class="flex-1 bg-black"></div>
+</div>
+<span class="material-symbols-outlined absolute top-2 left-2 text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</button>
+<!-- Palette Option 2 -->
+<button class="bg-surface-container-lowest border-[2px] border-surface-variant rounded-lg p-3 text-right text-on-surface-variant font-label-md text-label-md relative overflow-hidden hover:border-outline-variant hover:bg-surface transition-all btn-tactile">
+<span class="block mb-2">שחור ולבן</span>
+<div class="flex h-4 rounded overflow-hidden">
+<div class="flex-1 bg-white border border-gray-200"></div>
+<div class="flex-1 bg-gray-200"></div>
+<div class="flex-1 bg-gray-400"></div>
+<div class="flex-1 bg-gray-600"></div>
+<div class="flex-1 bg-gray-800"></div>
+<div class="flex-1 bg-black"></div>
+</div>
+</button>
+</div>
+</section>
+<!-- Technical Settings Section -->
+<section aria-labelledby="tech-heading">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-stack-md flex items-center gap-2" id="tech-heading">
+<span class="material-symbols-outlined text-primary-container">tune</span>
+                        הגדרות מתקדמות
+                    </h3>
+<div class="bg-surface rounded-xl border-2 border-outline-variant p-stack-md shadow-sm flex flex-col gap-stack-lg">
+<!-- Contrast Slider -->
+<div>
+<div class="flex justify-between items-center mb-2 font-label-md text-label-md text-on-surface">
+<label for="contrast-slider">ניגודיות</label>
+<span class="text-on-surface-variant">0</span>
+</div>
+<input class="w-full" id="contrast-slider" max="50" min="-50" type="range" value="0"/>
+</div>
+<!-- Detail Level Slider -->
+<div>
+<div class="flex justify-between items-center mb-2 font-label-md text-label-md text-on-surface">
+<label for="detail-slider">רמת פירוט</label>
+<span class="text-on-surface-variant">גבוהה</span>
+</div>
+<input class="w-full" id="detail-slider" max="3" min="1" step="1" type="range" value="3"/>
+</div>
+<!-- Dithering Toggle -->
+<div class="flex items-center justify-between pt-2 border-t border-surface-variant">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">החלקת צבעים (Dithering)</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">יוצר אשליה של יותר צבעים</p>
+</div>
+<!-- Custom Toggle -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-surface-container-lowest after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</section>
+</div>
+<!-- Pinned Bottom Action Area -->
+<div class="p-grid-margin border-t-2 border-surface-variant bg-surface-container-lowest z-10 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)]">
+<div class="flex items-end justify-between mb-stack-md">
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-1">סה"כ לתשלום</span>
+<div class="font-display-lg text-display-lg text-on-surface">₪399</div>
+</div>
+<div class="text-left font-label-md text-label-md text-primary bg-primary-fixed px-3 py-1 rounded-md">
+                        משלוח חינם
+                    </div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 bg-secondary text-on-secondary font-headline-md text-headline-md py-4 rounded-xl shadow-md border-b-[4px] border-on-secondary-fixed hover:bg-secondary-container hover:text-on-secondary-container transition-colors btn-tactile">
+                    המשך לשלב הבא
+                    <span class="material-symbols-outlined" style="transform: scaleX(-1);">arrow_forward</span>
+</button>
+</div>
+</aside>
+<!-- Main Canvas Area (Left side visually due to RTL) -->
+<section class="flex-1 flex items-center justify-center bg-surface-container-low shadow-[inset_0_4px_20px_rgba(0,0,0,0.03)] relative overflow-hidden p-grid-margin">
+<!-- Canvas Toolbar (Floating Top Left) -->
+<div class="absolute top-grid-margin left-grid-margin bg-surface-container-lowest border-2 border-surface-variant rounded-lg shadow-sm flex gap-1 p-1 z-10">
+<button aria-label="Zoom in" class="w-10 h-10 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button aria-label="Zoom out" class="w-10 h-10 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">zoom_out</span>
+</button>
+<div class="w-[2px] bg-surface-variant my-1 mx-1"></div>
+<button aria-label="Reset view" class="w-10 h-10 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">fit_screen</span>
+</button>
+</div>
+<!-- The Mosaic Preview Stage -->
+<div class="relative flex flex-col items-center">
+<!-- Measurement label top -->
+<div class="font-label-md text-label-md text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="w-12 h-[2px] bg-surface-variant"></span>
+                    76 ס"מ (2 לוחות)
+                    <span class="w-12 h-[2px] bg-surface-variant"></span>
+</div>
+<div class="flex items-center">
+<!-- Measurement label right (RTL left) -->
+<div class="font-label-md text-label-md text-on-surface-variant ml-4 flex flex-col items-center gap-2" style="writing-mode: vertical-rl; transform: rotate(180deg);">
+<span class="w-12 h-[2px] bg-surface-variant"></span>
+                        76 ס"מ
+                        <span class="w-12 h-[2px] bg-surface-variant"></span>
+</div>
+<!-- The physical board representation -->
+<div class="relative bg-surface border-4 border-surface-variant shadow-[0_10px_30px_-5px_rgba(0,0,0,0.15)] rounded-sm" style="width: 500px; height: 500px;">
+<!-- Grid lines representing individual baseplates -->
+<div class="absolute inset-0 z-10 pointer-events-none grid grid-cols-2 grid-rows-2">
+<div class="border-r-2 border-b-2 border-surface-variant/30"></div>
+<div class="border-b-2 border-surface-variant/30"></div>
+<div class="border-r-2 border-surface-variant/30"></div>
+<div></div>
+</div>
+<!-- Generated Mosaic Image Placeholder -->
+<!-- Using a highly structured prompt to generate a pixelated/brick-like portrait -->
+<div class="absolute inset-0 bg-surface-container overflow-hidden">
+<img alt="Mosaic preview placeholder" class="w-full h-full object-cover" data-alt="A tightly cropped portrait of a golden retriever dog, heavily stylized to look like it is built entirely out of small, solid color plastic toy bricks. The aesthetic is blocky, pixel-art style, with a restricted color palette of bright red, blue, yellow, pure white, and black. The lighting simulates a studio environment casting slight, realistic plastic-like highlights on the individual studs of the bricks. The overall mood is playful, creative, and tactile, fitting a modern digital toy builder application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuZRkqiPDcCUJdAUC4osvn5RK-vajmzjgSw5tPq9rhOWPTq_d4_woJD0vtsANoOLxhMyrrPaHjw-bApNicu4Wl6LxDUJ-gBYUlqIKQNEYn6JOE1TH95Tq0qph_S_SekeIvyWrBSs3ASJFYtKBvn2YU0oglnGOidVyzdacLz3khC-PDRba89zdtut_sD4K0M2qOldexNfqU0Lqbo28rLE16SrmEy7xSooXBQSXfB-5XHP51UIhtJH91ygxliu_qLETCLtMim2rltq8" style="image-rendering: pixelated; filter: contrast(1.2) saturate(1.5);"/>
+</div>
+<!-- Placeholder instruction overlay if no image uploaded (Simulated via opacity here, assuming image IS uploaded for the 'live preview' state) -->
+<div class="hidden absolute inset-0 bg-surface/80 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+<span class="material-symbols-outlined text-6xl text-surface-variant mb-4">upload_file</span>
+<p class="font-headline-sm text-headline-sm text-on-surface-variant">העלה תמונה כדי להתחיל</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>
