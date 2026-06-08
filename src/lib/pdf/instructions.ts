@@ -9,15 +9,22 @@
  * Trusts the pixel_map (CLAUDE.md) — NO image processing happens here, so the
  * serverless route stays fast and within time limits.
  *
- * Labels/numbers are language-neutral. Hebrew text (title) renders correctly
- * only when a Hebrew-capable font is supplied via `hebrewFontBase64`; otherwise
- * we fall back to the Latin title so output is never garbled.
+ * Hebrew + RTL: prose is drawn with the embedded Heebo font via `makeHebrewWriter`
+ * (bidi reorder + jsPDF isInputVisual + manual right-align). The build grids and
+ * R#-C# coordinates stay language-neutral (numbers/Latin), so they need no bidi.
  */
 import { jsPDF } from "jspdf";
 
 import { DEFAULT_PALETTE, type BrickColor } from "@/lib/brick-engine/palette";
 import { estimateWeight } from "@/lib/packing";
+import { HEEBO_TTF_BASE64 } from "./heebo-font";
+import { makeHebrewWriter } from "./rtl";
 import { buildInventory } from "./inventory";
+
+const RIGHT = 210 - 12; // A4 width − margin: right edge for RTL text
+/** Real-world stud pitch (mm). A 24-stud baseplate ≈ 19.2 cm → 8.0 mm/stud,
+ *  so per-module build pages can print 1:1 to overlay on the physical plate. */
+const MM_PER_STUD = 8;
 
 export interface InstructionsOptions {
   palette?: BrickColor[];
@@ -39,17 +46,6 @@ function readableText(rgb: [number, number, number]): [number, number, number] {
   return luma > 140 ? [20, 20, 20] : [245, 245, 245];
 }
 
-function maybeRegisterHebrew(doc: jsPDF, base64?: string): string | null {
-  if (!base64) return null;
-  try {
-    doc.addFileToVFS("Heebo.ttf", base64);
-    doc.addFont("Heebo.ttf", "Heebo", "normal");
-    return "Heebo";
-  } catch {
-    return null;
-  }
-}
-
 /** Generate the instruction-manual PDF as an ArrayBuffer. */
 export function buildInstructionsPdf(
   pixelMap: number[][],
@@ -64,24 +60,19 @@ export function buildInstructionsPdf(
   const inv = buildInventory(pixelMap, palette);
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const hebrewFont = maybeRegisterHebrew(doc, options.hebrewFontBase64);
-  const title =
-    options.title ?? (hebrewFont ? "פיקסיפיק — מדריך הרכבה" : "Pixipic — Build Instructions");
+  doc.addFileToVFS("Heebo.ttf", HEEBO_TTF_BASE64);
+  doc.addFont("Heebo.ttf", "Heebo", "normal");
+  doc.setFont("Heebo", "normal");
+  const he = makeHebrewWriter(doc);
 
   // ---------------------------------------------------------------- Cover
-  doc.setFont(hebrewFont ?? "helvetica", hebrewFont ? "normal" : "bold");
   doc.setFontSize(22);
-  if (hebrewFont) {
-    doc.text(title, A4.w - MARGIN, MARGIN + 8, { align: "right" });
-  } else {
-    doc.text(title, MARGIN, MARGIN + 8);
-  }
+  he(options.title ?? "פיקסיפיק — מדריך הרכבה", RIGHT, MARGIN + 8);
 
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.text(
-    `Size: ${cols} × ${rows} studs   |   Total: ${inv.totalStuds} studs   |   Colors: ${inv.distinctColors}`,
-    MARGIN,
+  he(
+    `גודל: ${cols}×${rows} לבנים · סה״כ ${inv.totalStuds} לבנים · ${inv.distinctColors} צבעים`,
+    RIGHT,
     MARGIN + 18,
   );
 
@@ -169,11 +160,11 @@ function drawBaseplateLayout(
     modulesY: number;
   },
 ) {
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Heebo", "normal");
   doc.setFontSize(15);
-  doc.text(
-    `Baseplate Layout — ${m.modulesY} rows × ${m.modulesX} cols of ${m.moduleSize}-stud plates`,
-    MARGIN,
+  makeHebrewWriter(doc)(
+    `מפת לוחות בסיס — ${m.modulesY}×${m.modulesX} לוחות בני ${m.moduleSize}`,
+    RIGHT,
     MARGIN + 6,
   );
 
@@ -233,13 +224,10 @@ function drawModule(
     modulesY: number;
   },
 ) {
-  doc.setFont("helvetica", "bold");
+  const he = makeHebrewWriter(doc);
+  doc.setFont("Heebo", "normal");
   doc.setFontSize(13);
-  doc.text(
-    `Module R${m.my + 1}-C${m.mx + 1}  (of ${m.modulesY}×${m.modulesX})`,
-    MARGIN,
-    MARGIN + 6,
-  );
+  he(`לוח R${m.my + 1}-C${m.mx + 1} (מתוך ${m.modulesY}×${m.modulesX})`, RIGHT, MARGIN + 6);
 
   const x0 = m.mx * m.moduleSize;
   const y0 = m.my * m.moduleSize;
@@ -248,10 +236,22 @@ function drawModule(
   const wStuds = xEnd - x0;
   const hStuds = yEnd - y0;
 
-  const avail = Math.min(A4.w - 2 * MARGIN, A4.h - (MARGIN + 12) - MARGIN);
-  const cell = avail / m.moduleSize;
-  const gridX = MARGIN;
-  const gridY = MARGIN + 12;
+  // Print 1:1 (8 mm/stud) when the module fits the page with tight margins, so
+  // the builder can lay the physical plate on the page; otherwise scale to fit.
+  const gridY = MARGIN + 16;
+  const GRID_MARGIN = 8;
+  const fitCell = Math.min(
+    (A4.w - 2 * GRID_MARGIN) / m.moduleSize,
+    (A4.h - gridY - GRID_MARGIN) / m.moduleSize,
+  );
+  const cell = Math.min(MM_PER_STUD, fitCell);
+  const realSize = cell >= MM_PER_STUD - 1e-6;
+  const gridX = (A4.w - m.moduleSize * cell) / 2; // centre horizontally
+
+  if (realSize) {
+    doc.setFontSize(8);
+    he("בגודל אמיתי (1:1) — הניחו את הלוח על הדף לבדיקה", RIGHT, MARGIN + 11);
+  }
 
   doc.setFontSize(Math.max(6, cell * 1.6));
   doc.setDrawColor(120, 120, 120);
@@ -282,56 +282,61 @@ function drawInventory(
   doc: jsPDF,
   inv: ReturnType<typeof buildInventory>,
 ) {
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Heebo", "normal");
+  const he = makeHebrewWriter(doc);
+
   doc.setFontSize(16);
-  doc.text("Parts Inventory", MARGIN, MARGIN + 6);
+  he("מלאי חלקים", RIGHT, MARGIN + 6);
 
   doc.setFontSize(10);
   let y = MARGIN + 16;
   const rowH = 7;
   const swatch = 5;
 
-  doc.text("#", MARGIN, y);
-  doc.text("Color", MARGIN + 22, y);
-  doc.text("Qty", A4.w - MARGIN, y, { align: "right" });
+  // RTL columns: colour on the right, quantity on the left.
+  const swatchX = RIGHT - swatch; // swatch rect left edge
+  const nameRight = swatchX - 2; // colour name, right-aligned
+  const idRight = 110;
+  const qtyRight = 40;
+
+  he("צבע", nameRight, y);
+  he("מק״ט", idRight, y);
+  he("כמות", qtyRight, y);
   y += 2;
   doc.setDrawColor(180, 180, 180);
-  doc.line(MARGIN, y, A4.w - MARGIN, y);
+  doc.line(MARGIN, y, RIGHT, y);
   y += rowH;
 
-  doc.setFont("helvetica", "normal");
   for (const line of inv.lines) {
     if (y > A4.h - MARGIN) {
       doc.addPage();
+      doc.setFont("Heebo", "normal");
       y = MARGIN + 10;
     }
-    doc.text(String(line.id), MARGIN, y);
     doc.setFillColor(line.rgb[0], line.rgb[1], line.rgb[2]);
     doc.setDrawColor(120, 120, 120);
-    doc.rect(MARGIN + 10, y - swatch + 1, swatch, swatch, "FD");
-    doc.text(line.name, MARGIN + 22, y);
-    doc.text(String(line.count), A4.w - MARGIN, y, { align: "right" });
+    doc.rect(swatchX, y - swatch + 1, swatch, swatch, "FD");
+    he(line.name, nameRight, y);
+    he(String(line.id), idRight, y);
+    he(line.count.toLocaleString("he-IL"), qtyRight, y);
     y += rowH;
   }
 
-  doc.setFont("helvetica", "bold");
   y += 2;
-  doc.line(MARGIN, y - rowH + 2, A4.w - MARGIN, y - rowH + 2);
-  doc.text(`Total studs: ${inv.totalStuds}`, A4.w - MARGIN, y, {
-    align: "right",
-  });
+  doc.line(MARGIN, y - rowH + 2, RIGHT, y - rowH + 2);
+  he(`סה״כ: ${inv.totalStuds.toLocaleString("he-IL")} לבנים`, RIGHT, y);
 
   // Weight-based packing target (Pixipic packs by scale, not by counting).
   const w = estimateWeight(inv.totalStuds);
   y += rowH;
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(
-    `Packing scale target: ~${w.scaleTargetGrams} g (incl. ${Math.round(
+  doc.setTextColor(90, 90, 90);
+  he(
+    `יעד שקילה לאריזה: ~${w.scaleTargetGrams} גרם (כולל ${Math.round(
       (w.bricksWithSpareGrams / w.bricksGrams - 1) * 100,
-    )}% spare)`,
-    A4.w - MARGIN,
+    )}% רזרבה)`,
+    RIGHT,
     y,
-    { align: "right" },
   );
+  doc.setTextColor(0, 0, 0);
 }

@@ -232,7 +232,7 @@ export function B2bCalculator(props: CalculatorState) {
         <dl className="flex flex-col gap-2 text-sm">
           <Row
             label={`${quote.employees} × פסיפס (${quote.cols}×${quote.rows})`}
-            value={formatILS(quote.mosaicsTotal)}
+            value={formatILS(quote.perMosaicBase * quote.employees)}
           />
           {quote.discount > 0 && (
             <div className="flex items-center justify-between text-success">

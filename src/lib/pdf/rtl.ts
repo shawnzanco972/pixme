@@ -43,13 +43,29 @@ export function toVisual(text: string, base: "rtl" | "ltr" = "rtl"): string {
 
 /**
  * Counter jsPDF's residual number mangling. Even with `isInputVisual`, jsPDF
- * char-reverses multi-group numeric runs joined by `/` or `×` (so "08/06/2026"
- * → "6202/60/80" and "16×16" → "61×61"); single numbers like "9.81" are left
- * alone. We pre-reverse exactly those runs so jsPDF's reversal restores them.
- * Apply AFTER `toVisual`, right before handing the string to jsPDF.
+ * char-reverses any *pure-numeric token* that sits next to Hebrew in a line
+ * (so "576 חלקים" → "675", "2,304" → "403,2", "08/06/2026" → "6202/60/80").
+ * It does NOT touch standalone numbers, nor tokens containing Latin letters
+ * (UUIDs render fine as LTR). So: only when the line has Hebrew, pre-reverse
+ * each whitespace-delimited token that is purely numeric (digits + separators,
+ * no letters) — jsPDF's own reversal then restores it. Apply AFTER `toVisual`.
  */
+const HAS_LATIN = /[A-Za-z]/;
+const NUMERIC_RUN = /[0-9][0-9.,:/×%]*/g;
+
 export function fixNumberRuns(s: string): string {
-  return s.replace(/[0-9]+(?:[/×][0-9]+)+/g, (m) => [...m].reverse().join(""));
+  if (!hasHebrew(s)) return s;
+  return s
+    .split(/(\s+)/)
+    .map((tok) =>
+      // Tokens with Latin letters (UUIDs) stay LTR in jsPDF — don't touch them.
+      // Otherwise reverse each numeric run so jsPDF's reversal cancels out,
+      // leaving any prefix like "~" or "(" in place.
+      HAS_LATIN.test(tok)
+        ? tok
+        : tok.replace(NUMERIC_RUN, (m) => [...m].reverse().join("")),
+    )
+    .join("");
 }
 
 export type HebrewAlign = "right" | "left" | "center";
