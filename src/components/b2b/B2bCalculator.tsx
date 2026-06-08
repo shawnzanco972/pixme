@@ -1,12 +1,9 @@
 "use client";
 /**
- * B2B calculator + guest checkout. The buyer plays with employee count and
- * canvas size and sees the real, scaling price (each employee gets a physical
- * gift set, so it's employees × the regular mosaic price). An optional
- * "managed" upsell adds dedicated per-employee upload links + the dashboard.
- *
- * Up to MAX_SELF_SERVE_SEATS it's a direct checkout; above that we switch to a
- * price-quote request (POST /api/b2b/quote).
+ * B2B calculator + guest checkout. Controlled: size/employees/managed live in
+ * the parent (B2bExperience) so the engine preview below stays in sync with the
+ * chosen size. Price scales with quantity (volume discount); above
+ * MAX_SELF_SERVE_SEATS it becomes a price-quote request.
  */
 import { useState } from "react";
 
@@ -14,15 +11,21 @@ import {
   B2B_SIZE_PRESETS,
   buildMinutes,
   computeB2bQuote,
-  MANAGED_FEE_PER_SEAT,
-  MAX_SELF_SERVE_SEATS,
 } from "@/lib/b2b-pricing";
-import { computePrice, formatILS } from "@/lib/pricing";
+import { computePrice, formatILS, presetStuds } from "@/lib/pricing";
 
-export function B2bCalculator() {
-  const [presetId, setPresetId] = useState("2x2");
-  const [employees, setEmployees] = useState(15);
-  const [managed, setManaged] = useState(true);
+export interface CalculatorState {
+  presetId: string;
+  setPresetId: (id: string) => void;
+  employees: number;
+  setEmployees: (n: number) => void;
+  managed: boolean;
+  setManaged: (v: boolean) => void;
+}
+
+export function B2bCalculator(props: CalculatorState) {
+  const { presetId, setPresetId, employees, setEmployees, managed, setManaged } =
+    props;
   const [company, setCompany] = useState("");
   const [project, setProject] = useState("");
   const [email, setEmail] = useState("");
@@ -39,7 +42,6 @@ export function B2bCalculator() {
     setError(null);
     if (!company.trim() || !email.trim())
       return setError("נא למלא שם חברה ואימייל.");
-
     setSubmitting(true);
     try {
       const res = await fetch("/api/checkout", {
@@ -114,11 +116,9 @@ export function B2bCalculator() {
           <span className="text-sm font-medium">גודל הפסיפס לכל עובד</span>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {B2B_SIZE_PRESETS.map((p) => {
-              const per = computePrice(
-                p.platesX * 24,
-                p.platesY * 24,
-                "physical",
-              ).total;
+              const { cols, rows } = presetStuds(p);
+              const per = computePrice(cols, rows, "physical").total;
+              const plates = p.platesX * p.platesY;
               const active = p.id === presetId;
               return (
                 <button
@@ -133,8 +133,9 @@ export function B2bCalculator() {
                 >
                   <div className="font-bold">{p.labelHe}</div>
                   <div className="text-xs text-zinc-500">
-                    {p.platesX * 24}×{p.platesY * 24} · {formatILS(per)}
+                    {plates} {plates === 1 ? "לוח" : "לוחות"} · {cols}×{rows}
                   </div>
+                  <div className="text-xs font-medium">{formatILS(per)}</div>
                 </button>
               );
             })}
@@ -165,7 +166,8 @@ export function B2bCalculator() {
               }
             />
             <span className="text-xs text-zinc-500">
-              עד {MAX_SELF_SERVE_SEATS} — מעבר לכך נשמח להכין הצעה אישית.
+              ככל שמזמינים יותר — המחיר לעובד יורד. עד 100 ישירות, מעבר לכך הצעה
+              אישית.
             </span>
           </div>
         </div>
@@ -180,7 +182,7 @@ export function B2bCalculator() {
           />
           <span className="flex flex-col gap-1">
             <span className="font-medium">
-              ניהול מלא + קישור אישי לכל עובד (+{formatILS(MANAGED_FEE_PER_SEAT)}{" "}
+              ניהול מלא + קישור אישי לכל עובד ({formatILS(quote.managedFee)}{" "}
               לעובד)
             </span>
             <span className="text-sm text-zinc-600">
@@ -232,6 +234,12 @@ export function B2bCalculator() {
             label={`${quote.employees} × פסיפס (${quote.cols}×${quote.rows})`}
             value={formatILS(quote.mosaicsTotal)}
           />
+          {quote.discount > 0 && (
+            <div className="flex items-center justify-between text-success">
+              <dt>הנחת כמות ({Math.round(quote.discount * 100)}%-)</dt>
+              <dd className="font-medium">−{formatILS(quote.savings)}</dd>
+            </div>
+          )}
           {managed && (
             <Row
               label={`ניהול + קישורים אישיים (${quote.employees})`}
@@ -240,13 +248,11 @@ export function B2bCalculator() {
           )}
           <div className="my-1 border-t border-outline" />
           <div className="flex items-center justify-between">
-            <span className="font-medium">
-              {isQuote ? "הערכה" : "סה״כ"}
-            </span>
+            <span className="font-medium">{isQuote ? "הערכה" : "סה״כ"}</span>
             <span className="text-2xl font-bold">{formatILS(quote.total)}</span>
           </div>
           <p className="text-xs text-zinc-500">
-            כל עובד מקבל ערכה פיזית משלו · זמן הרכבה משוער: ~
+            {formatILS(quote.perMosaic)} לעובד · ערכה פיזית משלו · זמן הרכבה ~
             {minutes >= 60
               ? `${Math.round(minutes / 60)} שע׳`
               : `${minutes} דק׳`}{" "}

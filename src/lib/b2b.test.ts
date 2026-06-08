@@ -8,8 +8,9 @@ import {
 } from "./b2b";
 import {
   computeB2bQuote,
-  MANAGED_FEE_PER_SEAT,
+  managedFeePerSeat,
   MAX_SELF_SERVE_SEATS,
+  mosaicDiscount,
 } from "./b2b-pricing";
 import { computePrice } from "./pricing";
 
@@ -87,20 +88,30 @@ describe("projectProgress", () => {
 });
 
 describe("computeB2bQuote", () => {
-  it("prices a B2B set as employees × the regular physical mosaic price", () => {
-    const q = computeB2bQuote(10, "2x2", false);
+  it("at low volume equals employees × the regular physical mosaic price", () => {
+    const q = computeB2bQuote(5, "2x2", false); // below the first discount tier
     const perMosaic = computePrice(q.cols, q.rows, "physical").total;
+    expect(q.discount).toBe(0);
     expect(q.perMosaic).toBe(perMosaic);
-    expect(q.mosaicsTotal).toBe(perMosaic * 10);
-    // The whole point of the fix: NOT dramatically cheaper than B2C.
-    expect(q.total).toBe(perMosaic * 10);
+    expect(q.total).toBe(perMosaic * 5);
   });
 
-  it("adds the managed upsell per seat when enabled", () => {
-    const plain = computeB2bQuote(20, "2x2", false);
-    const managed = computeB2bQuote(20, "2x2", true);
-    expect(managed.managementTotal).toBe(20 * MANAGED_FEE_PER_SEAT);
-    expect(managed.total - plain.total).toBe(20 * MANAGED_FEE_PER_SEAT);
+  it("applies a gradual volume discount (more = cheaper per unit)", () => {
+    const base = computeB2bQuote(5, "2x2", false).perMosaic;
+    const at25 = computeB2bQuote(25, "2x2", false).perMosaic;
+    const at50 = computeB2bQuote(50, "2x2", false).perMosaic;
+    expect(at25).toBeLessThan(base);
+    expect(at50).toBeLessThan(at25);
+    expect(computeB2bQuote(50, "2x2", false).savings).toBeGreaterThan(0);
+    expect(mosaicDiscount(9)).toBe(0);
+    expect(mosaicDiscount(50)).toBeGreaterThan(mosaicDiscount(25));
+  });
+
+  it("managed fee per seat drops to ₪10 at 50+", () => {
+    expect(managedFeePerSeat(10)).toBe(18);
+    expect(managedFeePerSeat(50)).toBe(10);
+    const q = computeB2bQuote(50, "2x2", true);
+    expect(q.managementTotal).toBe(50 * 10);
   });
 
   it("flags orders over the self-serve cap for a quote", () => {

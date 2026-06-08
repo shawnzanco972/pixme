@@ -43,17 +43,20 @@ All in `src/lib/brick-engine/`, wired through `BrickifyOptions` → worker →
 Migrations `0007_b2b_projects.sql` + `0008_b2b_managed.sql` — **applied to the
 live `pixme` Supabase project**, and `src/lib/supabase/types.ts` regenerated.
 
-**Pricing model (corrected):** B2B is PHYSICAL — every employee gets their own
-gift set — so the price **scales**: `employees × the regular physical mosaic
-price for the chosen size`. It is NOT a cheap "license bundle" (that earlier
-model under-priced ~7× and lost money on every kit). The optional **"managed"
-upsell** (₪18/seat) adds a dedicated upload link per employee + the dashboard.
-All in `src/lib/b2b-pricing.ts` (`computeB2bQuote`). Over **100 employees** the
-calculator switches to a **price-quote request** (`/api/b2b/quote`).
+**Pricing model:** B2B is PHYSICAL — every employee gets their own gift set —
+so the base is `employees × the regular physical mosaic price`, then a **volume
+discount** rewards bulk (6 / 12 / 18% at 10 / 25 / 50 employees). The optional
+**"managed" upsell** (dedicated per-employee link + dashboard) is billed per
+seat and also tiers down with volume (₪18 → ₪10 at 50+). Tune the tiers in
+`src/lib/b2b-pricing.ts` (`MOSAIC_DISCOUNT_TIERS`, `MANAGED_FEE_TIERS`). Over
+**100 employees** the calculator switches to a **price-quote request**
+(`/api/b2b/quote`).
 
 - **Landing page** `/b2b` (`src/app/b2b/page.tsx`) — hero, how-it-works, a live
-  **price calculator** (`B2bCalculator.tsx`: size × employees × managed upsell),
-  and an FAQ (plate ≈19 cm / 576 bricks / ~45 min, family-activity framing).
+  **calculator** (`B2bCalculator.tsx`: size × employees × managed upsell, with
+  plate counts + discount line), a **live engine preview** (`B2bEnginePreview`)
+  whose resolution follows the calculator's selected size (shared state in
+  `B2bExperience`), and an FAQ (plate ≈19 cm / 576 bricks / ~45 min).
 - **Checkout** (`src/app/api/checkout/route.ts`) — amount recomputed
   **server-side from size + employees + managed** (never trusted from the
   client). Order stores `plates_x/y`, `licenses_purchased` (= employees),

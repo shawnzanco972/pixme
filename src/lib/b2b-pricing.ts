@@ -1,17 +1,17 @@
 /**
- * B2B pricing — scales with the order, because B2B is PHYSICAL.
+ * B2B pricing — scales with the order, with a VOLUME DISCOUNT.
  *
- * Every employee receives their own physical gift set, so the price is simply
- * (employees × the regular per-mosaic price for the chosen size). B2B is NOT a
- * digital license and is never dramatically cheaper than a B2C order — anything
- * else loses money on every kit.
+ * B2B is physical (every employee gets their own gift set), so the base is the
+ * regular per-mosaic price. But buying in bulk earns a gradual discount — the
+ * more sets, the cheaper each one — so an office manager who orders for the
+ * whole company (and runs it all from one dashboard, ordering per birthday
+ * without paying each time) is rewarded. B2B is therefore cheaper per unit than
+ * a one-off B2C order at volume, but never sold below cost.
  *
- * The optional upsell ("managed") is the convenience layer for the office
- * manager: a dedicated upload link per employee + the project dashboard that
- * tracks them. That's billed per seat (small) — it sells the time saved, not
- * the bricks.
+ * The optional "managed" upsell (dedicated per-employee link + dashboard) is
+ * billed per seat and ALSO gets cheaper with volume (down to ₪10 at 50+).
  *
- * Pure + deterministic so the calculator renders live and checkout can recompute
+ * Pure + deterministic so the calculator renders live and checkout recomputes
  * the authoritative amount server-side.
  */
 import {
@@ -22,11 +22,32 @@ import {
   type SizePreset,
 } from "@/lib/pricing";
 
-/** Per-seat fee for the managed upsell (dedicated links + dashboard), ILS. */
-export const MANAGED_FEE_PER_SEAT = 18;
-
 /** Above this many employees we switch to a manual price quote. */
 export const MAX_SELF_SERVE_SEATS = 100;
+
+/**
+ * Per-mosaic volume discount: [minEmployees, discountFraction]. Highest
+ * matching tier wins. Gradual so bulk buyers see real savings.
+ */
+const MOSAIC_DISCOUNT_TIERS: ReadonlyArray<readonly [number, number]> = [
+  [50, 0.18],
+  [25, 0.12],
+  [10, 0.06],
+  [1, 0],
+];
+
+/**
+ * Managed-upsell fee per seat: [minEmployees, fee ILS]. Drops to ₪10 at 50+.
+ */
+const MANAGED_FEE_TIERS: ReadonlyArray<readonly [number, number]> = [
+  [50, 10],
+  [25, 14],
+  [1, 18],
+];
+
+/** Headline managed fee for marketing copy ("from ₪10"). */
+export const MANAGED_FEE_MIN = 10;
+export const MANAGED_FEE_MAX = 18;
 
 // --- Physical plate facts (for the FAQ / family-activity framing) ----------
 /** One 24×24 baseplate is ~19 cm per side. */
@@ -41,18 +62,38 @@ export const B2B_SIZE_PRESETS: readonly SizePreset[] = SIZE_PRESETS.filter(
   (p) => p.group === "square",
 );
 
+const round5 = (n: number) => Math.round(n / 5) * 5;
+
+/** Volume discount fraction for an employee count. */
+export function mosaicDiscount(employees: number): number {
+  return MOSAIC_DISCOUNT_TIERS.find(([min]) => employees >= min)?.[1] ?? 0;
+}
+
+/** Managed-upsell fee per seat for an employee count. */
+export function managedFeePerSeat(employees: number): number {
+  return MANAGED_FEE_TIERS.find(([min]) => employees >= min)?.[1] ?? MANAGED_FEE_MAX;
+}
+
 export interface B2bQuote {
   employees: number;
   presetId: string;
   cols: number;
   rows: number;
   plates: number;
-  /** Physical price of ONE employee's mosaic (same as a regular order). */
+  /** Undiscounted physical price of one mosaic (the B2C reference price). */
+  perMosaicBase: number;
+  /** Discounted per-mosaic price actually charged. */
   perMosaic: number;
+  /** Discount fraction applied (0..1). */
+  discount: number;
+  /** Shekels saved vs. ordering each set at the B2C price. */
+  savings: number;
   /** employees × perMosaic. */
   mosaicsTotal: number;
   managed: boolean;
-  /** managed ? employees × MANAGED_FEE_PER_SEAT : 0. */
+  /** Per-seat managed fee at this volume. */
+  managedFee: number;
+  /** managed ? employees × managedFee : 0. */
   managementTotal: number;
   total: number;
   /** True when employees exceed the self-serve cap → request a quote. */
@@ -61,8 +102,7 @@ export interface B2bQuote {
 
 /**
  * Compute a B2B quote. Falls back to the first preset for an unknown id, and
- * clamps employees to ≥1. `requiresQuote` is advisory — callers gate checkout
- * on it (the totals are still computed so the quote form can prefill them).
+ * clamps employees to ≥1.
  */
 export function computeB2bQuote(
   employees: number,
@@ -72,18 +112,29 @@ export function computeB2bQuote(
   const preset = presetById(presetId) ?? B2B_SIZE_PRESETS[0];
   const n = Math.max(1, Math.floor(employees || 0));
   const { cols, rows } = presetStuds(preset);
-  const perMosaic = computePrice(cols, rows, "physical").total;
+
+  const perMosaicBase = computePrice(cols, rows, "physical").total;
+  const discount = mosaicDiscount(n);
+  const perMosaic = round5(perMosaicBase * (1 - discount));
   const mosaicsTotal = perMosaic * n;
-  const managementTotal = managed ? n * MANAGED_FEE_PER_SEAT : 0;
+  const savings = (perMosaicBase - perMosaic) * n;
+
+  const managedFee = managedFeePerSeat(n);
+  const managementTotal = managed ? n * managedFee : 0;
+
   return {
     employees: n,
     presetId: preset.id,
     cols,
     rows,
     plates: preset.platesX * preset.platesY,
+    perMosaicBase,
     perMosaic,
+    discount,
+    savings,
     mosaicsTotal,
     managed,
+    managedFee,
     managementTotal,
     total: mosaicsTotal + managementTotal,
     requiresQuote: n > MAX_SELF_SERVE_SEATS,

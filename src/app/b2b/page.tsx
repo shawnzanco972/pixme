@@ -1,11 +1,9 @@
-import { B2bCalculator } from "@/components/b2b/B2bCalculator";
+import { B2bExperience } from "@/components/b2b/B2bExperience";
 import {
   BRICKS_PER_PLATE,
   BUILD_MINUTES_PER_PLATE,
-  MANAGED_FEE_PER_SEAT,
   PLATE_CM,
 } from "@/lib/b2b-pricing";
-import { formatILS } from "@/lib/pricing";
 
 export const metadata = {
   title: "מתנות לעובדים — Pixipic לעסקים",
@@ -96,22 +94,8 @@ export default function B2bPage() {
         </ol>
       </section>
 
-      {/* Calculator */}
-      <section
-        id="calculator"
-        className="mx-auto w-full max-w-5xl scroll-mt-6 px-6 py-12"
-      >
-        <h2 className="text-center font-heading text-2xl font-bold">
-          מחשבון מחיר
-        </h2>
-        <p className="mt-2 text-center text-zinc-600">
-          שחקו עם הכמות והגודל. הניהול האישי לכל עובד עולה{" "}
-          {formatILS(MANAGED_FEE_PER_SEAT)} בלבד לעובד.
-        </p>
-        <div className="mt-8">
-          <B2bCalculator />
-        </div>
-      </section>
+      {/* Calculator + live engine preview (shared size state) */}
+      <B2bExperience />
 
       {/* FAQ */}
       <section className="mx-auto w-full max-w-3xl px-6 py-12">
