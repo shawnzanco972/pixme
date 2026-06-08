@@ -1,6 +1,10 @@
-# CLAUDE.md — Pixme Project Guide
+# CLAUDE.md — Pixipic Project Guide
 
-This file gives Claude persistent context for the Pixme repository. Read it at the start of every session.
+This file gives Claude persistent context for the repository. Read it at the start of every session.
+
+> **Brand:** the product is **Pixipic** (Hebrew **פיקסיפיק**). It was previously
+> "Pixme" — never use that name in UI, and never reference competitors by name.
+> The git repo/package id may still read `pixme` (internal only).
 
 ## PROJECT VISION & CONTEXT
 
@@ -17,8 +21,8 @@ We are building a highly automated, **zero-stock (or low-inventory) e-commerce p
 
 1. **Frontend/Backend:** Next.js (App Router) hosted on **Vercel**.
 2. **Database:** **Supabase** (PostgreSQL).
-3. **Styling:** **Tailwind CSS v4** using **native CSS logical properties** (`ms-*`, `me-*`, `start-*`, `end-*`) for automatic bi-directional LTR/RTL mirroring. The app is RTL-first (Hebrew).
-4. **Fonts:** Google Fonts **'Heebo'** (primary body) and **'David Libre'** (headings).
+3. **Styling:** **Tailwind CSS v4** using **native CSS logical properties** (`ms-*`, `me-*`, `start-*`, `end-*`) for automatic bi-directional LTR/RTL mirroring. The app is RTL-first (Hebrew). **Light-only "Creative Workshop" theme** (off-white #f7f9fb + stud-dot texture; brand red #b7102a / blue #1d4ed8); brand tokens + `.btn/.card/.input` classes in `globals.css`. `dark:` variant is bound to a `.dark` class (never added) so it stays light on dark-mode machines.
+4. **Fonts:** Google Fonts **'Rubik'** (headings/labels, `--font-rubik`) and **'Heebo'** (body, `--font-heebo`). Both Hebrew-capable.
 5. **Image Processing — the "Brick Engine":** HTML5 Canvas + Web Workers.
    - Convert **sRGB → OKLab** (perceptually uniform) to prevent muddy colors and green skin tones.
    - Match colors using **Euclidean distance in OKLab** with a **material mismatch penalty**.
@@ -35,8 +39,15 @@ We are building a highly automated, **zero-stock (or low-inventory) e-commerce p
 ## COLOR SCIENCE RULES
 
 - Never match colors in raw sRGB. Always convert to **OKLab** first.
-- Distance metric: **Euclidean in OKLab** + a **material mismatch penalty** term.
+- Distance metric: **chroma-weighted Euclidean in OKLab** (chromaWeight ~1.6, so
+  saturated colors don't collapse to gray) + **neutral-avoidance** (tinted pixels
+  avoid white/gray) + **material mismatch penalty**. See `match.ts`.
 - Apply coarse block quantization and despeckling to reduce noise before/after matching.
+- **Palette = physical stock** (`palette.ts`): 25 defined colors, `core` flag →
+  19 in stock by default (incl. cool tones Bright Light Blue + Medium Azure),
+  6 boosters out of stock. Availability override in DB `brick_stock`
+  (in_stock + on_hand_grams). `getActivePalette()` filters; `remapPixelMap()`
+  handles out-of-stock. `?testPalette=full` shows all 25.
 
 ### Brick Engine pipeline (crispness, in order) — `src/lib/brick-engine`
 1. **Pre-processing** (`preprocess.ts`): brightness/contrast/saturation on the
