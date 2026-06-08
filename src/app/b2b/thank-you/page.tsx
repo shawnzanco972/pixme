@@ -1,7 +1,8 @@
 /**
  * B2B post-purchase confirmation. After payment the iCount webhook provisions
- * the workspace and (once email is wired) sends the secure link to the buyer.
- * If the workspace already exists (payment confirmed), we surface its link here.
+ * the workspace and (once email is wired) emails the owner link to the buyer.
+ * Here we surface the private OWNER dashboard link — the single thing the buyer
+ * needs to add their team and track progress.
  */
 import Link from "next/link";
 
@@ -16,43 +17,53 @@ export default async function ThankYouPage({
 }) {
   const { order } = await searchParams;
 
-  let workspaceId: string | null = null;
+  let ownerToken: string | null = null;
+  let projectName: string | null = null;
+  let paid = false;
   if (order) {
     const admin = createAdminClient();
     const { data } = await admin
-      .from("b2b_workspaces")
-      .select("id")
-      .eq("b2b_order_id", order)
-      .limit(1)
+      .from("b2b_orders")
+      .select("owner_token, project_name, status")
+      .eq("id", order)
       .maybeSingle();
-    workspaceId = data?.id ?? null;
+    ownerToken = data?.owner_token ?? null;
+    projectName = data?.project_name ?? null;
+    paid = data?.status === "paid";
   }
+
+  const ownerPath = ownerToken ? `/b2b/project/${ownerToken}` : null;
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-      <h1 className="font-heading text-3xl font-bold">תודה על הרכישה!</h1>
+      <h1 className="font-heading text-3xl font-bold">תודה על הרכישה! 🎉</h1>
 
-      {workspaceId ? (
+      {ownerPath ? (
         <>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            סביבת העבודה שלכם מוכנה. שתפו את הקישור הבא עם העובדים:
+          <p className="text-zinc-600">
+            {projectName ? `הפרויקט "${projectName}" מוכן.` : "הפרויקט שלכם מוכן."}{" "}
+            זהו לוח הבקרה הפרטי שלכם — הוסיפו את העובדים, שתפו קישורים אישיים
+            ועקבו אחרי ההתקדמות. שמרו אותו, זו הכניסה היחידה לפרויקט.
           </p>
+          {!paid && (
+            <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+              התשלום עדיין בעיבוד — הקישור כבר פעיל וייפתח במלואו ברגע שהתשלום
+              יאושר.
+            </p>
+          )}
           <code
             dir="ltr"
-            className="block w-full rounded-lg bg-zinc-100 p-3 text-sm break-all dark:bg-zinc-900"
+            className="block w-full rounded-lg bg-surface-muted p-3 text-sm break-all"
           >
-            {`/workspace/${workspaceId}`}
+            {ownerPath}
           </code>
-          <Link
-            href={`/workspace/${workspaceId}`}
-            className="rounded-full bg-black px-8 py-3 text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-          >
-            פתחו את סביבת העבודה
+          <Link href={ownerPath} className="btn btn-primary">
+            פתחו את לוח הבקרה
           </Link>
         </>
       ) : (
-        <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          ההזמנה התקבלה. לאחר אישור התשלום, קישור סביבת העבודה יישלח לאימייל שלכם.
+        <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+          ההזמנה התקבלה. לאחר אישור התשלום יישלח אליכם קישור לניהול הפרויקט.
         </p>
       )}
     </main>

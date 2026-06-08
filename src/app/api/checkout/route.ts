@@ -12,9 +12,21 @@
  */
 import { NextResponse } from "next/server";
 
+import { computeB2bQuote } from "@/lib/b2b-pricing";
 import { createCheckout } from "@/lib/icount";
+import { computePrice, GIFT_WRAP_FEE, presetById } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
+import type { FulfillmentType } from "@/lib/supabase/types.helpers";
+
+/** Minimal pixel_map shape guard (row-major 2D number array). */
+function isPixelMap(v: unknown): v is number[][] {
+  return (
+    Array.isArray(v) &&
+    v.length > 0 &&
+    v.every((row) => Array.isArray(row) && row.every((n) => typeof n === "number"))
+  );
+}
 
 export const runtime = "nodejs";
 
@@ -45,10 +57,31 @@ export async function POST(request: Request) {
     if (track === "b2c") {
       const contactEmail = String(body.contact_email ?? "");
       const customerName = String(body.customer_name ?? "");
-      const totalPrice = Number(body.total_price ?? 0);
+      const fulfillment: FulfillmentType =
+        body.fulfillment_type === "physical" ? "physical" : "digital";
+      const intent = body.intent === "gift" ? "gift" : "self";
+      const giftWrap = intent === "gift" && body.gift_wrap === true;
+      const deliverTo =
+        intent === "gift" && body.deliver_to === "recipient"
+          ? "recipient"
+          : "buyer";
+
+      // Price is authoritative here: derived from the pixel_map's size, never
+      // trusted from the client. Falls back to total_price only if no map.
+      const pixelMap = isPixelMap(body.pixel_map) ? body.pixel_map : null;
+      let totalPrice: number;
+      if (pixelMap) {
+        const rows = pixelMap.length;
+        const cols = rows > 0 ? pixelMap[0].length : 0;
+        totalPrice =
+          computePrice(cols, rows, fulfillment).total +
+          (giftWrap ? GIFT_WRAP_FEE : 0);
+      } else {
+        totalPrice = Number(body.total_price ?? 0);
+      }
       if (!contactEmail || !customerName || !(totalPrice > 0)) {
         return NextResponse.json(
-          { error: "Missing customer_name, contact_email, or total_price" },
+          { error: "Missing customer_name, contact_email, or a priced design" },
           { status: 400 },
         );
       }
@@ -59,11 +92,20 @@ export async function POST(request: Request) {
           customer_name: customerName,
           contact_email: contactEmail,
           total_price: totalPrice,
-          fulfillment_type:
-            body.fulfillment_type === "physical" ? "physical" : "digital",
+          fulfillment_type: fulfillment,
           image_url: (body.image_url as string) ?? null,
           pixel_map: (body.pixel_map as Json) ?? null,
           shipping_address: (body.shipping_address as Json) ?? null,
+          intent,
+          gift_message:
+            typeof body.gift_message === "string" ? body.gift_message : null,
+          gift_wrap: giftWrap,
+          deliver_to: deliverTo,
+          recipient_name:
+            typeof body.recipient_name === "string"
+              ? body.recipient_name
+              : null,
+          recipient_address: (body.recipient_address as Json) ?? null,
           status: "pending",
         })
         .select("id")
@@ -100,15 +142,30 @@ export async function POST(request: Request) {
     if (track === "b2b") {
       const contactEmail = String(body.contact_email ?? "");
       const companyName = String(body.company_name ?? "");
-      const licenses = Number(body.licenses_purchased ?? 0);
-      const amount = Number(body.amount ?? 0);
-      if (!contactEmail || !companyName || !(licenses > 0) || !(amount > 0)) {
+      const projectName = body.project_name
+        ? String(body.project_name)
+        : null;
+      // Size + employee count + upsell are the inputs; the price is recomputed
+      // authoritatively here (never trusted from the body) so it always equals
+      // employees × the regular physical mosaic price (+ managed fee).
+      const preset = presetById(String(body.preset_id ?? ""));
+      const employees = Number(body.employees ?? 0);
+      const managed = body.managed === true;
+      if (!contactEmail || !companyName || !preset || !(employees > 0)) {
         return NextResponse.json(
           {
             error:
-              "Missing company_name, contact_email, licenses_purchased, or amount",
+              "Missing company_name, contact_email, a valid preset_id, or employees",
           },
           { status: 400 },
+        );
+      }
+
+      const quote = computeB2bQuote(employees, preset.id, managed);
+      if (quote.requiresQuote) {
+        return NextResponse.json(
+          { error: "Order exceeds self-serve limit — request a quote instead" },
+          { status: 422 },
         );
       }
 
@@ -117,20 +174,27 @@ export async function POST(request: Request) {
         .insert({
           company_name: companyName,
           contact_email: contactEmail,
-          licenses_purchased: licenses,
+          project_name: projectName,
+          plates_x: preset.platesX,
+          plates_y: preset.platesY,
+          licenses_purchased: quote.employees,
+          managed,
           amount_paid: 0, // set authoritatively on payment confirmation
           status: "pending",
         })
-        .select("id")
+        .select("id, owner_token")
         .single();
 
       if (error || !data) {
         throw new Error(error?.message ?? "Failed to create B2B order");
       }
 
+      const ownerUrl = `${siteUrl()}/b2b/project/${data.owner_token}`;
+
       if (!paymentsConfigured()) {
         return NextResponse.json({
           orderId: data.id,
+          ownerToken: data.owner_token,
           url: `${siteUrl()}/b2b/thank-you?order=${data.id}`,
           paymentConfigured: false,
         });
@@ -139,15 +203,20 @@ export async function POST(request: Request) {
       const checkout = await createCheckout({
         orderId: data.id,
         track: "b2b",
-        amount,
-        description: `Pixipic — ${licenses} רישיונות B2B`,
+        amount: quote.total,
+        description: `Pixipic — ${quote.employees} מתנות לעובדים (${quote.cols}×${quote.rows})`,
         customerEmail: contactEmail,
         customerName: companyName,
         successUrl: `${siteUrl()}/b2b/thank-you?order=${data.id}`,
         ipnUrl: `${siteUrl()}/api/webhooks/icount`,
       });
 
-      return NextResponse.json({ orderId: data.id, url: checkout.url });
+      return NextResponse.json({
+        orderId: data.id,
+        ownerToken: data.owner_token,
+        ownerUrl,
+        url: checkout.url,
+      });
     }
 
     return NextResponse.json(

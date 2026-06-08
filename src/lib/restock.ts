@@ -6,7 +6,7 @@
  */
 import { countParts } from "@/lib/brick-engine";
 import { CATALOG, isCore, type BrickColor } from "@/lib/brick-engine/palette";
-import { GRAMS_PER_STUD, SPARE_RATIO } from "@/lib/packing";
+import { GRAMS_PER_STUD, packCount } from "@/lib/packing";
 
 export interface RestockLine {
   id: number;
@@ -60,7 +60,7 @@ export function aggregateRestock(
   const lines: RestockLine[] = [...totals.entries()]
     .map(([id, pieces]) => {
       const c = byId.get(id);
-      const piecesWithSpare = Math.ceil(pieces * (1 + SPARE_RATIO));
+      const piecesWithSpare = packCount(pieces);
       return {
         id,
         name: c?.name ?? `Unknown #${id}`,

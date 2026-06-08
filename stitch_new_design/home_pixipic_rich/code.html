@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PixiPic - הופכים רגעים ליצירות אמנות מלבנים</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&amp;family=Alef:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Heebo', 'sans-serif'],
+              display: ['Heebo', 'sans-serif'],
+              body: ['Alef', 'sans-serif'],
+            },
+            colors: {
+              "on-surface-variant": "#5b403f",
+              "surface-tint": "#bb152c",
+              "on-tertiary-fixed": "#251a00",
+              "on-primary-fixed": "#410007",
+              "inverse-surface": "#2d3133",
+              "primary": "#b7102a",
+              "tertiary-container": "#926f00",
+              "secondary-container": "#4069f2",
+              "on-secondary": "#ffffff",
+              "secondary": "#1d4ed8",
+              "on-surface": "#191c1e",
+              "on-tertiary-container": "#fffbff",
+              "surface-container-low": "#f2f4f6",
+              "primary-fixed": "#ffdad8",
+              "primary-container": "#db313f",
+              "on-primary-container": "#fffbff",
+              "secondary-fixed-dim": "#b7c4ff",
+              "inverse-primary": "#ffb3b1",
+              "surface-container-high": "#e6e8ea",
+              "error": "#ba1a1a",
+              "on-error": "#ffffff",
+              "on-error-container": "#93000a",
+              "tertiary-fixed-dim": "#f3bf2f",
+              "on-tertiary-fixed-variant": "#5a4300",
+              "on-secondary-fixed-variant": "#0039b5",
+              "inverse-on-surface": "#eff1f3",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-highest": "#e0e3e5",
+              "secondary-fixed": "#dce1ff",
+              "surface": "#f7f9fb",
+              "outline-variant": "#e4bebc",
+              "primary-fixed-dim": "#ffb3b1",
+              "tertiary": "#745800",
+              "surface-bright": "#f7f9fb",
+              "tertiary-fixed": "#ffdf98",
+              "surface-variant": "#e0e3e5",
+              "on-secondary-fixed": "#001551",
+              "on-primary-fixed-variant": "#92001c",
+              "outline": "#8f6f6e",
+              "surface-dim": "#d8dadc",
+              "surface-container": "#eceef0",
+              "on-secondary-container": "#fffbff",
+              "on-background": "#191c1e",
+              "on-primary": "#ffffff",
+              "background": "#f7f9fb",
+              "on-tertiary": "#ffffff",
+              "error-container": "#ffdad6"
+            },
+            boxShadow: {
+              'brick': '0 4px 10px rgba(0, 0, 0, 0.1)',
+              'brick-inset': 'inset 0 2px 4px rgba(0, 0, 0, 0.05)',
+            },
+            backgroundImage: {
+              'stud-pattern': 'radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)',
+            },
+            backgroundSize: {
+              'stud': '8px 8px',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      body {
+        font-family: 'Heebo', sans-serif;
+        background-color: theme('colors.background');
+        color: theme('colors.on-background');
+      }
+      .font-body {
+        font-family: 'Alef', sans-serif;
+      }
+      
+      /* Toy Brick Aesthetics */
+      .brick-btn {
+        transition: all 0.1s ease;
+        border-bottom: 4px solid rgba(0,0,0,0.2);
+      }
+      .brick-btn:active {
+        transform: translateY(2px);
+        border-bottom: 2px solid rgba(0,0,0,0.2);
+      }
+      .brick-card {
+        border-bottom: 3px solid theme('colors.outline-variant');
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .brick-card:hover {
+        transform: translateY(-4px);
+        box-shadow: theme('boxShadow.brick');
+      }
+      
+      .pattern-overlay {
+        background-image: theme('backgroundImage.stud-pattern');
+        background-size: theme('backgroundSize.stud');
+      }
+    </style>
+</head>
+<body class="pattern-overlay min-h-screen flex flex-col">
+<!-- Header / TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim w-full top-0 sticky border-b-4 border-surface-variant shadow-sm z-50">
+<div class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+<a class="text-3xl font-extrabold text-primary tracking-tight" href="#">PixiPic</a>
+<nav class="hidden md:flex gap-8 items-center font-medium">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-lg" href="#how-it-works">איך זה עובד</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-lg" href="#gallery">גלריה</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-lg" href="#pricing">מחירים</a>
+</nav>
+<a class="brick-btn bg-secondary text-on-secondary px-6 py-3 rounded-lg font-bold text-lg hidden md:block" href="#create">
+                התחילו ליצור
+            </a>
+<!-- Mobile Menu Button -->
+<button class="md:hidden text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu</span>
+</button>
+</div>
+</header>
+<main class="flex-grow">
+<!-- Hero Section -->
+<section class="relative bg-surface-container overflow-hidden pt-16 pb-24 lg:pt-32 lg:pb-40">
+<div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+<div class="relative z-10 text-center lg:text-right">
+<h1 class="text-5xl lg:text-7xl font-extrabold text-on-surface mb-6 leading-tight">
+                        הופכים רגעים ליצירות אמנות מלבנים
+                    </h1>
+<p class="font-body text-xl lg:text-2xl text-on-surface-variant mb-10 max-w-2xl mx-auto lg:mx-0">
+                        הפכו את התמונות האהובות עליכם לפאזל לבנים ייחודי. מתנה מושלמת, פעילות משפחתית בלתי נשכחת, ופריט עיצוב מדהים.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+<a class="brick-btn bg-primary text-on-primary px-8 py-4 rounded-lg font-bold text-xl text-center shadow-brick" href="#create">
+                            התחילו ליצור עכשיו
+                        </a>
+<a class="brick-btn bg-surface text-primary border-2 border-primary px-8 py-4 rounded-lg font-bold text-xl text-center" href="#how-it-works">
+                            איך זה עובד?
+                        </a>
+</div>
+</div>
+<div class="relative z-10">
+<div class="aspect-square rounded-xl overflow-hidden shadow-2xl transform lg:rotate-3 brick-card bg-white p-4">
+<img alt="Hero Image" class="w-full h-full object-cover rounded-lg" data-alt="A highly detailed close-up of a vibrant toy brick mosaic portrait. The artwork is constructed from small, colorful plastic square pieces clicking together on a gray baseplate. The lighting is bright and studio-quality, casting subtle realistic soft shadows that highlight the 3D tactile texture of the individual studs. The mood is creative, energetic, and playful, reflecting a modern light-mode toy UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8Vgsmew6MCJXTneS49mrf2u1PgVuELo3tERJrxXRHJR38ZdWMz-B20D-NW_-dsXPP5evjXpmYsGCeHIN9gU4mGwI4cFmdPnUiihS9nR7CGHtabhNzTFnV9aIrjtETZb30Kf9cTktVBcE-egoUnNYh63gH7MI9DGv-cCFtVbFKS1QuqsYYXuvZzEkG8L55GgHrmYbR4MwnmtPM8GgO2nqx6N3_5dvsSjE6mIqrBprr1yl-CEltWAxzEuTw55IvW19ePcvSCiun5K4"/>
+</div>
+<!-- Decorative Elements -->
+<div class="absolute -top-10 -right-10 w-24 h-24 bg-tertiary-fixed rounded-lg shadow-brick transform rotate-12 opacity-80 border-b-4 border-opacity-20 border-black"></div>
+<div class="absolute -bottom-8 -left-8 w-32 h-32 bg-secondary-container rounded-lg shadow-brick transform -rotate-6 opacity-80 border-b-4 border-opacity-20 border-black"></div>
+</div>
+</div>
+</section>
+<!-- How it Works -->
+<section class="py-24 bg-surface-bright" id="how-it-works">
+<div class="max-w-7xl mx-auto px-6">
+<div class="text-center mb-16">
+<h2 class="text-4xl lg:text-5xl font-bold text-on-surface mb-4">איך זה עובד?</h2>
+<p class="font-body text-xl text-on-surface-variant max-w-2xl mx-auto">שלושה שלבים פשוטים ליצירת האמנות הבאה שלכם.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<!-- Step 1 -->
+<div class="brick-card bg-surface-container-lowest p-8 rounded-xl text-center flex flex-col items-center">
+<div class="w-20 h-20 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center mb-6 shadow-sm">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">upload_file</span>
+</div>
+<h3 class="text-2xl font-bold text-on-surface mb-3">1. עיצוב</h3>
+<p class="font-body text-on-surface-variant text-lg">מעלים תמונה, בוחרים גודל וסגנון צבעים, והמערכת שלנו מתרגמת אותה להוראות בנייה.</p>
+</div>
+<!-- Step 2 -->
+<div class="brick-card bg-surface-container-lowest p-8 rounded-xl text-center flex flex-col items-center">
+<div class="w-20 h-20 bg-secondary-container text-on-secondary-container rounded-full flex items-center justify-center mb-6 shadow-sm">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+</div>
+<h3 class="text-2xl font-bold text-on-surface mb-3">2. הזמנה</h3>
+<p class="font-body text-on-surface-variant text-lg">מקבלים ערכה יוקרתית עד הבית, הכוללת את כל הלבנים הנדרשות, משטח בסיס, והוראות מפורטות.</p>
+</div>
+<!-- Step 3 -->
+<div class="brick-card bg-surface-container-lowest p-8 rounded-xl text-center flex flex-col items-center">
+<div class="w-20 h-20 bg-tertiary-fixed text-on-tertiary-fixed rounded-full flex items-center justify-center mb-6 shadow-sm">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">extension</span>
+</div>
+<h3 class="text-2xl font-bold text-on-surface mb-3">3. בנייה</h3>
+<p class="font-body text-on-surface-variant text-lg">מרכיבים יחד, נהנים מזמן איכות, ותולים את יצירת המופת החדשה שלכם על הקיר.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Occasions / Use Cases (Bento Grid) -->
+<section class="py-24 bg-surface">
+<div class="max-w-7xl mx-auto px-6">
+<h2 class="text-4xl lg:text-5xl font-bold text-on-surface mb-12 text-center">לכל רגע מיוחד</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[300px]">
+<!-- Bento Item 1 -->
+<div class="brick-card lg:col-span-2 rounded-2xl overflow-hidden relative group">
+<img alt="Perfect Gift" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A warm, brightly lit living room setting showing a wrapped gift box next to a partially built toy brick mosaic picture frame. The lighting suggests a joyful birthday morning. Vibrant primary colors contrast against a clean, modern white table surface. The tactile nature of the plastic bricks is clearly visible, aligning with a premium toy brand aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBk5sJscZIiCvcP4R_UH0WmZDxcaXxWWZPocCT7cM8f_cJpg8IQwqyRgTo2jBen2qHoJPZslZearL77lc7fmE2OkMBr9O9eVhxNGqHqFUPedRwcJP4H9Q8cUWqofT9Guu8jvNC8gqjHdFUPOzaIZdCMOOtZPAWFYl07elcg0KQ-l3Ymw_ooIjZXDOWUUxPXpH1VLSoJRYRn8cxrjEiVGjRqpZn2jcv_8byu1Z3lwUSpspyAVEk-qnu_vGTzO4cW82wyCNzo6DoJ1Dw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 p-8 text-white">
+<h3 class="text-3xl font-bold mb-2">מתנה מושלמת</h3>
+<p class="font-body text-lg opacity-90 max-w-md">הפתיעו את היקרים לכם עם מתנה אישית, יצירתית ומרגשת שנשארת לתמיד.</p>
+</div>
+</div>
+<!-- Bento Item 2 -->
+<div class="brick-card rounded-2xl overflow-hidden relative group">
+<img alt="Family Activity" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Hands of a parent and a child working together to place small plastic bricks onto a large grey grid plate to form a picture. The scene is shot from a top-down perspective on a bright white wooden table. Soft, natural daylight highlights the glossy texture of the colorful toy bricks, creating a cheerful and collaborative mood suited for a family-focused product." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdVKzFDLp6hmjszosOspkJCcKhlakGLJBhgYXvXdZ2AZmUpDhRX9aX5K-iGQpt05ujF_BtfXeLQg2E6Rvm5OmV8IjE9hl9Kf8Nik34KP1soNKMU1qkxOuSQ_0yh_Sp-f_cP8pdZ8oo2c8AqOOYWSaU8wTAWcti6opLzZ-prEvFi86xMmo_Rz17Ae2UzGoJFeuBlxJO_hffaJipSxXG0eqQERotQCOe41Oirg7iwcMcZgfcT5oKB3JKRvTy-FhGpdxb0LHMcVk4uhI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 p-8 text-white">
+<h3 class="text-2xl font-bold mb-2">פעילות משפחתית</h3>
+<p class="font-body opacity-90">זמן איכות מהנה שמחבר בין כולם.</p>
+</div>
+</div>
+<!-- Bento Item 3 -->
+<div class="brick-card rounded-2xl overflow-hidden relative group bg-secondary-container flex flex-col justify-center items-center text-center p-8">
+<span class="material-symbols-outlined text-6xl text-on-secondary-container mb-4" style="font-variation-settings: 'FILL' 1;">palette</span>
+<h3 class="text-2xl font-bold text-on-secondary-container mb-2">אמנות עצמאית</h3>
+<p class="font-body text-on-secondary-container opacity-90">שחררו את הדמיון.</p>
+</div>
+<!-- Bento Item 4 -->
+<div class="brick-card lg:col-span-2 rounded-2xl overflow-hidden relative group">
+<img alt="Office Decor" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A sleek, modern office interior with a striking, large-scale pixel art mosaic made of toy bricks hanging on a minimalist concrete wall. The mosaic depicts a stylized landscape. High-end architectural lighting illuminates the artwork, emphasizing the grid structure and subtle depth of the plastic pieces. The overall mood is professional yet creatively inspiring, adhering to a minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQ9D_6tBsXPUeuM2W7uIdRvI0I_q5bQCSgRpBPx7d78RvrLM8AUFj9Uoxn4YeJKbYtgfsYxkSdiJ076r-gZ_jIhr1zMiHHWEattsJ66Jp9H2gflMo3D2zlZVvvfqMiXfXFKLphRWxOOLnoPSkXcmvZ3P1k6r-nM9AGCJBitLfcLkl9nWfiIB80k2DmnXkTL-WxGj1wFCZNYBpnyEii9Tdf-EM9F76rlhKCB3Fx2d0-zQs5L5P2oU_vh4IUE-KukQM4CVXx0gDDxz4"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 p-8 text-white">
+<h3 class="text-3xl font-bold mb-2">עיצוב למשרד</h3>
+<p class="font-body text-lg opacity-90 max-w-md">הכניסו צבע וסטייל לסביבת העבודה עם יצירה שמושכת את העין.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-24 bg-primary text-on-primary text-center relative overflow-hidden">
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent bg-[length:20px_20px]"></div>
+<div class="max-w-4xl mx-auto px-6 relative z-10">
+<h2 class="text-4xl lg:text-6xl font-extrabold mb-6">מוכנים להתחיל לבנות?</h2>
+<p class="text-xl lg:text-2xl font-body mb-10 opacity-90">העלו תמונה עכשיו וראו איך היא נראית כפסיפס לבנים תוך שניות.</p>
+<a class="brick-btn inline-block bg-white text-primary px-10 py-5 rounded-xl font-bold text-2xl shadow-xl hover:bg-surface-container-lowest" href="#create">
+                    התחילו את היצירה שלכם
+                </a>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest dark:bg-surface-dim w-full mt-16 border-t-2 border-surface-variant dark:border-outline-variant">
+<div class="flex flex-col md:flex-row justify-between items-center px-6 py-8 max-w-7xl mx-auto gap-4">
+<div class="font-bold text-xl text-on-surface">PixiPic</div>
+<div class="text-on-surface-variant font-body text-sm">
+                © 2024 PixiPic. בונים את הרגעים שלכם לבנה אחר לבנה.
+            </div>
+<div class="flex gap-4">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body text-sm" href="#">תנאי שימוש</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body text-sm" href="#">פרטיות</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body text-sm" href="#">תמיכה</a>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PixiPic | לעסקים</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Rubik:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#5b403f",
+                        "surface-tint": "#bb152c",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-primary-fixed": "#410007",
+                        "inverse-surface": "#2d3133",
+                        "primary": "#b7102a",
+                        "tertiary-container": "#926f00",
+                        "secondary-container": "#4069f2",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#1d4ed8",
+                        "on-surface": "#191c1e",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed": "#ffdad8",
+                        "primary-container": "#db313f",
+                        "on-primary-container": "#fffbff",
+                        "secondary-fixed-dim": "#b7c4ff",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-high": "#e6e8ea",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#f3bf2f",
+                        "on-tertiary-fixed-variant": "#5a4300",
+                        "on-secondary-fixed-variant": "#0039b5",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-fixed": "#dce1ff",
+                        "surface": "#f7f9fb",
+                        "outline-variant": "#e4bebc",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "tertiary": "#745800",
+                        "surface-bright": "#f7f9fb",
+                        "tertiary-fixed": "#ffdf98",
+                        "surface-variant": "#e0e3e5",
+                        "on-secondary-fixed": "#001551",
+                        "on-primary-fixed-variant": "#92001c",
+                        "outline": "#8f6f6e",
+                        "surface-dim": "#d8dadc",
+                        "surface-container": "#eceef0",
+                        "on-secondary-container": "#fffbff",
+                        "on-background": "#191c1e",
+                        "on-primary": "#ffffff",
+                        "background": "#f7f9fb",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-xl": "64px",
+                        "base": "8px",
+                        "stack-xs": "4px",
+                        "grid-margin": "24px",
+                        "stack-lg": "32px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Rubik"],
+                        "headline-sm": ["Rubik"],
+                        "display-lg-mobile": ["Rubik"],
+                        "display-lg": ["Rubik"],
+                        "headline-md": ["Rubik"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Rubik"],
+                        "body-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Baseplate pattern */
+        .baseplate-bg {
+            background-image: radial-gradient(var(--tw-colors-outline-variant) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        
+        /* 3D Button Effect */
+        .btn-3d {
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 0 0 rgba(0,0,0,0.15);
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 0 rgba(0,0,0,0.15);
+        }
+
+        /* 3D Card Effect */
+        .card-3d {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05), 0 4px 0 0 var(--tw-colors-surface-variant);
+        }
+        .card-3d:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1), 0 6px 0 0 var(--tw-colors-surface-variant);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased baseplate-bg">
+<!-- TopNavBar -->
+<nav class="w-full top-0 sticky z-50 bg-surface border-b-4 border-surface-variant shadow-sm px-grid-margin py-base flex justify-between items-center max-w-7xl mx-auto">
+<div class="flex items-center gap-stack-lg">
+<a class="font-display-lg text-display-lg text-primary tracking-tight" href="#">PixiPic</a>
+<div class="hidden md:flex gap-gutter">
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low rounded-lg px-3 py-2" href="#">Create</a>
+<a class="font-label-md text-label-md text-secondary border-b-2 border-secondary font-bold pb-1 px-3 py-2" href="#">לעסקים</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low rounded-lg px-3 py-2" href="#">Gallery</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low rounded-lg px-3 py-2" href="#">Help</a>
+</div>
+</div>
+<div>
+<a class="font-label-md text-label-md text-primary hover:bg-surface-container-low rounded-lg px-4 py-2 transition-all" href="#">Login</a>
+</div>
+</nav>
+<main class="max-w-7xl mx-auto px-grid-margin py-stack-xl space-y-stack-xl">
+<!-- Hero Section -->
+<section class="relative bg-surface-container-lowest rounded-xl border-2 border-surface-variant p-stack-lg overflow-hidden flex flex-col md:flex-row items-center gap-stack-lg card-3d">
+<div class="flex-1 space-y-stack-md z-10">
+<span class="inline-block bg-tertiary-container text-on-tertiary-container font-label-md text-label-md px-3 py-1 rounded-full">B2B Solutions</span>
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface">פתרונות brick-art לעסקים ואירועים</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                    הפכו כל תמונה ליצירת אמנות אינטראקטיבית מלבני משחק. פתרון מושלם לגיבוש צוות, מתנות לעובדים, או קיר מיתוג מרשים למשרד.
+                </p>
+<div class="flex gap-gutter pt-base">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-6 py-3 rounded-lg btn-3d">
+                        דברו איתנו להצעת מחיר
+                    </button>
+<button class="bg-surface-container-high text-on-surface font-label-md text-label-md px-6 py-3 rounded-lg btn-3d hover:bg-surface-variant transition-colors border border-outline-variant">
+                        צפו בדוגמאות
+                    </button>
+</div>
+</div>
+<div class="flex-1 relative min-h-[400px] w-full rounded-lg overflow-hidden border border-outline-variant">
+<img alt="Corporate team building" class="absolute inset-0 w-full h-full object-cover" data-alt="A diverse corporate team enthusiastically building a massive wall mural out of colorful plastic toy bricks. The setting is a bright, modern, minimalist office space with soft natural lighting, reflecting a playful yet professional 'light mode' aesthetic. Primary colors of red and blue accents stand out against the white and light gray background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuADgFhSg9gQ28PJOjXSS5MJOiptBbmXZEe4QnpZddjW2213dinlgL8NpiyzQYjvI6QYMJUs-iHNh1uWuzmWmNMnJi2i9xayW-8RKq00JyMbbAg-3mt2gHR7HtP0Yk7jjDLnHSC6-iOaavxgKIN_igsDCV7qUsvCGiiqehiY-NqtHkoLUE9sLgW22jd579YzHoF_vabY5vPTMHaVDe4kDztRhjh-oo53tK6kWOYPGbBJf8LVzstww_S5dN0xCnxnUMSsV3EqKpJ3bRQ"/>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-container-lowest/80 to-transparent md:hidden"></div>
+</div>
+</section>
+<!-- Value Props -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="bg-surface-container-lowest p-stack-lg rounded-xl border border-surface-variant card-3d flex flex-col items-center text-center gap-stack-sm">
+<div class="w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center mb-base">
+<span class="material-symbols-outlined text-on-secondary text-3xl">view_in_ar</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface">כל עובד מקבל סט פיזי</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    ערכה אישית לכל עובד, עם הוראות הרכבה מותאמות אישית, ארוזה בקפידה וממותגת.
+                </p>
+</div>
+<div class="bg-surface-container-lowest p-stack-lg rounded-xl border border-surface-variant card-3d flex flex-col items-center text-center gap-stack-sm">
+<div class="w-16 h-16 bg-primary-container rounded-full flex items-center justify-center mb-base">
+<span class="material-symbols-outlined text-on-primary-container text-3xl">local_offer</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface">הנחת כמות</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    תמחור מיוחד להזמנות מרוכזות. ככל שתרכיבו יותר, תחסכו יותר. מותאם לתקציבי רווחה.
+                </p>
+</div>
+<div class="bg-surface-container-lowest p-stack-lg rounded-xl border border-surface-variant card-3d flex flex-col items-center text-center gap-stack-sm">
+<div class="w-16 h-16 bg-tertiary-container rounded-full flex items-center justify-center mb-base">
+<span class="material-symbols-outlined text-on-tertiary-container text-3xl">schedule</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface">חיסכון בזמן למנהל המשרד</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    מערכת ניהול הזמנות פשוטה המאפשרת העלאת רשימות אקסל וניהול כתובות למשלוח אוטומטי.
+                </p>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-stack-xl bg-surface-container-lowest border-t-2 border-surface-variant">
+<div class="flex flex-col md:flex-row justify-between items-center px-grid-margin py-stack-lg max-w-7xl mx-auto gap-gutter">
+<div class="font-headline-sm text-headline-sm text-on-surface">PixiPic</div>
+<div class="flex gap-gutter">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors opacity-90 hover:opacity-100" href="#">Terms</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors opacity-90 hover:opacity-100" href="#">Privacy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors opacity-90 hover:opacity-100" href="#">Support</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors opacity-90 hover:opacity-100" href="#">Community</a>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant">
+                © 2024 Creative Workshop. Build your world, one brick at a time.
+            </div>
+</div>
+</footer>
+</body></html>

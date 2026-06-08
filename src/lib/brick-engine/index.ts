@@ -22,6 +22,10 @@ import {
   DEFAULT_DITHER_AMOUNT,
   type DitherOptions,
 } from "./dither";
+import {
+  floydSteinbergMatch,
+  type FloydSteinbergOptions,
+} from "./fsdither";
 import { effectiveDistanceSq, nearestColorIndex, type MatchOptions } from "./match";
 import { swapOptimize, type SwapOptions } from "./optimize";
 import { DEFAULT_PALETTE, type BrickColor } from "./palette";
@@ -55,6 +59,13 @@ export interface BrickifyOptions {
   preprocess?: PreprocessOptions;
   /** Dithering options; pass `null` to disable noise dithering. */
   dither?: DitherOptions | null;
+  /**
+   * Floyd–Steinberg error-diffusion matching for smooth photographic
+   * gradients. `true` for defaults, or an options object. When on, the noise
+   * dither, despeckle and swap-optimize passes default OFF (they'd erase the
+   * diffusion texture). Default off (greedy nearest-color match).
+   */
+  fsDither?: FloydSteinbergOptions | boolean;
   /** Despeckle options; pass `null` to disable despeckling. */
   despeckle?: DespeckleOptions | null;
   /** Sobel edge-preservation options for despeckle. */
@@ -102,30 +113,47 @@ export function brickifyImage(
   // 1) Coarse block quantization → grid of average LINEAR-RGB colors.
   const linGrid = quantizeToLinearGrid(src, cols, rows);
 
-  // 2) Dither: OFF by default — at stud resolution random noise reads as
-  //    speckle, not smooth gradient. Opt in by passing a `dither` object.
-  const ditherAmount = options.dither
-    ? (options.dither.amount ?? DEFAULT_DITHER_AMOUNT)
-    : 0;
+  // Floyd–Steinberg mode diffuses error itself, so noise dither would only add
+  // grit; force it off when FS is on (unless the caller explicitly asked).
+  const fs = options.fsDither;
+  const ditherAmount =
+    options.dither && !(fs && options.dither === undefined)
+      ? (options.dither.amount ?? DEFAULT_DITHER_AMOUNT)
+      : 0;
   const targets: OKLab[] = linGrid.map((lin) =>
     ditherLinearToOklab(lin, ditherAmount, rng),
   );
 
-  // 3) Phase 1 — greedy nearest-color match in OKLab.
-  let indices: number[] = targets.map((lab) =>
-    nearestColorIndex(lab, palette, options.match),
-  );
+  // 3) Phase 1 — either greedy nearest-color match or FS error diffusion.
+  let indices: number[];
+  if (fs) {
+    const fsOpts: FloydSteinbergOptions = {
+      ...options.match,
+      ...(typeof fs === "object" ? fs : {}),
+    };
+    indices = floydSteinbergMatch(targets, cols, rows, palette, fsOpts);
+  } else {
+    indices = targets.map((lab) =>
+      nearestColorIndex(lab, palette, options.match),
+    );
+  }
 
-  // 4) Despeckle with Sobel edge preservation (unless disabled).
-  if (options.despeckle !== null) {
+  // 4) Despeckle with Sobel edge preservation. Defaults OFF under FS (it would
+  //    flatten the deliberate diffusion texture) unless the caller opts in.
+  const despeckleOn =
+    options.despeckle === null
+      ? false
+      : fs
+        ? options.despeckle !== undefined
+        : true;
+  if (despeckleOn) {
     const edgeEnabled = options.edgePreservation?.enabled ?? true;
+    // Line-art/text wants MORE edges preserved → a lower Sobel threshold.
+    const edgeThreshold =
+      options.edgePreservation?.threshold ??
+      (options.preprocess?.lineArt ? 0.06 : DEFAULT_EDGE_THRESHOLD);
     const edgeMask = edgeEnabled
-      ? computeEdgeMask(
-          targets.map((t) => t.L),
-          cols,
-          rows,
-          options.edgePreservation?.threshold ?? DEFAULT_EDGE_THRESHOLD,
-        )
+      ? computeEdgeMask(targets.map((t) => t.L), cols, rows, edgeThreshold)
       : null;
     indices = despeckleGrid(indices, cols, rows, {
       // Stronger defaults clean flat-area noise; edge mask keeps faces crisp.
@@ -138,8 +166,8 @@ export function brickifyImage(
 
   // 5) Phase 2 — swap optimization, using the SAME cost as the greedy matcher
   //    (chroma weight + neutral-avoidance + material penalty) so it can't undo
-  //    the matcher's choices.
-  if (options.optimize?.enabled ?? true) {
+  //    the matcher's choices. Off by default under FS (would undo diffusion).
+  if (options.optimize?.enabled ?? !fs) {
     const byId = new Map<number, BrickColor>(palette.map((c) => [c.id, c]));
     const cost = (cell: number, id: number): number => {
       const c = byId.get(id);

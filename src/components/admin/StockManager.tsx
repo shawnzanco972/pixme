@@ -71,9 +71,9 @@ export function StockManager() {
         מלאי צבעים ({inStockCount}/{CATALOG.length} זמינים ·{" "}
         {formatWeight(totalGrams)} במלאי)
       </h2>
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto rounded-xl border border-outline">
         <table className="w-full text-start text-sm">
-          <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+          <thead className="bg-surface-muted text-zinc-600">
             <tr>
               <th className="p-2 text-start">צבע</th>
               <th className="p-2 text-start">סוג</th>
@@ -88,7 +88,7 @@ export function StockManager() {
               return (
                 <tr
                   key={c.id}
-                  className="border-t border-zinc-100 dark:border-zinc-800"
+                  className="border-t border-outline"
                 >
                   <td className="p-2">
                     <span className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export function StockManager() {
                       type="number"
                       min={0}
                       inputMode="decimal"
-                      className="w-24 rounded border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+                      className="w-24 rounded border border-outline px-2 py-1 bg-surface"
                       value={value}
                       onChange={(e) =>
                         setDrafts((d) =>

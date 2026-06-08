@@ -8,7 +8,9 @@
  *
  * Operates in gamma sRGB (perceptual), the space users expect these controls in.
  */
+import { faceAwareContrast } from "./face";
 import type { RGBAImage } from "./quantize";
+import { unsharpMask } from "./unsharp";
 
 export interface PreprocessOptions {
   /** 1 = unchanged. >1 brighter, <1 darker. */
@@ -19,11 +21,23 @@ export interface PreprocessOptions {
   saturation?: number;
   /** Auto-levels: stretch tonal range (1st–99th pct) so flat photos pop. */
   autoLevels?: boolean;
+  /**
+   * Face-aware contrast: expand contrast around detected skin midtones so
+   * portraits keep their facial features instead of flattening to one skin
+   * brick. No-op on images with little skin. Default off.
+   */
+  faceAware?: boolean;
+  /**
+   * Line-art / text mode: an unsharp mask that crisps edges BEFORE downsampling,
+   * so logos, lettering and line drawings stay legible at stud resolution.
+   * Default off.
+   */
+  lineArt?: boolean;
 }
 
 const REC601 = { r: 0.299, g: 0.587, b: 0.114 };
 
-function isIdentity(o: PreprocessOptions): boolean {
+function isPixelOpsIdentity(o: PreprocessOptions): boolean {
   return (
     !o.autoLevels &&
     (o.brightness ?? 1) === 1 &&
@@ -81,13 +95,19 @@ export function preprocessImage(
   image: RGBAImage,
   options: PreprocessOptions = {},
 ): RGBAImage {
-  if (isIdentity(options)) return image;
+  // Spatial passes first (they read neighborhoods), on the full-res image.
+  let work = image;
+  if (options.lineArt) work = unsharpMask(work);
+  if (options.faceAware) work = faceAwareContrast(work);
+
+  // Per-pixel tone ops can short-circuit if neutral.
+  if (isPixelOpsIdentity(options)) return work;
 
   const brightness = options.brightness ?? 1;
   const contrast = options.contrast ?? 1;
   const saturation = options.saturation ?? 1;
 
-  const src = image.data;
+  const src = work.data;
   const levels = options.autoLevels ? computeLevels(src) : null;
   const span = levels ? levels.hi - levels.lo : 1;
   const out = new Uint8ClampedArray(src.length);

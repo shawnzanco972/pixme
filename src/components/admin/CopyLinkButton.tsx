@@ -25,7 +25,7 @@ export function CopyLinkButton({ path }: { path: string }) {
     <button
       type="button"
       onClick={copy}
-      className="rounded-full border border-zinc-300 px-3 py-1 text-xs transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+      className="rounded-full border border-outline px-3 py-1 text-xs transition-colors hover:bg-surface-muted"
     >
       {copied ? "הועתק ✓" : "העתק קישור"}
     </button>

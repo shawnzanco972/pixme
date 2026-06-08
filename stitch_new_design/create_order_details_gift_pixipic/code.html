@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Creative Workshop - פרטים</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Rubik:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#5b403f",
+                        "surface-tint": "#bb152c",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-primary-fixed": "#410007",
+                        "inverse-surface": "#2d3133",
+                        "primary": "#b7102a",
+                        "tertiary-container": "#926f00",
+                        "secondary-container": "#4069f2",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#1d4ed8",
+                        "on-surface": "#191c1e",
+                        "on-tertiary-container": "#fffbff",
+                        "surface-container-low": "#f2f4f6",
+                        "primary-fixed": "#ffdad8",
+                        "primary-container": "#db313f",
+                        "on-primary-container": "#fffbff",
+                        "secondary-fixed-dim": "#b7c4ff",
+                        "inverse-primary": "#ffb3b1",
+                        "surface-container-high": "#e6e8ea",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#f3bf2f",
+                        "on-tertiary-fixed-variant": "#5a4300",
+                        "on-secondary-fixed-variant": "#0039b5",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-fixed": "#dce1ff",
+                        "surface": "#f7f9fb",
+                        "outline-variant": "#e4bebc",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "tertiary": "#745800",
+                        "surface-bright": "#f7f9fb",
+                        "tertiary-fixed": "#ffdf98",
+                        "surface-variant": "#e0e3e5",
+                        "on-secondary-fixed": "#001551",
+                        "on-primary-fixed-variant": "#92001c",
+                        "outline": "#8f6f6e",
+                        "surface-dim": "#d8dadc",
+                        "surface-container": "#eceef0",
+                        "on-secondary-container": "#fffbff",
+                        "on-background": "#191c1e",
+                        "on-primary": "#ffffff",
+                        "background": "#f7f9fb",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-xl": "64px",
+                        "base": "8px",
+                        "stack-xs": "4px",
+                        "grid-margin": "24px",
+                        "stack-lg": "32px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Rubik"],
+                        "headline-sm": ["Rubik"],
+                        "display-lg-mobile": ["Rubik"],
+                        "display-lg": ["Rubik"],
+                        "headline-md": ["Rubik"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Rubik"],
+                        "body-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: theme('colors.background');
+            background-image: radial-gradient(theme('colors.surface-variant') 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        h1, h2, h3, h4, h5, h6, .font-rubik {
+            font-family: 'Rubik', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .btn-extruded {
+            border-bottom-width: 4px;
+            border-bottom-color: rgba(0,0,0,0.2);
+            transition: all 0.1s ease-in-out;
+        }
+        .btn-extruded:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+        .card-extruded {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-bottom-width: 4px;
+            border-bottom-color: theme('colors.surface-variant');
+        }
+    </style>
+</head>
+<body class="text-on-background min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface w-full top-0 sticky border-b-4 border-surface-variant shadow-sm z-50">
+<div class="flex justify-between items-center px-grid-margin py-base max-w-7xl mx-auto">
+<div class="font-display-lg text-display-lg text-primary tracking-tight">
+                Creative Workshop
+            </div>
+<!-- Navigation hidden as this is a linear transactional flow -->
+<div class="flex items-center gap-gutter">
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors">
+                    Login
+                </button>
+</div>
+</div>
+</header>
+<main class="flex-grow w-full max-w-7xl mx-auto px-grid-margin py-stack-lg">
+<!-- Progress Indicator -->
+<div class="flex justify-center items-center mb-stack-xl">
+<div class="flex items-center gap-4 bg-surface-container-lowest px-6 py-3 rounded-full card-extruded">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center font-label-md text-label-md font-bold">1</span>
+<span class="font-label-md text-label-md hidden md:inline">עיצוב</span>
+</div>
+<div class="w-8 h-1 bg-surface-variant rounded-full"></div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center font-label-md text-label-md font-bold">2</span>
+<span class="font-label-md text-label-md hidden md:inline">למי</span>
+</div>
+<div class="w-8 h-1 bg-primary rounded-full"></div>
+<div class="flex items-center gap-2 text-primary font-bold">
+<span class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-md text-label-md font-bold">3</span>
+<span class="font-label-md text-label-md">פרטים</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter lg:gap-stack-lg">
+<!-- Form Column -->
+<div class="lg:col-span-8 space-y-stack-md">
+<!-- Personal Details Section -->
+<section class="bg-surface-container-lowest rounded-lg p-stack-md card-extruded">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">person</span>
+                        פרטי הרוכש
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">שם מלא</label>
+<input class="w-full rounded-md border-2 border-surface-variant focus:border-secondary focus:ring-secondary bg-surface-bright text-body-md font-body-md p-3 h-12" placeholder="ישראל ישראלי" type="text"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">דוא״ל לאישור הזמנה</label>
+<input class="w-full rounded-md border-2 border-surface-variant focus:border-secondary focus:ring-secondary bg-surface-bright text-body-md font-body-md p-3 h-12" placeholder="israel@example.com" type="email"/>
+</div>
+</div>
+</section>
+<!-- Gift Specific Section -->
+<section class="bg-surface-container-lowest rounded-lg p-stack-md card-extruded border-t-4 border-t-tertiary-fixed-dim">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" style="font-variation-settings: 'FILL' 1;">redeem</span>
+                        פרטי המתנה
+                    </h2>
+<div class="space-y-stack-md">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">מסר אישי (אופציונלי)</label>
+<textarea class="w-full rounded-md border-2 border-surface-variant focus:border-secondary focus:ring-secondary bg-surface-bright text-body-md font-body-md p-3" placeholder="כתבו ברכה שתוצמד למתנה..." rows="3"></textarea>
+</div>
+<label class="flex items-center gap-3 p-4 border-2 border-surface-variant rounded-md cursor-pointer hover:bg-surface transition-colors">
+<input checked="" class="w-6 h-6 text-primary border-surface-variant rounded focus:ring-primary" type="checkbox"/>
+<div class="flex-grow">
+<span class="block font-headline-sm text-headline-sm text-on-surface">עטיפת מתנה</span>
+<span class="block font-body-md text-body-md text-on-surface-variant">אריזה חגיגית עם סרט</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary">+₪25</span>
+</label>
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant mb-2">אפשרויות משלוח</span>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<label class="flex flex-col items-center justify-center p-6 border-2 border-secondary bg-secondary-fixed rounded-md cursor-pointer card-extruded text-center">
+<input checked="" class="hidden" name="delivery_type" type="radio"/>
+<span class="material-symbols-outlined text-secondary mb-2 text-3xl">local_shipping</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">שלחו ישירות למקבל/ת</span>
+</label>
+<label class="flex flex-col items-center justify-center p-6 border-2 border-surface-variant bg-surface rounded-md cursor-pointer hover:bg-surface-bright transition-colors text-center grayscale opacity-80 hover:opacity-100 hover:grayscale-0">
+<input class="hidden" name="delivery_type" type="radio"/>
+<span class="material-symbols-outlined text-on-surface-variant mb-2 text-3xl">home</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">שלחו אליי ואני אעניק</span>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- Shipping Address Section -->
+<section class="bg-surface-container-lowest rounded-lg p-stack-md card-extruded">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">location_on</span>
+                        כתובת למשלוח
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-gutter">
+<div class="md:col-span-2">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">רחוב ומספר בית</label>
+<input class="w-full rounded-md border-2 border-surface-variant focus:border-secondary focus:ring-secondary bg-surface-bright text-body-md font-body-md p-3 h-12" placeholder="לדוגמה: הרצל 12" type="text"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">עיר</label>
+<input class="w-full rounded-md border-2 border-surface-variant focus:border-secondary focus:ring-secondary bg-surface-bright text-body-md font-body-md p-3 h-12" placeholder="תל אביב" type="text"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">מיקוד</label>
+<input class="w-full rounded-md border-2 border-surface-variant focus:border-secondary focus:ring-secondary bg-surface-bright text-body-md font-body-md p-3 h-12" placeholder="1234567" type="text"/>
+</div>
+</div>
+</section>
+</div>
+<!-- Order Summary Sidebar -->
+<div class="lg:col-span-4">
+<div class="bg-surface-container-lowest rounded-lg p-stack-md card-extruded sticky top-24">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-md border-b-2 border-surface-variant pb-2">סיכום הזמנה</h2>
+<div class="flex items-center gap-4 mb-stack-md">
+<div class="w-20 h-20 bg-surface-variant rounded-md overflow-hidden shrink-0 border-2 border-outline-variant">
+<!-- Placeholder for selected product image -->
+<img alt="A colorful digital workshop graphic showing abstract geometric building blocks made of vibrant plastics in primary red and blue colors, arranged playfully on a clean white table under bright, even studio lighting to emphasize a modern, tactile, toy-like aesthetic." class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBSekAX0z0BGdCoD_kkVuKZdUIBZ4tlpOfQyfW-CwSuitnlB5BLxBWAl_LXEf-Q5ElW48UmJ8a6qm_qvZkAkU5rguDMC6BahBheH6EXhwhE7nYzxSE3WEfIjVz1QDI6npbEeJHy84aWqvb-PElKMwyNnf7FOQrpwYF4s9w1ZIhOZv2uIS2d63u7SlKL70bbe6Wv6N1ZWV89AeZitAVwzVi3hS_t3w4cpvEd9w7wKUU-Xwuf2yXyphggLk5hyhkNX8J1xYGuNAagsk"/>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface">ערכת משחק - טירת חלל</div>
+<div class="font-body-md text-body-md text-on-surface-variant">כולל הקדשה אישית</div>
+</div>
+</div>
+<div class="space-y-3 font-body-md text-body-md text-on-surface mb-stack-md border-b-2 border-surface-variant pb-4">
+<div class="flex justify-between">
+<span>סכום ביניים</span>
+<span>₪250</span>
+</div>
+<div class="flex justify-between text-tertiary">
+<span>עטיפת מתנה</span>
+<span>₪25</span>
+</div>
+<div class="flex justify-between">
+<span>משלוח אקספרס</span>
+<span>₪30</span>
+</div>
+</div>
+<div class="flex justify-between font-headline-md text-headline-md text-on-surface mb-stack-lg">
+<span>סך הכל לתשלום</span>
+<span class="text-primary font-bold">₪305</span>
+</div>
+<button class="w-full bg-primary text-on-primary font-headline-sm text-headline-sm py-4 rounded-lg flex items-center justify-center gap-2 btn-extruded hover:bg-primary-container transition-colors h-14">
+<span class="material-symbols-outlined">lock</span>
+                        ביצוע הזמנה ותשלום
+                    </button>
+<div class="text-center mt-3 flex items-center justify-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+                        תשלום מאובטח
+                    </div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest w-full mt-stack-xl border-t-2 border-surface-variant">
+<div class="flex flex-col md:flex-row justify-between items-center px-grid-margin py-stack-lg max-w-7xl mx-auto gap-gutter">
+<div class="font-headline-sm text-headline-sm text-on-surface">
+                Creative Workshop
+            </div>
+<div class="flex gap-gutter font-label-sm text-label-sm text-on-surface-variant">
+<a class="hover:text-primary transition-colors opacity-90 hover:opacity-100" href="#">Terms</a>
+<a class="hover:text-primary transition-colors opacity-90 hover:opacity-100" href="#">Privacy</a>
+<a class="hover:text-primary transition-colors opacity-90 hover:opacity-100" href="#">Support</a>
+<a class="hover:text-primary transition-colors opacity-90 hover:opacity-100" href="#">Community</a>
+</div>
+<div class="font-body-md text-body-md text-secondary">
+                © 2024 Creative Workshop. Build your world, one brick at a time.
+            </div>
+</div>
+</footer>
+</body></html>

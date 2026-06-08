@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 
 import { buildInstructionsPdf } from "@/lib/pdf/instructions";
+import { HEEBO_TTF_BASE64 } from "@/lib/pdf/heebo-font";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { PixelMap } from "@/lib/supabase/types.helpers";
 
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
 
     const pdf = buildInstructionsPdf(pixelMap, {
       title: typeof body.title === "string" ? body.title : undefined,
+      hebrewFontBase64: HEEBO_TTF_BASE64,
     });
 
     return new NextResponse(pdf, {

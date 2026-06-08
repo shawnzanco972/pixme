@@ -22,13 +22,14 @@ export function useBrickPreview() {
       file: File,
       size: number,
       extra?: Omit<BrickifyOptions, "cols" | "rows">,
+      rows?: number,
     ): Promise<number[][]> => {
       setWorking(true);
       try {
         const imageData = await fileToImageData(file);
         const { pixelMap: map } = await brickify(imageData, {
           cols: size,
-          rows: size,
+          rows: rows ?? size,
           ...extra,
         });
         if (canvasRef.current) renderBricks(canvasRef.current, map);

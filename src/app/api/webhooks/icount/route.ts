@@ -10,6 +10,7 @@
  */
 import { NextResponse } from "next/server";
 
+import { sendOrderConfirmation, sendOwnerWelcome } from "@/lib/email";
 import {
   extractOrderRef,
   verifyTransaction,
@@ -82,7 +83,7 @@ async function provisionB2c(
 ) {
   const { data: order, error } = await admin
     .from("b2c_orders")
-    .select("id, status")
+    .select("id, status, customer_name, contact_email")
     .eq("id", orderId)
     .single();
   if (error || !order) throw new Error(`B2C order ${orderId} not found`);
@@ -94,6 +95,13 @@ async function provisionB2c(
     .eq("id", orderId)
     .neq("status", "paid");
   if (updErr) throw new Error(updErr.message);
+
+  // Best-effort confirmation email (no-op until email is configured).
+  await sendOrderConfirmation({
+    to: order.contact_email,
+    customerName: order.customer_name,
+    orderId: order.id,
+  });
 }
 
 /** Idempotently mark a B2B order paid and create its workspace once. */
@@ -105,7 +113,9 @@ async function provisionB2b(
 ) {
   const { data: order, error } = await admin
     .from("b2b_orders")
-    .select("id, status, licenses_purchased")
+    .select(
+      "id, status, licenses_purchased, contact_email, company_name, project_name, owner_token",
+    )
     .eq("id", orderId)
     .single();
   if (error || !order) throw new Error(`B2B order ${orderId} not found`);
@@ -138,8 +148,15 @@ async function provisionB2b(
       expiration_date: new Date(Date.now() + WORKSPACE_TTL_MS).toISOString(),
     });
     if (wsErr) throw new Error(wsErr.message);
-  }
 
-  // TODO(email): send the secure workspace link to order.contact_email once an
-  // email provider is wired (Phase 5.1).
+    // Email the owner their private dashboard link (best-effort; the link is
+    // also shown on the thank-you page, so a failed send is non-fatal). Only
+    // sent once, alongside first provisioning, to avoid duplicate emails.
+    await sendOwnerWelcome({
+      to: order.contact_email,
+      companyName: order.company_name,
+      projectName: order.project_name,
+      ownerToken: order.owner_token,
+    });
+  }
 }

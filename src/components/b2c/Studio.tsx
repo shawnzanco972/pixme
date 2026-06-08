@@ -24,7 +24,25 @@ const MAX_PLATES = 5;
 import { createClient } from "@/lib/supabase/client";
 import { uploadToSignedUrl } from "@/lib/supabase/storage";
 
-export function Studio() {
+/** Data the wizard captures from the design step to carry to checkout. */
+export interface DesignPayload {
+  file: File | null;
+  pixelMap: number[][];
+  cols: number;
+  rows: number;
+  price: number;
+}
+
+export interface StudioProps {
+  /**
+   * Embedded in the /create wizard: hides the details/checkout form and shows a
+   * "next step" CTA that reports the design up via `onProceed`.
+   */
+  embedded?: boolean;
+  onProceed?: (data: DesignPayload) => void;
+}
+
+export function Studio({ embedded = false, onProceed }: StudioProps = {}) {
   const { brickify } = useBrickWorker();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -41,6 +59,12 @@ export function Studio() {
   const [autoLevels, setAutoLevels] = useState(true);
   // Dithering off by default (it reads as speckle at stud resolution).
   const [dither, setDither] = useState(0);
+  // Floyd–Steinberg error diffusion for smooth photographic gradients.
+  const [smoothGradients, setSmoothGradients] = useState(false);
+  // Face-aware contrast: keep facial features in portraits.
+  const [faceAware, setFaceAware] = useState(false);
+  // Line-art / text mode: crisp edges for logos & lettering.
+  const [lineArt, setLineArt] = useState(false);
   // Zoom/crop (1 = fit; >1 crops tighter so the subject gets more studs).
   const [zoom, setZoom] = useState(1);
   // Crop center (0..1) for drag-to-pan when zoomed in.
@@ -63,6 +87,9 @@ export function Studio() {
     setSaturation(1.1);
     setAutoLevels(true);
     setDither(0);
+    setSmoothGradients(false);
+    setFaceAware(false);
+    setLineArt(false);
     setZoom(1);
     setPanX(0.5);
     setPanY(0.5);
@@ -196,8 +223,9 @@ export function Studio() {
       cols,
       rows,
       palette: activePalette,
-      preprocess: { contrast, saturation, autoLevels },
+      preprocess: { contrast, saturation, autoLevels, faceAware, lineArt },
       dither: dither > 0 ? { amount: dither } : null,
+      fsDither: smoothGradients,
     })
       .then((r) => {
         if (cancelled) return;
@@ -217,6 +245,9 @@ export function Studio() {
     saturation,
     autoLevels,
     dither,
+    smoothGradients,
+    faceAware,
+    lineArt,
     zoom,
     panX,
     panY,
@@ -551,6 +582,42 @@ export function Studio() {
             />
             שיפור אוטומטי (ניגודיות חכמה)
           </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={faceAware}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setFaceAware(e.target.checked);
+              }}
+            />
+            הדגשת פנים (לדיוקנאות)
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={smoothGradients}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setSmoothGradients(e.target.checked);
+              }}
+            />
+            מעברי צבע חלקים (לתמונות)
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={lineArt}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setLineArt(e.target.checked);
+              }}
+            />
+            מצב טקסט / קו (ללוגו וכיתוב)
+          </label>
         </div>
 
         {/* Color scheme — supply-driven. In-stock colors can be toggled;
@@ -622,56 +689,78 @@ export function Studio() {
           (PDF) זמין להורדה חינם בעמוד ההזמנה.
         </div>
 
-        <div className="grid gap-3 border-t border-outline pt-5">
-          <p className="text-sm font-medium">פרטים ומשלוח</p>
-          <input
-            className="input"
-            placeholder="שם מלא"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            type="email"
-            dir="ltr"
-            className="input text-start"
-            placeholder="אימייל"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              className="input col-span-2"
-              placeholder="רחוב ומספר"
-              value={street}
-              onChange={(e) => setStreet(e.target.value)}
-            />
+        {!embedded && (
+          <div className="grid gap-3 border-t border-outline pt-5">
+            <p className="text-sm font-medium">פרטים ומשלוח</p>
             <input
               className="input"
-              placeholder="עיר"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
+              placeholder="שם מלא"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
             <input
-              className="input"
-              placeholder="מיקוד"
-              value={zip}
-              onChange={(e) => setZip(e.target.value)}
+              type="email"
+              dir="ltr"
+              className="input text-start"
+              placeholder="אימייל"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                className="input col-span-2"
+                placeholder="רחוב ומספר"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+              />
+              <input
+                className="input"
+                placeholder="עיר"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+              <input
+                className="input"
+                placeholder="מיקוד"
+                value={zip}
+                onChange={(e) => setZip(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="mt-2 flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-800">
+        <div className="mt-2 flex items-center justify-between border-t border-outline pt-4">
           <span className="font-heading text-2xl font-bold">
             {formatILS(price.total)}
           </span>
-          <button
-            type="button"
-            onClick={() => void handleOrder()}
-            disabled={submitting || !result}
-            className="btn btn-primary"
-          >
-            {submitting ? "מעבד…" : "הוספה לעגלה 🛒"}
-          </button>
+          {embedded ? (
+            <button
+              type="button"
+              onClick={() =>
+                result &&
+                onProceed?.({
+                  file,
+                  pixelMap: result.pixelMap,
+                  cols,
+                  rows,
+                  price: price.total,
+                })
+              }
+              disabled={!result}
+              className="btn btn-primary"
+            >
+              המשך לשלב הבא ←
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleOrder()}
+              disabled={submitting || !result}
+              className="btn btn-primary"
+            >
+              {submitting ? "מעבד…" : "הוספה לעגלה 🛒"}
+            </button>
+          )}
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

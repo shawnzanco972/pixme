@@ -55,6 +55,8 @@ export default async function AdminOrderDetail({
   const pixelMap = (order.pixel_map as PixelMap | null) ?? null;
   const packing = pixelMap ? orderPackingList(pixelMap) : null;
   const address = order.shipping_address as ShippingAddress | null;
+  const isGift = order.intent === "gift";
+  const shipToRecipient = isGift && order.deliver_to === "recipient";
 
   // Signed URL for the original uploaded photo (private bucket).
   let photoUrl: string | null = null;
@@ -94,17 +96,51 @@ export default async function AdminOrderDetail({
 
       <section className="grid gap-6 md:grid-cols-2">
         {/* Shipping + actions */}
-        <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="font-heading text-lg font-semibold">משלוח</h2>
+        <div className="flex flex-col gap-3 rounded-xl border border-outline p-4">
+          <h2 className="font-heading text-lg font-semibold">
+            משלוח
+            {isGift && (
+              <span className="ms-2 rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-foreground/80">
+                🎁 מתנה
+              </span>
+            )}
+          </h2>
           <p className="text-sm" dir="ltr">
             {order.contact_email}
           </p>
+          {shipToRecipient && order.recipient_name && (
+            <p className="text-sm">
+              <span className="text-zinc-500">נמען: </span>
+              {order.recipient_name}
+            </p>
+          )}
           {address ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="text-sm text-zinc-600">
               {address.street}, {address.city} {address.zip}
+              {shipToRecipient && (
+                <span className="text-zinc-400"> (כתובת המקבל/ת)</span>
+              )}
             </p>
           ) : (
             <p className="text-sm text-zinc-400">אין כתובת</p>
+          )}
+          {isGift && (
+            <div className="rounded-lg bg-surface-muted p-3 text-sm">
+              <p>
+                {order.gift_wrap ? "✓ לארוז כמתנה (עטיפה + סרט)" : "ללא עטיפה"}
+                {shipToRecipient && " · אין לכלול חשבונית/מחיר בחבילה"}
+              </p>
+              {order.recipient_name && !shipToRecipient && (
+                <p className="text-zinc-500">
+                  כרטיס ברכה עבור: {order.recipient_name}
+                </p>
+              )}
+              {order.gift_message && (
+                <p className="mt-1 italic text-zinc-600">
+                  “{order.gift_message}”
+                </p>
+              )}
+            </div>
           )}
           <div className="mt-2 flex flex-wrap gap-2">
             <DownloadInstructions
@@ -121,10 +157,10 @@ export default async function AdminOrderDetail({
         </div>
 
         {/* Mosaic preview (always available from pixel_map) + original photo */}
-        <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="flex flex-col gap-3 rounded-xl border border-outline p-4">
           <h2 className="font-heading text-lg font-semibold">הפסיפס</h2>
           {pixelMap ? (
-            <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+            <div className="overflow-hidden rounded-lg border border-outline">
               <MosaicPreview pixelMap={pixelMap} />
             </div>
           ) : (
@@ -152,9 +188,9 @@ export default async function AdminOrderDetail({
         {!packing ? (
           <p className="text-sm text-zinc-400">אין עדיין מפת לבנים להזמנה זו.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto rounded-xl border border-outline">
             <table className="w-full text-start text-sm">
-              <thead className="bg-zinc-50 text-zinc-500 dark:bg-zinc-900">
+              <thead className="bg-surface-muted text-zinc-600">
                 <tr>
                   <th className="p-3 text-start">צבע</th>
                   <th className="p-3 text-start">בעיצוב</th>
@@ -166,7 +202,7 @@ export default async function AdminOrderDetail({
                 {packing.lines.map((l) => (
                   <tr
                     key={l.id}
-                    className="border-t border-zinc-100 dark:border-zinc-800"
+                    className="border-t border-outline"
                   >
                     <td className="p-3">
                       <span className="flex items-center gap-2">
@@ -187,7 +223,7 @@ export default async function AdminOrderDetail({
                     <td className="p-3 font-medium">{formatWeight(l.grams)}</td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-zinc-300 font-semibold dark:border-zinc-700">
+                <tr className="border-t-2 border-outline font-semibold">
                   <td className="p-3">
                     סה״כ ({packing.lines.length} צבעים)
                   </td>

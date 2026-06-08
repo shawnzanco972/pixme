@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="light" dir="rtl" lang="he"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Recipient Step - Creative Workshop</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Rubik:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#5b403f",
+                    "surface-tint": "#bb152c",
+                    "on-tertiary-fixed": "#251a00",
+                    "on-primary-fixed": "#410007",
+                    "inverse-surface": "#2d3133",
+                    "primary": "#b7102a",
+                    "tertiary-container": "#926f00",
+                    "secondary-container": "#4069f2",
+                    "on-secondary": "#ffffff",
+                    "secondary": "#1d4ed8",
+                    "on-surface": "#191c1e",
+                    "on-tertiary-container": "#fffbff",
+                    "surface-container-low": "#f2f4f6",
+                    "primary-fixed": "#ffdad8",
+                    "primary-container": "#db313f",
+                    "on-primary-container": "#fffbff",
+                    "secondary-fixed-dim": "#b7c4ff",
+                    "inverse-primary": "#ffb3b1",
+                    "surface-container-high": "#e6e8ea",
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#f3bf2f",
+                    "on-tertiary-fixed-variant": "#5a4300",
+                    "on-secondary-fixed-variant": "#0039b5",
+                    "inverse-on-surface": "#eff1f3",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary-fixed": "#dce1ff",
+                    "surface": "#f7f9fb",
+                    "outline-variant": "#e4bebc",
+                    "primary-fixed-dim": "#ffb3b1",
+                    "tertiary": "#745800",
+                    "surface-bright": "#f7f9fb",
+                    "tertiary-fixed": "#ffdf98",
+                    "surface-variant": "#e0e3e5",
+                    "on-secondary-fixed": "#001551",
+                    "on-primary-fixed-variant": "#92001c",
+                    "outline": "#8f6f6e",
+                    "surface-dim": "#d8dadc",
+                    "surface-container": "#eceef0",
+                    "on-secondary-container": "#fffbff",
+                    "on-background": "#191c1e",
+                    "on-primary": "#ffffff",
+                    "background": "#f7f9fb",
+                    "on-tertiary": "#ffffff",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-xl": "64px",
+                    "base": "8px",
+                    "stack-xs": "4px",
+                    "grid-margin": "24px",
+                    "stack-lg": "32px",
+                    "stack-sm": "8px",
+                    "stack-md": "16px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "label-sm": [
+                            "Rubik"
+                    ],
+                    "headline-sm": [
+                            "Rubik"
+                    ],
+                    "display-lg-mobile": [
+                            "Rubik"
+                    ],
+                    "display-lg": [
+                            "Rubik"
+                    ],
+                    "headline-md": [
+                            "Rubik"
+                    ],
+                    "body-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-md": [
+                            "Rubik"
+                    ],
+                    "body-md": [
+                            "Plus Jakarta Sans"
+                    ]
+            },
+            "fontSize": {
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-sm": [
+                            "20px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display-lg-mobile": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.surface');
+            background-image: radial-gradient(theme('colors.on-surface') 1px, transparent 1px);
+            background-size: 24px 24px;
+            background-position: 0 0;
+            background-color: theme('colors.surface');
+        }
+        .btn-extruded {
+            border-bottom-width: 4px;
+            border-bottom-color: theme('colors.primary-container');
+            transition: all 0.1s;
+        }
+        .btn-extruded:active {
+            border-bottom-width: 0px;
+            transform: translateY(4px);
+            margin-bottom: 4px;
+        }
+        .card-extruded {
+            border-bottom-width: 4px;
+            border-bottom-color: theme('colors.surface-variant');
+            transition: all 0.1s;
+        }
+        .card-extruded:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .card-extruded:active {
+            border-bottom-width: 0px;
+            transform: translateY(4px);
+        }
+        .card-extruded.selected {
+            border-color: theme('colors.secondary');
+            border-bottom-color: theme('colors.secondary-container');
+            background-color: theme('colors.secondary-fixed');
+        }
+    </style>
+</head>
+<body class="text-on-surface font-body-md bg-surface min-h-screen flex flex-col relative overflow-x-hidden">
+<!-- TopNavBar: Suppressed because this is a linear/transactional checkout flow -->
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center px-grid-margin py-stack-xl max-w-7xl mx-auto w-full z-10">
+<!-- Progress Indicator -->
+<div class="mb-stack-lg w-full max-w-2xl">
+<div class="flex justify-between items-center mb-stack-xs text-on-surface-variant font-label-md text-label-md">
+<span class="flex items-center gap-1"><span class="w-6 h-6 rounded-full bg-surface-variant text-center leading-6">1</span> עיצוב</span>
+<span class="flex items-center gap-1 font-bold text-primary"><span class="w-6 h-6 rounded-full bg-primary text-on-primary text-center leading-6 shadow-sm">2</span> למי</span>
+<span class="flex items-center gap-1 opacity-50"><span class="w-6 h-6 rounded-full bg-surface-variant text-center leading-6">3</span> פרטים</span>
+</div>
+<!-- Progress Bar (Studs) -->
+<div class="flex gap-1 h-3">
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-1 bg-surface-variant rounded-full"></div>
+</div>
+</div>
+<!-- Header -->
+<div class="text-center mb-stack-xl">
+<h1 class="font-display-lg text-display-lg md:text-display-lg font-display-lg-mobile text-display-lg-mobile mb-stack-sm text-on-surface">עבור מי ההזמנה?</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">בחרו למי מיועדת הערכה שאתם בונים.</p>
+</div>
+<!-- Options Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter w-full max-w-2xl mb-stack-xl">
+<!-- Option 1: For Me -->
+<button class="card-extruded bg-surface-container-lowest border-2 border-surface-variant rounded-xl p-stack-lg flex flex-col items-center justify-center text-center group focus:outline-none focus:ring-4 focus:ring-secondary focus:ring-opacity-50" onclick="selectOption(this)">
+<div class="w-20 h-20 rounded-full bg-surface-container-highest flex items-center justify-center mb-stack-md group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-[40px] text-on-surface-variant group-hover:text-primary" style="font-variation-settings: 'FILL' 1;">person</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-xs">לעצמי</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">הערכה תשלח אליכם הביתה</p>
+</button>
+<!-- Option 2: Gift -->
+<button class="card-extruded bg-surface-container-lowest border-2 border-surface-variant rounded-xl p-stack-lg flex flex-col items-center justify-center text-center group focus:outline-none focus:ring-4 focus:ring-secondary focus:ring-opacity-50" onclick="selectOption(this)">
+<div class="w-20 h-20 rounded-full bg-surface-container-highest flex items-center justify-center mb-stack-md group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-[40px] text-on-surface-variant group-hover:text-primary" style="font-variation-settings: 'FILL' 1;">featured_seasonal_and_gifts</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-xs">מתנה</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">הערכה תשלח ישירות למקבל המתנה</p>
+</button>
+</div>
+<!-- Navigation Actions -->
+<div class="flex justify-between w-full max-w-2xl mt-auto pt-stack-md border-t-2 border-surface-variant">
+<button class="px-6 py-3 font-label-md text-label-md font-bold text-on-surface-variant hover:bg-surface-container-highest rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-secondary">
+                חזרה
+            </button>
+<button class="btn-extruded bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-bold py-3 px-8 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                המשך
+            </button>
+</div>
+</main>
+<!-- Footer: Suppressed for focused transactional flow -->
+<script>
+        function selectOption(selectedElement) {
+            // Remove selected class from all cards
+            const cards = document.querySelectorAll('.card-extruded');
+            cards.forEach(card => {
+                card.classList.remove('selected');
+                // Reset icon colors
+                const icon = card.querySelector('.material-symbols-outlined');
+                if(icon) {
+                    icon.classList.remove('text-secondary');
+                    icon.classList.add('text-on-surface-variant');
+                }
+            });
+
+            // Add selected class to the clicked card
+            selectedElement.classList.add('selected');
+            
+            // Highlight icon in selected card
+            const selectedIcon = selectedElement.querySelector('.material-symbols-outlined');
+            if(selectedIcon) {
+                selectedIcon.classList.remove('text-on-surface-variant');
+                selectedIcon.classList.remove('group-hover:text-primary');
+                selectedIcon.classList.add('text-secondary');
+            }
+        }
+    </script>
+</body></html>

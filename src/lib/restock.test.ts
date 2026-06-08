@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { GRAMS_PER_STUD, SPARE_RATIO } from "@/lib/packing";
+import { GRAMS_PER_STUD, packCount } from "@/lib/packing";
 import { aggregateRestock, orderPackingList } from "./restock";
 
 describe("aggregateRestock", () => {
@@ -16,7 +16,7 @@ describe("aggregateRestock", () => {
     expect(report.totalPieces).toBe(6);
     const white = report.lines.find((l) => l.id === 0)!;
     expect(white.pieces).toBe(3);
-    expect(white.piecesWithSpare).toBe(Math.ceil(3 * (1 + SPARE_RATIO)));
+    expect(white.piecesWithSpare).toBe(packCount(3));
     expect(white.grams).toBeCloseTo(
       Math.round(white.piecesWithSpare * GRAMS_PER_STUD * 10) / 10,
       5,
@@ -43,7 +43,7 @@ describe("aggregateRestock", () => {
     expect(list.totalPieces).toBe(8);
     const white = list.lines.find((l) => l.id === 0)!;
     expect(white.pieces).toBe(4);
-    expect(white.piecesWithSpare).toBe(Math.ceil(4 * (1 + SPARE_RATIO)));
+    expect(white.piecesWithSpare).toBe(packCount(4));
     expect(white.grams).toBeGreaterThan(white.pieces * GRAMS_PER_STUD * 0.9);
   });
 
