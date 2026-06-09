@@ -62,6 +62,12 @@ export function SeatRow({
 
   const cols = row.pixelMap?.[0]?.length ?? null;
   const rows = row.pixelMap?.length ?? null;
+  // Plates the employee actually used in their design vs. what they were
+  // allocated — the difference is slack the owner can give to someone else.
+  const usedPlates =
+    cols && rows ? Math.round((cols / 24) * (rows / 24)) : null;
+  const slack =
+    usedPlates != null ? row.effectivePlates - usedPlates : 0;
 
   const seatUrl = () =>
     `${typeof window !== "undefined" ? window.location.origin : ""}/seat/${row.inviteToken}`;
@@ -186,6 +192,12 @@ export function SeatRow({
               )}
             </select>
           </label>
+          {usedPlates != null && (
+            <span className={slack > 0 ? "text-amber-600" : ""}>
+              {usedPlates}/{row.effectivePlates} בשימוש
+              {slack > 0 ? ` · ${slack} פנויים להקצאה` : ""}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

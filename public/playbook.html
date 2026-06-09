@@ -542,6 +542,10 @@
               מחיר מכירה ליחידה (₪)
               <input id="calc-retail" type="number" min="0" step="5" value="399" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
             </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              פרסום / לקוח (₪)
+              <input id="calc-cac" type="number" min="0" step="5" value="40" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px">
             <div style="display: flex; justify-content: space-between"><span class="font-head" style="font-weight: 700">תוצאה</span><span id="r-size" style="color: var(--ink-soft)">3×3 (9 לוחות)</span></div>
@@ -550,8 +554,20 @@
             <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">עלות נחיתה / יחידה</span><span id="r-landed" style="font-weight: 600">—</span></div>
             <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">רווח / יחידה</span><span id="r-profit" class="bignum">—</span></div>
             <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--outline); padding-top: 6px"><span style="color: var(--ink-soft)">עלות כוללת</span><span id="r-total-landed">—</span></div>
-            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">רווח כולל</span><span id="r-total-profit" class="bignum" style="font-size: 18px">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">רווח כולל (לפני פרסום)</span><span id="r-total-profit" style="font-weight: 600">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">פחות פרסום (לקוח אחד)</span><span id="r-cac">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">רווח אחרי פרסום</span><span id="r-ad-profit" class="bignum" style="font-size: 18px">—</span></div>
           </div>
+        </div>
+        <div class="callout tip">
+          <div class="tag">💡 כלכלת ההזמנה הראשונה</div>
+          <p>
+            גם אם תוציאו <span id="r-cac-echo">₪40</span> על פרסום כדי להשיג לקוח,
+            עדיין נשארים <b id="r-ad-profit-echo">—</b> רווח כבר
+            <b>בהזמנה הראשונה</b> — וכל הזמנה חוזרת היא רווח כמעט מלא (ללא עלות
+            רכישה נוספת). אפשר לפרסם עד <b id="r-breakeven">—</b> ללקוח ועדיין
+            לא להפסיד על העסקה הראשונה.
+          </p>
         </div>
 
         <h3>2×2 כבסיס הכניסה</h3>
@@ -771,21 +787,29 @@
           var qty = Math.max(1, num("calc-qty"));
           var ship = num("calc-ship");
           var retail = num("calc-retail");
+          var cac = num("calc-cac");
           var cogs = cogsUsd(plates) * rate;
           var fulfil = GATEWAY_NIS + ship;
           var landed = cogs + fulfil;
           var prof = retail - landed;
+          var totalProfit = prof * qty; // before ads, per order
+          var adProfit = totalProfit - cac; // ad cost = once per acquired order
           set("r-size", w + "×" + h + " (" + plates + " לוחות)");
           set("r-cogs", nis(cogs));
           set("r-fulfil", nis(fulfil));
           set("r-landed", nis(landed));
           set("r-profit", nis(prof));
           set("r-total-landed", nis0(landed * qty));
-          set("r-total-profit", nis0(prof * qty));
+          set("r-total-profit", nis0(totalProfit));
+          set("r-cac", "−" + nis0(cac));
+          set("r-ad-profit", nis0(adProfit));
+          set("r-cac-echo", nis0(cac));
+          set("r-ad-profit-echo", nis0(adProfit));
+          set("r-breakeven", nis0(totalProfit));
         }
 
         rateEl.addEventListener("input", recompute);
-        ["calc-w", "calc-h", "calc-qty", "calc-ship", "calc-retail"].forEach(
+        ["calc-w", "calc-h", "calc-qty", "calc-ship", "calc-retail", "calc-cac"].forEach(
           function (id) {
             var el = document.getElementById(id);
             if (el) el.addEventListener("input", recompute);
