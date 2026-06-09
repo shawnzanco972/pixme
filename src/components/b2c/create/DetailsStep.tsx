@@ -45,6 +45,18 @@ export function DetailsStep({
     if (previewRef.current) renderBricks(previewRef.current, design.pixelMap);
   }, [design.pixelMap]);
 
+  // Source image the mosaic was built from (shown alongside the brick preview).
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!design.file) {
+      setOriginalUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(design.file);
+    setOriginalUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [design.file]);
+
   const total = design.price + (isGift && giftWrap ? GIFT_WRAP_FEE : 0);
   const shipToRecipient = isGift && deliverTo === "recipient";
   const addressLabel = shipToRecipient
@@ -115,10 +127,26 @@ export function DetailsStep({
       <aside className="card flex h-fit flex-col gap-4 p-6 lg:sticky lg:top-6">
         <h2 className="font-heading text-lg font-bold">סיכום הזמנה</h2>
         <div className="flex items-center gap-3">
-          <canvas
-            ref={previewRef}
-            className="h-16 w-16 rounded-lg border border-outline object-contain"
-          />
+          <div className="flex items-center gap-1">
+            <figure className="flex flex-col items-center gap-1">
+              <canvas
+                ref={previewRef}
+                className="h-16 w-16 rounded-lg border border-outline object-contain"
+              />
+              <figcaption className="text-[10px] text-zinc-500">פסיפס</figcaption>
+            </figure>
+            {originalUrl && (
+              <figure className="flex flex-col items-center gap-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={originalUrl}
+                  alt="התמונה המקורית"
+                  className="h-16 w-16 rounded-lg border border-outline object-cover"
+                />
+                <figcaption className="text-[10px] text-zinc-500">מקור</figcaption>
+              </figure>
+            )}
+          </div>
           <div>
             <p className="font-medium">ערכת פסיפס אישית</p>
             <p className="text-xs text-zinc-500">

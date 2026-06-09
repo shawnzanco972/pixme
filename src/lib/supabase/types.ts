@@ -401,6 +401,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ready_designs: {
+        Row: {
+          active: boolean
+          brick_count: number | null
+          created_at: string
+          default_plates_x: number
+          default_plates_y: number
+          id: string
+          image_path: string
+          is_hero: boolean
+          settings: Json | null
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          brick_count?: number | null
+          created_at?: string
+          default_plates_x?: number
+          default_plates_y?: number
+          id?: string
+          image_path: string
+          is_hero?: boolean
+          settings?: Json | null
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          active?: boolean
+          brick_count?: number | null
+          created_at?: string
+          default_plates_x?: number
+          default_plates_y?: number
+          id?: string
+          image_path?: string
+          is_hero?: boolean
+          settings?: Json | null
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           key: string

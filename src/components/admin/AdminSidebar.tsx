@@ -21,6 +21,7 @@ const TABS: Tab[] = [
   { href: "/admin/orders", label: "הזמנות" },
   { href: "/admin/clients", label: "לקוחות" },
   { href: "/admin/inventory", label: "מלאי" },
+  { href: "/admin/designs", label: "גלריית עיצובים" },
   { href: "/admin/b2b", label: "עסקים" },
   { href: "/admin/finance", label: "כספים" },
   { href: "/admin/docs", label: "מסמכים" },

@@ -1,13 +1,35 @@
 import Link from "next/link";
 
-import { HeroMosaic } from "@/components/HeroMosaic";
-import { StarterShowcase } from "@/components/StarterShowcase";
+import { HeroMosaic, type HeroDesign } from "@/components/HeroMosaic";
+import { ReadyDesignsGallery } from "@/components/ReadyDesignsGallery";
+import { parseEngineSettings } from "@/lib/design-settings";
 import {
   computePrice,
   formatILS,
   presetStuds,
   SIZE_PRESETS,
 } from "@/lib/pricing";
+import { designPublicUrl } from "@/lib/supabase/storage";
+import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
+
+async function getHeroDesign(): Promise<HeroDesign | undefined> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("ready_designs")
+    .select("image_path, default_plates_x, default_plates_y, settings")
+    .eq("is_hero", true)
+    .eq("active", true)
+    .maybeSingle();
+  if (!data) return undefined;
+  return {
+    imageUrl: designPublicUrl(supabase, data.image_path),
+    platesX: data.default_plates_x,
+    platesY: data.default_plates_y,
+    settings: parseEngineSettings(data.settings),
+  };
+}
 
 const TIERS = [
   { id: "2x2", tag: "הנמכר ביותר" },
@@ -51,7 +73,8 @@ const FAQ = [
   ],
 ];
 
-export default function Home() {
+export default async function Home() {
+  const heroDesign = await getHeroDesign();
   return (
     <main className="flex flex-1 flex-col">
       {/* Hero */}
@@ -78,16 +101,11 @@ export default function Home() {
             </Link>
           </div>
         </div>
-        <HeroMosaic starter="smiley" />
+        <HeroMosaic starter="smiley" design={heroDesign} />
       </section>
 
-      {/* Showcase */}
-      <section className="mx-auto w-full max-w-6xl px-6 pb-16">
-        <h2 className="mb-6 text-center font-heading text-2xl font-bold">
-          דוגמאות — כך זה ייראה מלבנים
-        </h2>
-        <StarterShowcase />
-      </section>
+      {/* Ready-made designs gallery (admin-managed; hidden when empty) */}
+      <ReadyDesignsGallery />
 
       {/* How it works */}
       <section

@@ -34,6 +34,7 @@ export type InventorySupply = Tables<"inventory_supplies">;
 export type Transaction = Tables<"transactions">;
 export type Client = Tables<"clients">;
 export type Setting = Tables<"settings">;
+export type ReadyDesign = Tables<"ready_designs">;
 
 /** inventory_supplies.category is a CHECK-constrained text column, not an enum. */
 export type SupplyCategory = "baseplate" | "connector" | "packaging" | "other";

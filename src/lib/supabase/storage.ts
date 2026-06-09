@@ -20,6 +20,17 @@ export const UPLOADS_BUCKET = "uploads" as const;
 
 type Client = SupabaseClient<Database>;
 
+/** Public bucket for ready-made design artwork (shown on the marketing site). */
+export const DESIGNS_BUCKET = "designs" as const;
+
+/**
+ * Public URL for an object in the public 'designs' bucket. No signing needed —
+ * the bucket is public, so this is a stable, cacheable URL.
+ */
+export function designPublicUrl(client: Client, path: string): string {
+  return client.storage.from(DESIGNS_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
 /** Map a MIME type to a safe file extension for object paths. */
 const EXT_BY_MIME: Record<string, string> = {
   "image/jpeg": "jpg",

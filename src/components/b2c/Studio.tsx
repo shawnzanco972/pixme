@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type BrickifyResult } from "@/lib/brick-engine";
 import { BrickSwatch } from "@/components/b2c/BrickSwatch";
+import { MosaicThumb } from "@/components/MosaicThumb";
 import { ColorBreakdown } from "@/components/b2c/ColorBreakdown";
 import { getActivePalette } from "@/lib/brick-engine/palette";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
@@ -19,6 +20,11 @@ import { cropToAspect, fileToImageData } from "@/lib/image";
 import { STARTERS, renderStarter } from "@/lib/starters";
 import { computePrice, formatILS, PLATE_STUDS } from "@/lib/pricing";
 import { fitPlateDims } from "@/lib/b2b";
+import {
+  DEFAULT_ENGINE_SETTINGS,
+  type DesignSettings,
+  type EngineSettings,
+} from "@/lib/design-settings";
 
 // Physical size of one 24×24 baseplate (24 studs × 8mm pitch ≈ 19.2 cm).
 const CM_PER_PLATE = 19.2;
@@ -56,6 +62,39 @@ export interface StudioProps {
   hidePricing?: boolean;
   /** Label for the embedded CTA (defaults to "המשך לשלב הבא ←"). */
   proceedLabel?: string;
+  /**
+   * Pre-load a ready-made design's artwork (public URL). Fetched once on mount
+   * and pushed through the normal pipeline, exactly like an uploaded photo.
+   */
+  initialImageUrl?: string;
+  /** Filename hint for the pre-loaded artwork (used as the order's image). */
+  initialImageName?: string;
+  /**
+   * Admin-authored engine settings to seed the studio controls with (crop/zoom,
+   * contrast, etc.). The customer can still change anything.
+   */
+  initialSettings?: Partial<EngineSettings>;
+  /**
+   * Ready-made designs to offer as a "suggestions" strip below the studio.
+   * Clicking one swaps it into the engine with its saved settings.
+   */
+  library?: StudioLibraryItem[];
+  /**
+   * Authoring mode (admin): replace the order/proceed CTA with a "save as
+   * default" button that reports the current settings via `onSaveSettings`.
+   */
+  authoring?: boolean;
+  onSaveSettings?: (settings: DesignSettings) => void;
+}
+
+/** A ready-made design offered in the studio's suggestions strip. */
+export interface StudioLibraryItem {
+  id: string;
+  title: string;
+  imageUrl: string;
+  platesX: number;
+  platesY: number;
+  settings: EngineSettings;
 }
 
 export function Studio({
@@ -66,6 +105,12 @@ export function Studio({
   initialPlatesY,
   hidePricing = false,
   proceedLabel,
+  initialImageUrl,
+  initialImageName,
+  initialSettings,
+  library,
+  authoring = false,
+  onSaveSettings,
 }: StudioProps = {}) {
   const { brickify } = useBrickWorker();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -96,23 +141,25 @@ export function Studio({
     setPlatesX(next.x);
     setPlatesY(next.y);
   }
-  // Pre-processing controls (defaults bias toward crisp, vivid output).
-  const [contrast, setContrast] = useState(1.2);
-  const [saturation, setSaturation] = useState(1.1);
-  const [autoLevels, setAutoLevels] = useState(true);
+  // Pre-processing controls (defaults bias toward crisp, vivid output). When a
+  // ready-made design is opened, its saved settings seed these instead.
+  const seed = { ...DEFAULT_ENGINE_SETTINGS, ...initialSettings };
+  const [contrast, setContrast] = useState(seed.contrast);
+  const [saturation, setSaturation] = useState(seed.saturation);
+  const [autoLevels, setAutoLevels] = useState(seed.autoLevels);
   // Dithering off by default (it reads as speckle at stud resolution).
-  const [dither, setDither] = useState(0);
+  const [dither, setDither] = useState(seed.dither);
   // Floyd–Steinberg error diffusion for smooth photographic gradients.
-  const [smoothGradients, setSmoothGradients] = useState(false);
+  const [smoothGradients, setSmoothGradients] = useState(seed.smoothGradients);
   // Face-aware contrast: keep facial features in portraits.
-  const [faceAware, setFaceAware] = useState(false);
+  const [faceAware, setFaceAware] = useState(seed.faceAware);
   // Line-art / text mode: crisp edges for logos & lettering.
-  const [lineArt, setLineArt] = useState(false);
+  const [lineArt, setLineArt] = useState(seed.lineArt);
   // Zoom/crop (1 = fit; >1 crops tighter so the subject gets more studs).
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(seed.zoom);
   // Crop center (0..1) for drag-to-pan when zoomed in.
-  const [panX, setPanX] = useState(0.5);
-  const [panY, setPanY] = useState(0.5);
+  const [panX, setPanX] = useState(seed.panX);
+  const [panY, setPanY] = useState(seed.panY);
   const dragRef = useRef<{
     x: number;
     y: number;
@@ -214,6 +261,21 @@ export function Studio({
   const [zip, setZip] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // "Compare to original" — show the source image the mosaic was built from so
+  // the customer can judge the likeness before ordering.
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!file) {
+      setOriginalUrl(null);
+      setShowOriginal(false);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setOriginalUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
   // Every order ships a physical kit (the instruction PDF is a free download).
   const price = computePrice(cols, rows, "physical");
 
@@ -242,6 +304,115 @@ export function Studio({
       setError("שגיאה בטעינת העיצוב.");
     }
   }, []);
+
+  // Imperatively push a settings snapshot into the controls (used when the
+  // customer picks a different design from the suggestions strip).
+  const applySettings = useCallback((s: EngineSettings) => {
+    setContrast(s.contrast);
+    setSaturation(s.saturation);
+    setAutoLevels(s.autoLevels);
+    setDither(s.dither);
+    setSmoothGradients(s.smoothGradients);
+    setFaceAware(s.faceAware);
+    setLineArt(s.lineArt);
+    setZoom(s.zoom);
+    setPanX(s.panX);
+    setPanY(s.panY);
+  }, []);
+
+  // Current settings + dimensions snapshot (admin authoring "save default").
+  const currentSettings = useCallback(
+    (): DesignSettings => ({
+      platesX,
+      platesY,
+      contrast,
+      saturation,
+      autoLevels,
+      dither,
+      smoothGradients,
+      faceAware,
+      lineArt,
+      zoom,
+      panX,
+      panY,
+    }),
+    [
+      platesX,
+      platesY,
+      contrast,
+      saturation,
+      autoLevels,
+      dither,
+      smoothGradients,
+      faceAware,
+      lineArt,
+      zoom,
+      panX,
+      panY,
+    ],
+  );
+
+  // Swap a suggested design into the engine: fetch its artwork, apply its saved
+  // size + settings, and re-run the pipeline (same path as an upload).
+  const loadLibraryItem = useCallback(
+    async (item: StudioLibraryItem) => {
+      setError(null);
+      setWorking(true);
+      try {
+        const res = await fetch(item.imageUrl);
+        if (!res.ok) throw new Error();
+        const blob = await res.blob();
+        const ext = (blob.type.split("/")[1] ?? "png").replace("jpeg", "jpg");
+        const f = new File([blob], `${item.title}.${ext}`, {
+          type: blob.type || "image/png",
+        });
+        setFile(f);
+        if (plateBudget == null) {
+          setPlatesX(item.platesX);
+          setPlatesY(item.platesY);
+        }
+        applySettings(item.settings);
+        setImageData(await fileToImageData(f));
+      } catch {
+        setWorking(false);
+        setError("שגיאה בטעינת העיצוב.");
+      }
+    },
+    [applySettings, plateBudget],
+  );
+
+  // Pre-load a ready-made design's artwork on mount (homepage → /create?design).
+  // Fetch the public image, wrap it as a File, and run it through onPick so the
+  // rest of the studio (crop/zoom/size/checkout) behaves like a normal upload.
+  useEffect(() => {
+    if (!initialImageUrl) return;
+    let cancelled = false;
+    setWorking(true);
+    (async () => {
+      try {
+        const res = await fetch(initialImageUrl);
+        if (!res.ok) throw new Error();
+        const blob = await res.blob();
+        if (cancelled) return;
+        const ext = (blob.type.split("/")[1] ?? "png").replace("jpeg", "jpg");
+        const f = new File([blob], initialImageName ?? `design.${ext}`, {
+          type: blob.type || "image/png",
+        });
+        setFile(f);
+        setImageData(await fileToImageData(f));
+      } catch {
+        if (!cancelled) {
+          setWorking(false);
+          setError("לא הצלחנו לטעון את העיצוב שנבחר.");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Run once for the provided URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialImageUrl]);
 
   const STARTER_EMOJI: Record<string, string> = {
     heart: "❤️",
@@ -350,7 +521,8 @@ export function Studio({
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-5xl gap-8 p-6 md:grid-cols-2">
+    <div className="mx-auto w-full max-w-5xl p-6">
+    <div className="grid gap-8 md:grid-cols-2">
       {/* Preview / upload stage */}
       <section className="flex flex-col gap-4">
         <input
@@ -383,6 +555,21 @@ export function Studio({
               zoom > 1 ? "cursor-grab active:cursor-grabbing touch-none" : ""
             }`}
           />
+
+          {/* Compare overlay — the original source image on top of the mosaic. */}
+          {result && showOriginal && originalUrl && (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={originalUrl}
+                alt="התמונה המקורית"
+                className="absolute inset-0 h-full w-full bg-surface object-contain"
+              />
+              <span className="absolute top-3 start-3 rounded-full bg-surface/90 px-3 py-1 text-xs shadow">
+                תמונה מקורית
+              </span>
+            </>
+          )}
 
           {!result && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-zinc-500">
@@ -455,13 +642,22 @@ export function Studio({
                 {result.cols}×{result.rows} אריחים · {result.cols * result.rows}{" "}
                 חלקים
               </span>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="underline"
-              >
-                החלפת תמונה
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowOriginal((v) => !v)}
+                  className="underline"
+                >
+                  {showOriginal ? "תצוגת פסיפס" : "השוואה למקור"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="underline"
+                >
+                  החלפת תמונה
+                </button>
+              </div>
             </div>
             <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
           </>
@@ -777,7 +973,16 @@ export function Studio({
               {formatILS(price.total)}
             </span>
           )}
-          {embedded ? (
+          {authoring ? (
+            <button
+              type="button"
+              onClick={() => result && onSaveSettings?.(currentSettings())}
+              disabled={!result}
+              className="btn btn-primary"
+            >
+              שמירת הגדרות ברירת מחדל
+            </button>
+          ) : embedded ? (
             <button
               type="button"
               onClick={() =>
@@ -809,6 +1014,49 @@ export function Studio({
 
         {error && <p className="text-sm text-red-600">{error}</p>}
       </section>
+    </div>
+
+      {/* Suggestions strip — pick a ready-made design to load into the engine. */}
+      {library && library.length > 0 && (
+        <div className="mt-10 rounded-3xl border border-outline bg-surface-muted/60 p-5 sm:p-6">
+          <div className="mb-4 flex flex-col gap-1 text-center sm:text-start">
+            <h3 className="font-heading text-xl font-bold sm:text-2xl">
+              🧱 עיצובים מוכנים
+            </h3>
+            <p className="text-sm text-foreground/70">
+              בלי מצלמה? בחרו יצירה מוכנה והתחילו לערוך — אפשר לשנות גודל וצבעים.
+            </p>
+          </div>
+          <div className="flex gap-6 overflow-x-auto pb-2">
+            {library.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => void loadLibraryItem(item)}
+                className="group flex shrink-0 flex-col items-center gap-2"
+                title={item.title}
+              >
+                {/* No surrounding box — the mosaic renders at its true ratio so
+                    wide designs take more width, and the hover effect can't be
+                    clipped by a frame. */}
+                <div className="flex h-40 items-end justify-center sm:h-48">
+                  <MosaicThumb
+                    imageUrl={item.imageUrl}
+                    platesX={item.platesX}
+                    platesY={item.platesY}
+                    settings={item.settings}
+                    studPx={5}
+                    className="max-h-full max-w-[22rem] rounded-md shadow-sm transition-transform duration-200 group-hover:-translate-y-1 group-hover:shadow-lg"
+                  />
+                </div>
+                <span className="max-w-44 truncate text-sm font-medium text-foreground/80">
+                  {item.title}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

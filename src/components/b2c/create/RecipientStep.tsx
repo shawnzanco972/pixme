@@ -74,11 +74,22 @@ function Choice({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`card flex flex-col items-center gap-3 p-8 text-center transition ${
-        selected ? "ring-2 ring-primary" : "hover:border-zinc-300"
+      className={`relative flex flex-col items-center gap-3 rounded-3xl border-2 bg-surface p-8 text-center shadow-sm transition ${
+        selected
+          ? "border-primary bg-primary/5 shadow-md"
+          : "border-outline hover:border-zinc-300 hover:shadow-md"
       }`}
     >
-      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-muted text-3xl">
+      {selected && (
+        <span className="absolute top-3 end-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-sm text-white">
+          ✓
+        </span>
+      )}
+      <span
+        className={`flex h-16 w-16 items-center justify-center rounded-full text-3xl transition-colors ${
+          selected ? "bg-primary/15" : "bg-surface-muted"
+        }`}
+      >
         {icon}
       </span>
       <span className="font-heading text-xl font-bold">{title}</span>

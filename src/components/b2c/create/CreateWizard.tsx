@@ -9,12 +9,34 @@
  */
 import { useState } from "react";
 
-import { Studio, type DesignPayload } from "@/components/b2c/Studio";
+import {
+  Studio,
+  type DesignPayload,
+  type StudioLibraryItem,
+} from "@/components/b2c/Studio";
 import { DetailsStep } from "@/components/b2c/create/DetailsStep";
 import { RecipientStep, type Intent } from "@/components/b2c/create/RecipientStep";
 import { StepProgress } from "@/components/b2c/create/StepProgress";
+import type { EngineSettings } from "@/lib/design-settings";
 
-export function CreateWizard() {
+/** Optional pre-selected ready-made design (from /create?design=…). */
+export interface CreateWizardProps {
+  initialImageUrl?: string;
+  initialImageName?: string;
+  initialPlatesX?: number;
+  initialPlatesY?: number;
+  initialSettings?: Partial<EngineSettings>;
+  library?: StudioLibraryItem[];
+}
+
+export function CreateWizard({
+  initialImageUrl,
+  initialImageName,
+  initialPlatesX,
+  initialPlatesY,
+  initialSettings,
+  library,
+}: CreateWizardProps = {}) {
   const [step, setStep] = useState(1);
   const [design, setDesign] = useState<DesignPayload | null>(null);
   const [intent, setIntent] = useState<Intent>("self");
@@ -34,6 +56,12 @@ export function CreateWizard() {
       {safeStep === 1 && (
         <Studio
           embedded
+          initialImageUrl={initialImageUrl}
+          initialImageName={initialImageName}
+          initialPlatesX={initialPlatesX}
+          initialPlatesY={initialPlatesY}
+          initialSettings={initialSettings}
+          library={library}
           onProceed={(d) => {
             setDesign(d);
             setStep(2);
