@@ -8,7 +8,7 @@
  */
 import { NextResponse } from "next/server";
 
-import { computeB2bQuote } from "@/lib/b2b-pricing";
+import { computeB2bQuoteByPlates } from "@/lib/b2b-pricing";
 import { sendQuoteRequest } from "@/lib/email";
 import { presetById } from "@/lib/pricing";
 
@@ -25,12 +25,31 @@ export async function POST(request: Request) {
   const companyName = String(body.company_name ?? "").trim();
   const contactEmail = String(body.contact_email ?? "").trim();
   const employees = Number(body.employees ?? 0);
-  const preset = presetById(String(body.preset_id ?? ""));
-  if (!companyName || !contactEmail || !(employees > 0) || !preset) {
+  let platesX = Math.floor(Number(body.plates_x));
+  let platesY = Math.floor(Number(body.plates_y));
+  if (!(platesX > 0) || !(platesY > 0)) {
+    const preset = presetById(String(body.preset_id ?? ""));
+    if (preset) {
+      platesX = preset.platesX;
+      platesY = preset.platesY;
+    }
+  }
+  if (
+    !companyName ||
+    !contactEmail ||
+    !(employees > 0) ||
+    !(platesX > 0) ||
+    !(platesY > 0)
+  ) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const quote = computeB2bQuote(employees, preset.id, body.managed === true);
+  const quote = computeB2bQuoteByPlates(
+    employees,
+    platesX,
+    platesY,
+    body.managed === true,
+  );
   const emailed = await sendQuoteRequest({
     companyName,
     contactEmail,

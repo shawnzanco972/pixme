@@ -12,7 +12,13 @@ import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
 import { ProvisionWorkspaceButton } from "@/components/admin/ProvisionWorkspaceButton";
 import { RosterManager } from "@/components/b2b/RosterManager";
 import type { SeatReviewRow } from "@/components/b2b/SeatRow";
-import { projectProgress, seatStatus, type SeatStatus } from "@/lib/b2b";
+import {
+  defaultAllocation,
+  projectProgress,
+  seatStatus,
+  totalPlateCredits,
+  type SeatStatus,
+} from "@/lib/b2b";
 import { isEmailConfigured } from "@/lib/email";
 import { formatILS, presetStuds } from "@/lib/pricing";
 import { createClient } from "@/lib/supabase/server";
@@ -75,10 +81,13 @@ export default async function AdminB2bDetail({
   const { data: roster } = wsIds.length
     ? await supabase
         .from("employee_roster")
-        .select("id, name, email, invite_token, workspace_id")
+        .select("id, name, email, invite_token, workspace_id, plates_allocated")
         .in("workspace_id", wsIds)
         .order("created_at", { ascending: true })
     : { data: [] };
+
+  const defaultAlloc = defaultAllocation(order);
+  const totalCredits = totalPlateCredits(order);
 
   const subByRoster = new Map<string, NonNullable<typeof subs>[number]>();
   for (const s of subs ?? []) {
@@ -96,6 +105,8 @@ export default async function AdminB2bDetail({
       submissionId: sub?.id ?? null,
       pixelMap: Array.isArray(pm) ? pm : null,
       scheduledFor: sub?.scheduled_for ?? null,
+      effectivePlates: r.plates_allocated ?? defaultAlloc,
+      maxPlates: 0, // computed in RosterManager from the pool
     };
   });
   const progress = projectProgress(seatRows.map((s) => s.status));
@@ -178,6 +189,7 @@ export default async function AdminB2bDetail({
             rows={seatRows}
             seatsLeft={Math.max(0, seatsLeft)}
             emailConfigured={isEmailConfigured()}
+            totalCredits={totalCredits}
           />
         </section>
       )}

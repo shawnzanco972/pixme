@@ -15,19 +15,52 @@ export function RosterManager({
   rows,
   seatsLeft,
   emailConfigured,
+  totalCredits,
 }: {
   token: string;
   rows: SeatReviewRow[];
   seatsLeft: number;
   emailConfigured: boolean;
+  /** Total plate pool for the project (internal capacity, owner-facing only). */
+  totalCredits: number;
 }) {
   const router = useRouter();
   const [names, setNames] = useState("");
   const [adding, setAdding] = useState(false);
   const [approvingAll, setApprovingAll] = useState(false);
+  const [credits, setCredits] = useState("");
+  const [buyingCredits, setBuyingCredits] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pendingReview = rows.filter((r) => r.status === "submitted");
+
+  // Pool accounting: each seat consumes its allocation; a seat can be raised up
+  // to whatever's left for the others.
+  const usedTotal = rows.reduce((s, r) => s + r.effectivePlates, 0);
+  const poolLeft = totalCredits - usedTotal;
+  const withMax = rows.map((r) => ({
+    ...r,
+    maxPlates: Math.max(1, totalCredits - (usedTotal - r.effectivePlates)),
+  }));
+
+  async function buyCredits() {
+    const n = Math.floor(Number(credits) || 0);
+    if (n <= 0) return;
+    setBuyingCredits(true);
+    try {
+      const res = await fetch("/api/b2b/owner/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerToken: token, action: "buy_credits", plates: n }),
+      });
+      if (res.ok) {
+        setCredits("");
+        router.refresh();
+      }
+    } finally {
+      setBuyingCredits(false);
+    }
+  }
 
   async function approveAll() {
     if (pendingReview.length === 0) return;
@@ -112,6 +145,34 @@ export function RosterManager({
         </div>
       </div>
 
+      {/* Plate pool — owner-facing capacity management. */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-outline bg-surface-muted/50 p-3 text-sm">
+        <span>
+          מאגר לוחות: <b>{usedTotal}</b> / {totalCredits} מוקצים ·{" "}
+          <span className={poolLeft > 0 ? "text-success" : "text-zinc-500"}>
+            {poolLeft} פנויים
+          </span>
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={1}
+            value={credits}
+            onChange={(e) => setCredits(e.target.value)}
+            placeholder="+ לוחות"
+            className="w-20 rounded border border-outline bg-surface px-2 py-1 text-xs"
+          />
+          <button
+            type="button"
+            onClick={() => void buyCredits()}
+            disabled={buyingCredits || !credits}
+            className="btn btn-ghost text-xs"
+          >
+            {buyingCredits ? "מוסיף…" : "הוספת לוחות"}
+          </button>
+        </div>
+      </div>
+
       {rows.length === 0 ? (
         <p className="card p-6 text-center text-zinc-500">
           עדיין לא הוספתם עובדים. הוסיפו שמות למטה — כל עובד יקבל קישור אישי
@@ -119,7 +180,7 @@ export function RosterManager({
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {rows.map((r) => (
+          {withMax.map((r) => (
             <SeatRow
               key={r.id}
               token={token}

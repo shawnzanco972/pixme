@@ -1,33 +1,38 @@
 /**
  * POST /api/b2b/owner/action
- *   { ownerToken, submissionId, action, scheduledFor? }
+ *   review : { ownerToken, submissionId, action: approve|reject|reopen|schedule, scheduledFor? }
+ *   pool   : { ownerToken, rosterId, action: "allocate", plates }
+ *            { ownerToken, action: "buy_credits", plates }
  *
- * Project-owner review actions, gated by the secret owner_token (no login),
- * served with the service-role key. The owner approves an employee's design
- * (→ "ready", which queues it for production), asks for a redo ("rejected"),
- * reopens an approval, or sets a per-employee fulfillment date.
- *
- * action ∈ "approve" | "reject" | "reopen" | "schedule"
- *  - approve  → status "ready", approved_at = now, scheduled_for = scheduledFor
- *  - reject   → status "rejected" (employee can edit + resubmit)
- *  - reopen   → status "pending"  (back to awaiting review)
- *  - schedule → only updates scheduled_for (keeps current status)
+ * Project-owner actions, gated by the secret owner_token (no login), served with
+ * the service-role key. Reviews drive a submission's status/date; pool actions
+ * redistribute or grow the project's plate capacity. Everything is validated
+ * against the order the owner_token resolves to — the ids are never trusted.
  */
 import { NextResponse } from "next/server";
 
+import { defaultAllocation, totalPlateCredits } from "@/lib/b2b";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { TablesUpdate } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
 
-type Action = "approve" | "reject" | "reopen" | "schedule";
+type Action =
+  | "approve"
+  | "reject"
+  | "reopen"
+  | "schedule"
+  | "allocate"
+  | "buy_credits";
 
 export async function POST(request: Request) {
   let body: {
     ownerToken?: string;
     submissionId?: string;
+    rosterId?: string;
     action?: Action;
     scheduledFor?: string | null;
+    plates?: number;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -35,21 +40,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { ownerToken, submissionId, action } = body;
-  if (!ownerToken || !submissionId || !action) {
+  const { ownerToken, action } = body;
+  if (!ownerToken || !action) {
     return NextResponse.json(
-      { error: "Missing ownerToken, submissionId, or action" },
+      { error: "Missing ownerToken or action" },
       { status: 400 },
     );
   }
 
   const admin = createAdminClient();
 
-  // Resolve the owner's order → its workspaces, so we can verify the submission
-  // actually belongs to this project (never trust the submissionId alone).
   const { data: order } = await admin
     .from("b2b_orders")
-    .select("id")
+    .select(
+      "id, plates_x, plates_y, licenses_purchased, extra_plate_credits",
+    )
     .eq("owner_token", ownerToken)
     .maybeSingle();
   if (!order) {
@@ -62,6 +67,70 @@ export async function POST(request: Request) {
     .eq("b2b_order_id", order.id);
   const wsIds = (workspaces ?? []).map((w) => w.id);
 
+  // --- Pool: grow total capacity ------------------------------------------
+  if (action === "buy_credits") {
+    const add = Math.max(0, Math.floor(body.plates ?? 0));
+    if (add <= 0) {
+      return NextResponse.json({ error: "Invalid plates" }, { status: 400 });
+    }
+    const { error } = await admin
+      .from("b2b_orders")
+      .update({ extra_plate_credits: order.extra_plate_credits + add })
+      .eq("id", order.id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // --- Pool: reallocate plates to one seat --------------------------------
+  if (action === "allocate") {
+    const plates = Math.max(1, Math.floor(body.plates ?? 0));
+    if (!body.rosterId) {
+      return NextResponse.json({ error: "Missing rosterId" }, { status: 400 });
+    }
+    // The seat must belong to this project.
+    const { data: seat } = await admin
+      .from("employee_roster")
+      .select("id, workspace_id")
+      .eq("id", body.rosterId)
+      .maybeSingle();
+    if (!seat || !wsIds.includes(seat.workspace_id)) {
+      return NextResponse.json(
+        { error: "Seat not part of this project" },
+        { status: 403 },
+      );
+    }
+    // Validate against the pool: others' effective allocations + new ≤ total.
+    const { data: allSeats } = await admin
+      .from("employee_roster")
+      .select("id, plates_allocated")
+      .in("workspace_id", wsIds);
+    const dflt = defaultAllocation(order);
+    const usedByOthers = (allSeats ?? [])
+      .filter((s) => s.id !== seat.id)
+      .reduce((sum, s) => sum + (s.plates_allocated ?? dflt), 0);
+    if (usedByOthers + plates > totalPlateCredits(order)) {
+      return NextResponse.json(
+        { error: "Exceeds the project's plate pool" },
+        { status: 409 },
+      );
+    }
+    const { error } = await admin
+      .from("employee_roster")
+      .update({ plates_allocated: plates })
+      .eq("id", seat.id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // --- Review a submission -------------------------------------------------
+  const { submissionId } = body;
+  if (!submissionId) {
+    return NextResponse.json({ error: "Missing submissionId" }, { status: 400 });
+  }
   const { data: sub } = await admin
     .from("employee_submissions")
     .select("id, workspace_id")

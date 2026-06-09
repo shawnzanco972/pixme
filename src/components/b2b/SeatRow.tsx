@@ -21,6 +21,10 @@ export interface SeatReviewRow {
   submissionId: string | null;
   pixelMap: number[][] | null;
   scheduledFor: string | null;
+  /** Plates currently allocated to this seat (owner-set or default share). */
+  effectivePlates: number;
+  /** Most plates this seat can be raised to without exceeding the pool. */
+  maxPlates: number;
 }
 
 const STATUS_LABEL: Record<SeatStatus, string> = {
@@ -88,6 +92,25 @@ export function SeatRow({
     }
   }
 
+  async function allocate(plates: number) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/b2b/owner/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ownerToken: token,
+          rosterId: row.id,
+          action: "allocate",
+          plates,
+        }),
+      });
+      if (res.ok) router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function act(action: Action) {
     if (!row.submissionId) return;
     setBusy(true);
@@ -139,11 +162,31 @@ export function SeatRow({
           </span>
         </div>
 
-        {cols && rows && (
-          <p className="text-xs text-zinc-500">
-            {cols}×{rows} אריחים · {(cols / 24) * (rows / 24)} לוחות
-          </p>
-        )}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+          {cols && rows && (
+            <span>
+              {cols}×{rows} אריחים
+            </span>
+          )}
+          <label className="flex items-center gap-1">
+            לוחות:
+            <select
+              value={row.effectivePlates}
+              disabled={busy}
+              onChange={(e) => void allocate(Number(e.target.value))}
+              className="rounded border border-outline bg-surface px-1.5 py-0.5 text-xs"
+              title="גודל המוקצה לעובד (מתוך מאגר הלוחות של הפרויקט)"
+            >
+              {Array.from({ length: row.maxPlates }, (_, i) => i + 1).map(
+                (n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Seat link controls */}

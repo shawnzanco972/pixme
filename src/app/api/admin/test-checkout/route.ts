@@ -19,7 +19,7 @@
 import { NextResponse } from "next/server";
 
 import { CATALOG, isCore } from "@/lib/brick-engine/palette";
-import { computeB2bQuote } from "@/lib/b2b-pricing";
+import { computeB2bQuoteByPlates } from "@/lib/b2b-pricing";
 import { provisionB2b, provisionB2c } from "@/lib/provision";
 import { computePrice, presetById, presetStuds } from "@/lib/pricing";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -129,12 +129,14 @@ export async function POST(request: Request) {
       const contactEmail =
         (body.contact_email as string)?.trim() || "owner@pixipic.test";
       const seatName = (body.seat_name as string)?.trim() || "עובד לדוגמה";
-      const preset = presetById(String(body.preset_id ?? "2x2")) ??
+      const fallback = presetById(String(body.preset_id ?? "2x2")) ??
         presetById("2x2")!;
+      const platesX = Math.max(1, Number(body.plates_x ?? fallback.platesX));
+      const platesY = Math.max(1, Number(body.plates_y ?? fallback.platesY));
       const employees = Math.max(1, Number(body.employees ?? 3));
       const managed = body.managed === true;
 
-      const quote = computeB2bQuote(employees, preset.id, managed);
+      const quote = computeB2bQuoteByPlates(employees, platesX, platesY, managed);
       if (quote.requiresQuote) {
         return NextResponse.json(
           { error: "Employee count exceeds the self-serve limit" },
@@ -148,8 +150,8 @@ export async function POST(request: Request) {
           company_name: companyName,
           contact_email: contactEmail,
           project_name: "פרויקט בדיקה",
-          plates_x: preset.platesX,
-          plates_y: preset.platesY,
+          plates_x: platesX,
+          plates_y: platesY,
           licenses_purchased: quote.employees,
           managed,
           amount_paid: 0,

@@ -2,6 +2,80 @@
  * B2B workspace helpers (server/runtime, not a React component or hook).
  */
 
+// --- Plate credits & allocation -------------------------------------------
+//
+// A B2B order is a POOL of 24×24 plate capacity = employees × the size the
+// company chose, plus any later top-ups. The owner can redistribute that pool
+// between employees (give one a bigger mosaic) as long as the total stays
+// within the pool. Each employee designs freely up to their own allocation.
+// ("plates/credits" is internal vocabulary — never shown in B2B sales copy.)
+
+export interface PlatePoolOrder {
+  licenses_purchased: number;
+  plates_x: number;
+  plates_y: number;
+  extra_plate_credits?: number | null;
+}
+
+/** The default even share each employee gets (the purchased per-employee size). */
+export function defaultAllocation(o: PlatePoolOrder): number {
+  return o.plates_x * o.plates_y;
+}
+
+/** Total plate-credit pool: employees × default size + any top-ups. */
+export function totalPlateCredits(o: PlatePoolOrder): number {
+  return (
+    o.licenses_purchased * o.plates_x * o.plates_y +
+    (o.extra_plate_credits ?? 0)
+  );
+}
+
+/**
+ * A near-square width×height whose product is ≤ budget and wastes the fewest
+ * plates — the natural starting shape for an allocation (e.g. 6→2×3, 9→3×3,
+ * 8→2×4). The employee can still reframe from here within the same budget.
+ */
+export function balancedDims(budget: number): { x: number; y: number } {
+  const b = Math.max(1, Math.floor(budget));
+  let best = { x: 1, y: b, waste: b - b, diff: b - 1 };
+  for (let x = 1; x * x <= b; x++) {
+    const y = Math.floor(b / x);
+    const waste = b - x * y;
+    const diff = y - x;
+    // Prefer fewer wasted plates; tie-break toward square.
+    if (waste < best.waste || (waste === best.waste && diff < best.diff)) {
+      best = { x, y, waste, diff };
+    }
+  }
+  return { x: best.x, y: best.y };
+}
+
+/**
+ * Auto-fit width/height to a plate budget. The axis the user just changed keeps
+ * its (clamped) value; the OTHER axis is reduced so width×height stays within
+ * budget. This powers the employee studio: budget 6, set W=3 ⇒ H=2; then set
+ * H=3 ⇒ W drops to 2. Never returns a dimension below 1.
+ */
+export function fitPlateDims(args: {
+  changed: "x" | "y";
+  x: number;
+  y: number;
+  budget: number;
+  maxAxis?: number;
+}): { x: number; y: number } {
+  const budget = Math.max(1, Math.floor(args.budget));
+  const maxAxis = Math.max(1, Math.min(args.maxAxis ?? budget, budget));
+  const clampAxis = (v: number) => Math.max(1, Math.min(maxAxis, v));
+  if (args.changed === "x") {
+    const x = clampAxis(args.x);
+    const y = Math.max(1, Math.min(args.y, Math.floor(budget / x)));
+    return { x, y };
+  }
+  const y = clampAxis(args.y);
+  const x = Math.max(1, Math.min(args.x, Math.floor(budget / y)));
+  return { x, y };
+}
+
 export interface WorkspaceLike {
   active: boolean;
   expiration_date: string | null;
