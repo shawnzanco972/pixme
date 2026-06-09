@@ -337,13 +337,16 @@
         <div class="kpi-row">
           <div class="kpi"><div class="big">~65</div><div class="lbl">יצירות מהמלאי הראשוני</div></div>
           <div class="kpi"><div class="big">₪22,850</div><div class="lbl">הכנסה גולמית</div></div>
-          <div class="kpi"><div class="big">₪14,000+</div><div class="lbl">רווח נקי (אחרי החזר ההקמה)</div></div>
+          <div class="kpi"><div class="big j-batch-net">₪12,900</div><div class="lbl">רווח נקי משוער (אחרי הקמה)</div></div>
         </div>
         <div class="callout report">
           <div class="tag">📋 מהניתוח הכלכלי</div>
           <p>
-            מכירת 65 הערכות מכניסה כ־<b>₪22,850</b> ברוטו, ומשאירה <b>מעל ₪14,000
-            רווח נקי</b> — אחרי שכיסיתם את כל עלות ההקמה של $1,750. כלומר ההזמנה
+            מכירת 65 הערכות מכניסה כ־<b>₪22,850</b> ברוטו, ומשאירה
+            <b>כ־<span class="j-batch-net">₪12,900</span> רווח נקי משוער</b> (לפי
+            השער) — אחרי שכיסיתם את כל עלות ההקמה של $1,750
+            (<span class="j-nis" data-usd="1750" data-dec="0">₪5,250</span>).
+            כלומר ההזמנה
             הראשונה מחזירה את עצמה הרבה לפני שהמלאי נגמר.
           </p>
         </div>
@@ -509,6 +512,48 @@
           </p>
         </div>
 
+        <h3>🧮 מחשבון עלות הזמנה (אינטראקטיבי)</h3>
+        <p style="font-size: 13px; color: var(--ink-soft)">
+          בחרו גודל, כמות, משלוח ומחיר מכירה — והמחשבון מעריך עלות ורווח לפי השער
+          שמוגדר בפינה. המחירים גסים לעת עתה; עדכנו אותם כשיהיו נתונים מדויקים.
+        </p>
+        <div
+          class="card"
+          style="display: grid; gap: 18px; grid-template-columns: 1fr 1fr; padding: 18px"
+        >
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              רוחב (לוחות)
+              <input id="calc-w" type="number" min="1" max="5" value="3" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              גובה (לוחות)
+              <input id="calc-h" type="number" min="1" max="5" value="3" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              כמות (יחידות)
+              <input id="calc-qty" type="number" min="1" value="1" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              משלוח ליחידה (₪)
+              <input id="calc-ship" type="number" min="0" step="0.5" value="18" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              מחיר מכירה ליחידה (₪)
+              <input id="calc-retail" type="number" min="0" step="5" value="399" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+            <div style="display: flex; justify-content: space-between"><span class="font-head" style="font-weight: 700">תוצאה</span><span id="r-size" style="color: var(--ink-soft)">3×3 (9 לוחות)</span></div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--outline); padding-top: 6px"><span style="color: var(--ink-soft)">עלות ייצור / יחידה</span><span id="r-cogs">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">עלות מימוש / יחידה</span><span id="r-fulfil">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">עלות נחיתה / יחידה</span><span id="r-landed" style="font-weight: 600">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">רווח / יחידה</span><span id="r-profit" class="bignum">—</span></div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--outline); padding-top: 6px"><span style="color: var(--ink-soft)">עלות כוללת</span><span id="r-total-landed">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">רווח כולל</span><span id="r-total-profit" class="bignum" style="font-size: 18px">—</span></div>
+          </div>
+        </div>
+
         <h3>2×2 כבסיס הכניסה</h3>
         <div class="callout report">
           <div class="tag">📋 מהניתוח</div>
@@ -645,7 +690,8 @@
         <div class="divider"></div>
         <p style="color: var(--ink-soft); font-size: 14px">
           <b>שורה תחתונה:</b> בהשקעת הקמה של ~$1,750, המלאי הראשוני מייצר ~65
-          יצירות ומחזיר את עצמו עם מעל ₪14,000 רווח. תמחור 3×3 ב־₪399 משאיר
+          יצירות ומחזיר את עצמו עם כ־<span class="j-batch-net">₪12,900</span>
+          רווח (משוער). תמחור 3×3 ב־₪399 משאיר
           ~<span class="j-profit">₪308</span> רווח להזמנה. שילוב של רכש יעיל־מס, מלאי מדורג ולוח ניהול מבוסס־Supabase
           המחובר למנוע ה״לבנים״ — יוצר עסק עם ״חפיר״ גבוה ומסלול סקלבילי ל־B2B.
         </p>
@@ -654,39 +700,97 @@
 
     <script>
       (function () {
-        // Live USD→₪ conversion. The factory/import costs are in USD; their ₪
-        // equivalents (and anything derived from them) recompute from the rate
-        // the operator sets. ₪-native figures (retail ₪399, revenue, local
-        // fulfilment) stay fixed.
-        var FULFILMENT_NIS = 28; // gateway + domestic shipping (₪-native)
-        var COGS_USD = 21.0; // sum of the per-3×3 production USD costs
-        var RETAIL_NIS = 399;
+        // Live USD→₪ conversion + a parametric cost model. Factory/import costs
+        // are in USD; their ₪ equivalents (and anything derived from them)
+        // recompute from the rate the operator sets. ₪-native figures (retail
+        // ₪399, gross revenue, local gateway/shipping) stay fixed.
+        //
+        // cogsUsd(plates) is calibrated to the report's 3×3 (9 plates) → $21.00:
+        //   per-plate (bricks+baseplates+import buffer) + per-kit fixed items.
+        var COGS_PER_PLATE_USD = 1.98333;
+        var COGS_FIXED_USD = 3.15;
+        var GATEWAY_NIS = 10; // payment gateway, ~2.5% of ₪399
+        var DEFAULT_SHIP_NIS = 18; // domestic shipping
+        var RETAIL_3X3_NIS = 399;
+        var SETUP_USD = 1750;
+        var BATCH_REVENUE_NIS = 22850; // 65-kit gross (₪-native)
         var rateEl = document.getElementById("rate");
+
+        function cogsUsd(plates) {
+          return plates * COGS_PER_PLATE_USD + COGS_FIXED_USD;
+        }
         function fmt(n, dec) {
           return n.toLocaleString("he-IL", {
             minimumFractionDigits: dec,
             maximumFractionDigits: dec,
           });
         }
+        var nis = (n) => "₪" + fmt(n, 2);
+        var nis0 = (n) => "₪" + fmt(Math.round(n), 0);
+        var num = (id) => parseFloat(document.getElementById(id).value) || 0;
+        var set = (id, t) => {
+          var el = document.getElementById(id);
+          if (el) el.textContent = t;
+        };
+
         function recompute() {
           var rate = parseFloat(rateEl.value) || 3;
           document.querySelectorAll(".j-nis").forEach(function (el) {
             var usd = parseFloat(el.dataset.usd);
             var dec = el.dataset.dec !== undefined ? +el.dataset.dec : 2;
-            var bare = el.hasAttribute("data-bare");
-            el.textContent = (bare ? "" : "₪") + fmt(usd * rate, dec);
+            el.textContent =
+              (el.hasAttribute("data-bare") ? "" : "₪") + fmt(usd * rate, dec);
           });
-          var orderTotal = COGS_USD * rate + FULFILMENT_NIS;
-          var profit = RETAIL_NIS - orderTotal;
+          // 3×3 reference order
+          var orderTotal = cogsUsd(9) * rate + GATEWAY_NIS + DEFAULT_SHIP_NIS;
+          var profit = RETAIL_3X3_NIS - orderTotal;
           document.querySelectorAll(".j-order-total").forEach(function (el) {
-            var bare = el.hasAttribute("data-bare");
-            el.textContent = (bare ? "" : "₪") + fmt(orderTotal, 2);
+            el.textContent =
+              (el.hasAttribute("data-bare") ? "" : "₪") + fmt(orderTotal, 2);
           });
-          document.querySelectorAll(".j-profit").forEach(function (el) {
-            el.textContent = "₪" + fmt(Math.round(profit), 0);
-          });
+          document
+            .querySelectorAll(".j-profit")
+            .forEach((el) => (el.textContent = nis0(profit)));
+          // 65-kit batch net (estimate): 40×2×2 + 25×3×3
+          var production = (40 * cogsUsd(4) + 25 * cogsUsd(9)) * rate;
+          var batchNet =
+            BATCH_REVENUE_NIS -
+            SETUP_USD * rate -
+            production -
+            65 * (GATEWAY_NIS + DEFAULT_SHIP_NIS);
+          document
+            .querySelectorAll(".j-batch-net")
+            .forEach((el) => (el.textContent = nis0(batchNet)));
+          calc(rate);
         }
+
+        function calc(rate) {
+          var w = Math.max(1, num("calc-w"));
+          var h = Math.max(1, num("calc-h"));
+          var plates = w * h;
+          var qty = Math.max(1, num("calc-qty"));
+          var ship = num("calc-ship");
+          var retail = num("calc-retail");
+          var cogs = cogsUsd(plates) * rate;
+          var fulfil = GATEWAY_NIS + ship;
+          var landed = cogs + fulfil;
+          var prof = retail - landed;
+          set("r-size", w + "×" + h + " (" + plates + " לוחות)");
+          set("r-cogs", nis(cogs));
+          set("r-fulfil", nis(fulfil));
+          set("r-landed", nis(landed));
+          set("r-profit", nis(prof));
+          set("r-total-landed", nis0(landed * qty));
+          set("r-total-profit", nis0(prof * qty));
+        }
+
         rateEl.addEventListener("input", recompute);
+        ["calc-w", "calc-h", "calc-qty", "calc-ship", "calc-retail"].forEach(
+          function (id) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener("input", recompute);
+          },
+        );
         recompute();
       })();
     </script>
