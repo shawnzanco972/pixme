@@ -73,6 +73,7 @@ export function MosaicThumb({
             faceAware: s.faceAware,
             lineArt: s.lineArt,
           },
+          detail: s.detail,
           dither: s.dither > 0 ? { amount: s.dither } : null,
           fsDither: s.smoothGradients,
         });

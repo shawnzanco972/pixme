@@ -20,6 +20,19 @@ export interface DespeckleOptions {
    * `true` are treated as edges and left untouched (edge preservation).
    */
   edgeMask?: boolean[] | null;
+  /**
+   * Optional perceptual cost guard: cost(cell, paletteId) — the same squared
+   * OKLab metric the matcher minimizes. When set, a speckle is only replaced by
+   * a neighbor color whose cost is within `maxCostIncrease` of the current one.
+   * Without this, majority vote can plant a perceptually FAR color (e.g. a
+   * green stud in a face) just because it happens to surround the cell.
+   */
+  cost?: (cell: number, id: number) => number;
+  /**
+   * Max allowed cost increase (squared-distance units) for a despeckle
+   * replacement when `cost` is provided. Default 0.035 (≈0.19 OKLab distance).
+   */
+  maxCostIncrease?: number;
 }
 
 const NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
@@ -45,6 +58,8 @@ export function despeckleGrid(
   const minSame = options.minSameNeighbors ?? 2;
   const passes = options.passes ?? 1;
   const edgeMask = options.edgeMask ?? null;
+  const cost = options.cost ?? null;
+  const maxCostIncrease = options.maxCostIncrease ?? 0.035;
 
   let current = grid.slice();
 
@@ -72,15 +87,17 @@ export function despeckleGrid(
         }
 
         if (sameCount < minSame) {
-          let bestVal = center;
-          let bestCount = -1;
-          for (const [val, count] of counts) {
-            if (count > bestCount) {
-              bestCount = count;
-              bestVal = val;
+          // Candidates by neighbor count (desc); take the most common one that
+          // passes the perceptual cost guard, else leave the cell alone.
+          const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+          const budget = cost ? cost(cell, center) + maxCostIncrease : Infinity;
+          for (const [val] of ranked) {
+            if (val === center) break; // keeping the center is always allowed
+            if (!cost || cost(cell, val) <= budget) {
+              next[cell] = val;
+              break;
             }
           }
-          next[cell] = bestVal;
         }
       }
     }

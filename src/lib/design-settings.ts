@@ -17,6 +17,8 @@ export interface EngineSettings {
   smoothGradients: boolean;
   faceAware: boolean;
   lineArt: boolean;
+  /** Detail preservation (0..1): keeps text/strokes legible at stud resolution. */
+  detail: number;
   zoom: number;
   panX: number;
   panY: number;
@@ -30,6 +32,7 @@ export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
   smoothGradients: false,
   faceAware: false,
   lineArt: false,
+  detail: 0.35,
   zoom: 1,
   panX: 0.5,
   panY: 0.5,
@@ -62,6 +65,7 @@ export function parseEngineSettings(raw: unknown): EngineSettings {
     ),
     faceAware: bool(r.faceAware, DEFAULT_ENGINE_SETTINGS.faceAware),
     lineArt: bool(r.lineArt, DEFAULT_ENGINE_SETTINGS.lineArt),
+    detail: num(r.detail, DEFAULT_ENGINE_SETTINGS.detail),
     zoom: num(r.zoom, DEFAULT_ENGINE_SETTINGS.zoom),
     panX: num(r.panX, DEFAULT_ENGINE_SETTINGS.panX),
     panY: num(r.panY, DEFAULT_ENGINE_SETTINGS.panY),

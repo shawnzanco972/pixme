@@ -34,7 +34,7 @@ describe("sRGB ↔ OKLab", () => {
       [10, 220, 130],
       [240, 200, 150],
     ] as const) {
-      const back = oklabToSrgb(srgbToOklab(...rgb));
+      const back = oklabToSrgb(srgbToOklab(rgb[0], rgb[1], rgb[2]));
       expect(Math.abs(back[0] - rgb[0])).toBeLessThanOrEqual(1);
       expect(Math.abs(back[1] - rgb[1])).toBeLessThanOrEqual(1);
       expect(Math.abs(back[2] - rgb[2])).toBeLessThanOrEqual(1);

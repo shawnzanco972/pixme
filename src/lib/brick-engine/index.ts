@@ -30,7 +30,11 @@ import { effectiveDistanceSq, nearestColorIndex, type MatchOptions } from "./mat
 import { swapOptimize, type SwapOptions } from "./optimize";
 import { DEFAULT_PALETTE, type BrickColor } from "./palette";
 import { preprocessImage, type PreprocessOptions } from "./preprocess";
-import { quantizeToLinearGrid, type RGBAImage } from "./quantize";
+import {
+  quantizeToLinearGrid,
+  type QuantizeOptions,
+  type RGBAImage,
+} from "./quantize";
 import { mulberry32 } from "./rng";
 import { computeEdgeMask } from "./sobel";
 
@@ -57,6 +61,12 @@ export interface BrickifyOptions {
   match?: MatchOptions;
   /** User pre-processing (brightness/contrast/saturation). */
   preprocess?: PreprocessOptions;
+  /**
+   * Detail preservation during downsampling (0..1): high-contrast cells commit
+   * to their dominant luma cluster instead of averaging to mush, keeping text
+   * and thin outlines legible. Default 0.35 (0.7 in line-art mode).
+   */
+  detail?: QuantizeOptions["detail"];
   /** Dithering options; pass `null` to disable noise dithering. */
   dither?: DitherOptions | null;
   /**
@@ -110,8 +120,10 @@ export function brickifyImage(
   // 0) User pre-processing on the full-res image (contrast keeps edges sharp).
   const src = preprocessImage(image, options.preprocess ?? {});
 
-  // 1) Coarse block quantization → grid of average LINEAR-RGB colors.
-  const linGrid = quantizeToLinearGrid(src, cols, rows);
+  // 1) Coarse block quantization → grid of average LINEAR-RGB colors, with
+  //    dominant-cluster detail preservation so strokes/text survive.
+  const detail = options.detail ?? (options.preprocess?.lineArt ? 0.7 : 0.35);
+  const linGrid = quantizeToLinearGrid(src, cols, rows, { detail });
 
   // Floyd–Steinberg mode diffuses error itself, so noise dither would only add
   // grit; force it off when FS is on (unless the caller explicitly asked).
@@ -138,6 +150,15 @@ export function brickifyImage(
     );
   }
 
+  // Shared perceptual cost — the SAME metric the greedy matcher minimizes
+  // (chroma/hue weighting, neutral-avoidance, material penalty). Used by the
+  // despeckle guard and swap optimization so neither can undo matching choices.
+  const byId = new Map<number, BrickColor>(palette.map((c) => [c.id, c]));
+  const cost = (cell: number, id: number): number => {
+    const c = byId.get(id);
+    return c ? effectiveDistanceSq(targets[cell], c, options.match) : Infinity;
+  };
+
   // 4) Despeckle with Sobel edge preservation. Defaults OFF under FS (it would
   //    flatten the deliberate diffusion texture) unless the caller opts in.
   const despeckleOn =
@@ -156,9 +177,11 @@ export function brickifyImage(
       ? computeEdgeMask(targets.map((t) => t.L), cols, rows, edgeThreshold)
       : null;
     indices = despeckleGrid(indices, cols, rows, {
-      // Stronger defaults clean flat-area noise; edge mask keeps faces crisp.
+      // Stronger defaults clean flat-area noise; edge mask keeps faces crisp;
+      // cost guard stops majority vote from planting a far-off color.
       minSameNeighbors: 3,
       passes: 2,
+      cost,
       ...options.despeckle,
       edgeMask,
     });
@@ -168,11 +191,6 @@ export function brickifyImage(
   //    (chroma weight + neutral-avoidance + material penalty) so it can't undo
   //    the matcher's choices. Off by default under FS (would undo diffusion).
   if (options.optimize?.enabled ?? !fs) {
-    const byId = new Map<number, BrickColor>(palette.map((c) => [c.id, c]));
-    const cost = (cell: number, id: number): number => {
-      const c = byId.get(id);
-      return c ? effectiveDistanceSq(targets[cell], c, options.match) : 0;
-    };
     indices = swapOptimize(indices, cost, {
       iterations: options.optimize?.iterations,
       rng,

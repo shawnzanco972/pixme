@@ -10,10 +10,10 @@ describe("nearestColorIndex", () => {
     const GREEN_ID = 2;
     const NOUGAT_ID = 3;
     const defs: BrickColorDef[] = [
-      { id: 0, name: "White", hex: "#f4f4f4", material: "solid", core: true },
-      { id: 1, name: "Black", hex: "#1b1b1b", material: "solid", core: true },
-      { id: GREEN_ID, name: "Bright Green", hex: "#4b9f4a", material: "solid", core: true },
-      { id: NOUGAT_ID, name: "Nougat", hex: "#cc8e69", material: "solid", core: true },
+      { id: 0, name: "White", nameHe: "לבן", hex: "#f4f4f4", material: "solid", core: true },
+      { id: 1, name: "Black", nameHe: "שחור", hex: "#1b1b1b", material: "solid", core: true },
+      { id: GREEN_ID, name: "Bright Green", nameHe: "ירוק", hex: "#4b9f4a", material: "solid", core: true },
+      { id: NOUGAT_ID, name: "Nougat", nameHe: "נוגט", hex: "#cc8e69", material: "solid", core: true },
     ];
     const palette = buildPalette(defs);
 
@@ -29,9 +29,9 @@ describe("nearestColorIndex", () => {
       [198, 134, 96], // medium
       [141, 85, 56], // deep
     ] as const) {
-      expect(nearestColorIndex(srgbToOklab(...skin), palette)).not.toBe(
-        GREEN_ID,
-      );
+      expect(
+        nearestColorIndex(srgbToOklab(skin[0], skin[1], skin[2]), palette),
+      ).not.toBe(GREEN_ID);
     }
   });
 
@@ -43,8 +43,8 @@ describe("nearestColorIndex", () => {
 
   it("keeps a saturated target colorful instead of collapsing to gray", () => {
     const defs: BrickColorDef[] = [
-      { id: 0, name: "Red", hex: "#c91a09", material: "solid", core: true },
-      { id: 1, name: "Gray", hex: "#8a8a8a", material: "solid", core: true },
+      { id: 0, name: "Red", nameHe: "אדום", hex: "#c91a09", material: "solid", core: true },
+      { id: 1, name: "Gray", nameHe: "אפור", hex: "#8a8a8a", material: "solid", core: true },
     ];
     const palette = buildPalette(defs);
     // A muted/darkish red whose lightness is close to mid-gray.
@@ -55,10 +55,10 @@ describe("nearestColorIndex", () => {
   it("does not collapse a pale tint to white/gray (neutral-avoidance)", () => {
     // Pale cyan/teal between White, Light Gray, and Sand Green.
     const defs: BrickColorDef[] = [
-      { id: 0, name: "White", hex: "#f2f3f2", material: "solid", core: true },
-      { id: 1, name: "Light Gray", hex: "#bcbcb9", material: "solid", core: true },
-      { id: 2, name: "Sand Green", hex: "#a0bcac", material: "solid", core: true },
-      { id: 3, name: "Bright Light Blue", hex: "#9fc3e9", material: "solid", core: true },
+      { id: 0, name: "White", nameHe: "לבן", hex: "#f2f3f2", material: "solid", core: true },
+      { id: 1, name: "Light Gray", nameHe: "אפור בהיר", hex: "#bcbcb9", material: "solid", core: true },
+      { id: 2, name: "Sand Green", nameHe: "ירוק חול", hex: "#a0bcac", material: "solid", core: true },
+      { id: 3, name: "Bright Light Blue", nameHe: "תכלת", hex: "#9fc3e9", material: "solid", core: true },
     ];
     const palette = buildPalette(defs);
     const paleTeal = srgbToOklab(170, 215, 200);
@@ -73,8 +73,8 @@ describe("nearestColorIndex", () => {
   it("penalizes material mismatches", () => {
     // Two near-identical reds: one solid, one transparent. Prefer solid.
     const defs: BrickColorDef[] = [
-      { id: 0, name: "Solid Red", hex: "#c4151c", material: "solid", core: true },
-      { id: 1, name: "Trans Red", hex: "#c4151c", material: "transparent", core: true },
+      { id: 0, name: "Solid Red", nameHe: "אדום", hex: "#c4151c", material: "solid", core: true },
+      { id: 1, name: "Trans Red", nameHe: "אדום שקוף", hex: "#c4151c", material: "transparent", core: true },
     ];
     const palette = buildPalette(defs);
     const target = srgbToOklab(0xc4, 0x15, 0x1c);
