@@ -163,9 +163,17 @@ export default async function Home() {
           {TIERS.map((t) => (
             <div
               key={t.id}
-              className={`card relative flex flex-col items-center gap-2 p-6 text-center ${
+              className={`relative flex flex-col items-center gap-2 rounded-2xl border border-outline p-6 text-center ${
                 t.tag ? "ring-2 ring-primary" : ""
               }`}
+              // Recessed-baseplate look — same treatment as the studio canvas.
+              style={{
+                background: "var(--color-surface-muted)",
+                boxShadow: "inset 0 4px 20px rgba(25,28,30,0.06)",
+                backgroundImage:
+                  "radial-gradient(circle, rgba(0,0,0,0.06) 1.4px, transparent 1.6px)",
+                backgroundSize: "14px 14px",
+              }}
             >
               {t.tag && (
                 <span className="absolute -top-3 rounded-full bg-primary px-3 py-1 text-xs text-on-primary">

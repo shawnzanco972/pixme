@@ -162,6 +162,8 @@ export function Studio({
   const [faceAware, setFaceAware] = useState(seed.faceAware);
   // Line-art / text mode: crisp edges for logos & lettering.
   const [lineArt, setLineArt] = useState(seed.lineArt);
+  // Detail preservation: commit high-contrast cells to text/stroke colors.
+  const [detail, setDetail] = useState(seed.detail);
   // Zoom/crop (1 = fit; >1 crops tighter so the subject gets more studs).
   const [zoom, setZoom] = useState(seed.zoom);
   // Crop center (0..1) for drag-to-pan when zoomed in.
@@ -187,6 +189,7 @@ export function Studio({
     setSmoothGradients(false);
     setFaceAware(false);
     setLineArt(false);
+    setDetail(DEFAULT_ENGINE_SETTINGS.detail);
     setZoom(1);
     setPanX(0.5);
     setPanY(0.5);
@@ -322,6 +325,7 @@ export function Studio({
     setSmoothGradients(s.smoothGradients);
     setFaceAware(s.faceAware);
     setLineArt(s.lineArt);
+    setDetail(s.detail);
     setZoom(s.zoom);
     setPanX(s.panX);
     setPanY(s.panY);
@@ -339,6 +343,7 @@ export function Studio({
       smoothGradients,
       faceAware,
       lineArt,
+      detail,
       zoom,
       panX,
       panY,
@@ -353,6 +358,7 @@ export function Studio({
       smoothGradients,
       faceAware,
       lineArt,
+      detail,
       zoom,
       panX,
       panY,
@@ -445,6 +451,7 @@ export function Studio({
       rows,
       palette: activePalette,
       preprocess: { contrast, saturation, autoLevels, faceAware, lineArt },
+      detail,
       dither: dither > 0 ? { amount: dither } : null,
       fsDither: smoothGradients,
     })
@@ -469,6 +476,7 @@ export function Studio({
     smoothGradients,
     faceAware,
     lineArt,
+    detail,
     zoom,
     panX,
     panY,
@@ -526,6 +534,98 @@ export function Studio({
       setSubmitting(false);
     }
   }
+
+  // Color breakdown + order summary. Rendered in two responsive slots: under
+  // the canvas on desktop (lg+), below the settings sidebar on mobile/tablet —
+  // so settings stay reachable before the checkout card on small screens.
+  const breakdownAndOrder = (
+    <>
+      {result && (
+        <div className="px-1">
+          <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
+        </div>
+      )}
+
+      {/* Order summary + primary action — framed in brand red so it stands out. */}
+      <div className="card flex flex-col gap-3 border-2 border-primary p-4">
+        {!hidePricing && (
+          <>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground/60">
+                סה&quot;כ לתשלום
+              </span>
+              <span className="font-heading text-3xl font-black text-primary">
+                {formatILS(price.total)}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                משלוח חינם
+              </span>
+              {result && (
+                <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs text-foreground/60">
+                  {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
+                </span>
+              )}
+            </div>
+          </>
+        )}
+        {hidePricing && result && (
+          <span className="text-sm text-foreground/60">
+            {Math.round(platesX * CM_PER_PLATE)}×
+            {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ ·{" "}
+            {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
+          </span>
+        )}
+
+        {authoring ? (
+          <button
+            type="button"
+            onClick={() => result && onSaveSettings?.(currentSettings())}
+            disabled={!result}
+            className="btn btn-primary w-full"
+          >
+            שמירת הגדרות ברירת מחדל
+          </button>
+        ) : embedded ? (
+          <button
+            type="button"
+            onClick={() =>
+              result &&
+              onProceed?.({
+                file,
+                pixelMap: result.pixelMap,
+                cols,
+                rows,
+                price: price.total,
+              })
+            }
+            disabled={!result}
+            className="btn btn-primary w-full"
+          >
+            {proceedLabel ?? "המשך לשלב הבא ←"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void handleOrder()}
+            disabled={submitting || !result}
+            className="btn btn-primary w-full"
+          >
+            {submitting ? "מעבד…" : "הוספה לעגלה"}
+          </button>
+        )}
+
+        {!hidePricing && (
+          <p className="text-xs leading-relaxed text-foreground/55">
+            כל הזמנה כוללת ערכה פיזית עם כל הלבנים + חוברת הוראות (PDF) להורדה
+            חינם בעמוד ההזמנה.
+          </p>
+        )}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+      </div>
+    </>
+  );
 
   return (
     <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
@@ -698,91 +798,9 @@ export function Studio({
         {working && (
           <p className="px-1 text-sm text-foreground/55">מעבד…</p>
         )}
-        {result && (
-          <div className="px-1">
-            <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
-          </div>
-        )}
 
-        {/* Order summary + primary action — below the canvas & color breakdown,
-            framed in brand red so it stands out. */}
-        <div className="card flex flex-col gap-3 border-2 border-primary p-4">
-          {!hidePricing && (
-            <>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground/60">
-                  סה&quot;כ לתשלום
-                </span>
-                <span className="font-heading text-3xl font-black text-primary">
-                  {formatILS(price.total)}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                  משלוח חינם
-                </span>
-                {result && (
-                  <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs text-foreground/60">
-                    {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-          {hidePricing && result && (
-            <span className="text-sm text-foreground/60">
-              {Math.round(platesX * CM_PER_PLATE)}×
-              {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ ·{" "}
-              {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
-            </span>
-          )}
-
-          {authoring ? (
-            <button
-              type="button"
-              onClick={() => result && onSaveSettings?.(currentSettings())}
-              disabled={!result}
-              className="btn btn-primary w-full"
-            >
-              שמירת הגדרות ברירת מחדל
-            </button>
-          ) : embedded ? (
-            <button
-              type="button"
-              onClick={() =>
-                result &&
-                onProceed?.({
-                  file,
-                  pixelMap: result.pixelMap,
-                  cols,
-                  rows,
-                  price: price.total,
-                })
-              }
-              disabled={!result}
-              className="btn btn-primary w-full"
-            >
-              {proceedLabel ?? "המשך לשלב הבא ←"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void handleOrder()}
-              disabled={submitting || !result}
-              className="btn btn-primary w-full"
-            >
-              {submitting ? "מעבד…" : "הוספה לעגלה"}
-            </button>
-          )}
-
-          {!hidePricing && (
-            <p className="text-xs leading-relaxed text-foreground/55">
-              כל הזמנה כוללת ערכה פיזית עם כל הלבנים + חוברת הוראות (PDF) להורדה
-              חינם בעמוד ההזמנה.
-            </p>
-          )}
-          {error && <p className="text-sm text-red-600">{error}</p>}
-        </div>
+        {/* Desktop slot: breakdown + checkout under the canvas. */}
+        <div className="hidden flex-col gap-3 lg:flex">{breakdownAndOrder}</div>
       </section>
 
       {/* Sidebar — upload, board, palette, settings, order (RTL start = right) */}
@@ -991,6 +1009,23 @@ export function Studio({
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">
+              חידוד פרטים (טקסט וקווים): {Math.round(detail * 100)}%
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={detail}
+              disabled={!imageData}
+              onChange={(e) => {
+                if (imageData) setWorking(true);
+                setDetail(Number(e.target.value));
+              }}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">
               פיזור (Dithering): {dither === 0 ? "כבוי" : dither.toFixed(3)}
             </span>
             <input
@@ -1131,6 +1166,8 @@ export function Studio({
           </div>
         )}
 
+        {/* Mobile/tablet slot: breakdown + checkout below the settings. */}
+        <div className="flex flex-col gap-3 lg:hidden">{breakdownAndOrder}</div>
       </aside>
     </div>
 
