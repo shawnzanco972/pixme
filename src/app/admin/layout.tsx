@@ -7,7 +7,7 @@
  * to show the shell — it never grants access.
  */
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,10 +16,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
 
   if (!user) return <>{children}</>;
 

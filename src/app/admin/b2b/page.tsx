@@ -9,16 +9,13 @@ import { redirect } from "next/navigation";
 
 import { STATUS_HE, day } from "@/lib/admin-format";
 import { formatILS } from "@/lib/pricing";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/supabase/types.helpers";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminB2bConsole() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const { data: projects } = await supabase

@@ -21,7 +21,7 @@ import {
 } from "@/lib/b2b";
 import { isEmailConfigured } from "@/lib/email";
 import { formatILS, presetStuds } from "@/lib/pricing";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 import type { OrderStatus, PixelMap } from "@/lib/supabase/types.helpers";
 
 const SEAT_HE: Record<SeatStatus, string> = {
@@ -47,10 +47,7 @@ export default async function AdminB2bDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const { data: order } = await supabase

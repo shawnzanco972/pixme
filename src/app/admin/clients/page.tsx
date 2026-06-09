@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { ClientNotes } from "@/components/admin/ClientNotes";
 import { day } from "@/lib/admin-format";
 import { formatILS } from "@/lib/pricing";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +19,7 @@ interface Agg {
 }
 
 export default async function AdminClients() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const [{ data: clients }, { data: b2c }, { data: b2b }] = await Promise.all([

@@ -10,7 +10,7 @@ import { ALERT_CATEGORY_HE, day } from "@/lib/admin-format";
 import { loadInventory } from "@/lib/inventory-data";
 import { formatWeight } from "@/lib/packing";
 import { formatILS } from "@/lib/pricing";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -19,54 +19,59 @@ function monthKey(iso: string): string {
 }
 
 export default async function AdminOverview() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
-  const [{ data: b2c }, { data: b2b }, inventory] = await Promise.all([
+  // Scoped, parallel queries — no full-table scans: each KPI fetches only the
+  // rows (and columns) it needs, and counts are computed in the database.
+  const monthStart = `${monthKey(new Date().toISOString())}-01`;
+  const [
+    { data: monthB2c },
+    { data: monthB2b },
+    { count: openOrders },
+    { data: toPackRows },
+    { count: projectsInProgress },
+    { data: readySubs },
+    inventory,
+  ] = await Promise.all([
     supabase
       .from("b2c_orders")
-      .select(
-        "id, customer_name, status, fulfillment_type, total_price, created_at",
-      )
+      .select("total_price")
+      .gte("created_at", monthStart)
+      .not("status", "in", "(pending,cancelled)"),
+    supabase
+      .from("b2b_orders")
+      .select("amount_paid")
+      .gte("created_at", monthStart),
+    supabase
+      .from("b2c_orders")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["pending", "paid"]),
+    supabase
+      .from("b2c_orders")
+      .select("id, customer_name, total_price, created_at")
+      .eq("fulfillment_type", "physical")
+      .eq("status", "paid")
       .order("created_at", { ascending: false }),
     supabase
       .from("b2b_orders")
-      .select("id, company_name, status, amount_paid, created_at")
-      .order("created_at", { ascending: false }),
+      .select("id", { count: "exact", head: true })
+      .eq("status", "paid"),
+    // B2B production queue: approved ("ready") employee kits we must build —
+    // workspace → order joined in ONE round trip via FK embeds (was a
+    // 3-query sequential waterfall).
+    supabase
+      .from("employee_submissions")
+      .select(
+        "id, employee_name, scheduled_for, b2b_workspaces(b2b_orders(company_name, project_name))",
+      )
+      .eq("status", "ready"),
     loadInventory(supabase),
   ]);
 
-  // B2B production queue: approved ("ready") employee kits we must build.
-  const { data: readySubs } = await supabase
-    .from("employee_submissions")
-    .select("id, employee_name, scheduled_for, workspace_id")
-    .eq("status", "ready");
-
-  const wsIds = [...new Set((readySubs ?? []).map((s) => s.workspace_id))];
-  const { data: wsRows } = wsIds.length
-    ? await supabase
-        .from("b2b_workspaces")
-        .select("id, b2b_order_id")
-        .in("id", wsIds)
-    : { data: [] };
-  const orderIdByWs = new Map(
-    (wsRows ?? []).map((w) => [w.id, w.b2b_order_id]),
-  );
-  const ordIds = [...new Set((wsRows ?? []).map((w) => w.b2b_order_id))];
-  const { data: ordRows } = ordIds.length
-    ? await supabase
-        .from("b2b_orders")
-        .select("id, company_name, project_name")
-        .in("id", ordIds)
-    : { data: [] };
-  const orderById = new Map((ordRows ?? []).map((o) => [o.id, o]));
-
   const productionQueue = (readySubs ?? [])
     .map((s) => {
-      const ord = orderById.get(orderIdByWs.get(s.workspace_id) ?? "");
+      const ord = s.b2b_workspaces?.b2b_orders;
       return {
         id: s.id,
         employee: s.employee_name,
@@ -82,42 +87,19 @@ export default async function AdminOverview() {
       return a.scheduledFor < b.scheduledFor ? -1 : 1;
     });
 
-  const orders = b2c ?? [];
-  const projects = b2b ?? [];
-  const thisMonth = monthKey(new Date().toISOString());
-
   // KPIs ------------------------------------------------------------------
   const revenueThisMonth =
-    orders
-      .filter(
-        (o) =>
-          o.status !== "pending" &&
-          o.status !== "cancelled" &&
-          monthKey(o.created_at) === thisMonth,
-      )
-      .reduce((s, o) => s + Number(o.total_price), 0) +
-    projects
-      .filter((p) => monthKey(p.created_at) === thisMonth)
-      .reduce((s, p) => s + Number(p.amount_paid), 0);
+    (monthB2c ?? []).reduce((s, o) => s + Number(o.total_price), 0) +
+    (monthB2b ?? []).reduce((s, p) => s + Number(p.amount_paid), 0);
 
-  const openOrders = orders.filter(
-    (o) => o.status === "pending" || o.status === "paid",
-  ).length;
-
-  const toPack = orders.filter(
-    (o) => o.fulfillment_type === "physical" && o.status === "paid",
-  );
-
-  const projectsInProgress = projects.filter(
-    (p) => p.status === "paid",
-  ).length;
+  const toPack = toPackRows ?? [];
 
   const kpis: Array<[string, string]> = [
     ["הכנסות החודש", formatILS(Math.round(revenueThisMonth))],
-    ["הזמנות פתוחות", String(openOrders)],
+    ["הזמנות פתוחות", String(openOrders ?? 0)],
     ["לאריזה (פיזי, שולם)", String(toPack.length)],
     ["מתנות עסקיות לייצור", String(productionQueue.length)],
-    ["פרויקטים פעילים", String(projectsInProgress)],
+    ["פרויקטים פעילים", String(projectsInProgress ?? 0)],
     [
       "חוסר במלאי (התראות)",
       String(inventory.alerts.length),

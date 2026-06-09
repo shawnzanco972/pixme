@@ -10,12 +10,14 @@ import {
   SIZE_PRESETS,
 } from "@/lib/pricing";
 import { designPublicUrl } from "@/lib/supabase/storage";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
+// ISR: public page, no per-visitor data — render once and re-use for 60s
+// instead of hitting Supabase on every visit (gallery edits show within 1min).
+export const revalidate = 60;
 
 async function getHeroDesign(): Promise<HeroDesign | undefined> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("ready_designs")
     .select("image_path, default_plates_x, default_plates_y, settings")

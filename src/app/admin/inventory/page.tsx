@@ -11,16 +11,13 @@ import { StockManager } from "@/components/admin/StockManager";
 import { SuppliesManager } from "@/components/admin/SuppliesManager";
 import { formatWeight } from "@/lib/packing";
 import { aggregateRestock } from "@/lib/restock";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 import type { PixelMap } from "@/lib/supabase/types.helpers";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminInventory() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const [{ data: restockRows }, { data: b2bRows }, { data: stockRows }] =

@@ -10,15 +10,12 @@ import { redirect } from "next/navigation";
 
 import { DesignsManager } from "@/components/admin/DesignsManager";
 import { designPublicUrl } from "@/lib/supabase/storage";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDesigns() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const { data } = await supabase

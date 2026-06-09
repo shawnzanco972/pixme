@@ -9,10 +9,11 @@
 import { DesignGallery, type GalleryDesign } from "@/components/DesignGallery";
 import { parseEngineSettings } from "@/lib/design-settings";
 import { designPublicUrl } from "@/lib/supabase/storage";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/server";
 
 export async function ReadyDesignsGallery() {
-  const supabase = await createClient();
+  // Cookie-less public client so the homepage stays statically cacheable.
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("ready_designs")
     .select(

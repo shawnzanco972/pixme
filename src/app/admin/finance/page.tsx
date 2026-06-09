@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 
 import { day } from "@/lib/admin-format";
 import { formatILS } from "@/lib/pricing";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +17,7 @@ function monthKey(iso: string): string {
 }
 
 export default async function AdminFinance() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const [{ data: txns }, { data: pendingB2c }] = await Promise.all([

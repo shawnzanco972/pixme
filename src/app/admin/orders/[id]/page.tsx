@@ -15,7 +15,7 @@ import { MosaicPreview } from "@/components/MosaicPreview";
 import { formatWeight, GRAMS_PER_STUD } from "@/lib/packing";
 import { formatILS } from "@/lib/pricing";
 import { orderPackingList } from "@/lib/restock";
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { createAdminClient, getAdminContext } from "@/lib/supabase/server";
 import { createSignedDownloadUrl } from "@/lib/supabase/storage";
 import type {
   OrderStatus,
@@ -39,10 +39,7 @@ export default async function AdminOrderDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const { data: order } = await supabase

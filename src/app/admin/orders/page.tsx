@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
 import { STATUS_HE, day } from "@/lib/admin-format";
 import { formatILS } from "@/lib/pricing";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/supabase/types.helpers";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +22,7 @@ function TestBadge() {
 }
 
 export default async function AdminOrders() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const [{ data: b2c }, { data: b2b }, { data: subs }] = await Promise.all([

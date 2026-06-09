@@ -13,15 +13,12 @@ import {
   SPARE_RATIO,
   MIN_SPARE_PIECES,
 } from "@/lib/packing";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDocs() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAdminContext();
   if (!user) redirect("/admin/login");
 
   const constants: Array<[string, string]> = [
