@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type BrickifyResult } from "@/lib/brick-engine";
+import { BrickSwatch } from "@/components/b2c/BrickSwatch";
 import { ColorBreakdown } from "@/components/b2c/ColorBreakdown";
 import { getActivePalette } from "@/lib/brick-engine/palette";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
@@ -701,49 +702,21 @@ export function Studio({
               איפוס לברירת מחדל
             </button>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {visibleColors.map((c) => {
-              const on = enabled.has(c.id);
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  disabled={!c.inStock}
-                  title={
-                    c.inStock
-                      ? c.name + (on ? " (פעיל)" : "")
-                      : `${c.name} — אזל מהמלאי`
-                  }
-                  onClick={() => toggleColor(c.id, c.inStock)}
-                  className={`relative h-8 w-8 rounded-md border border-black/20 transition ${
-                    on
-                      ? "scale-105 ring-2 ring-primary ring-offset-2 ring-offset-surface"
-                      : "opacity-35 grayscale hover:opacity-60"
-                  }`}
-                  style={{ backgroundColor: c.hex }}
-                >
-                  {on && (
-                    <span
-                      className="absolute inset-0 flex items-center justify-center text-sm font-bold"
-                      style={{
-                        color:
-                          0.299 * c.rgb[0] +
-                            0.587 * c.rgb[1] +
-                            0.114 * c.rgb[2] >
-                          140
-                            ? "#1b1b1b"
-                            : "#ffffff",
-                      }}
-                    >
-                      ✓
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="flex flex-wrap gap-2">
+            {visibleColors.map((c) => (
+              <BrickSwatch
+                key={c.id}
+                hex={c.hex}
+                name={c.name}
+                on={enabled.has(c.id)}
+                disabled={!c.inStock}
+                onClick={() => toggleColor(c.id, c.inStock)}
+              />
+            ))}
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            ✓ = צבע פעיל. לחצו כדי להוסיף/להסיר. צבעים מעומעמים אינם בשימוש.
+            צבע פעיל מסומן במסגרת; צבע עם קו חוצה אינו בשימוש. לחצו כדי
+            להוסיף/להסיר.
           </p>
         </div>
 

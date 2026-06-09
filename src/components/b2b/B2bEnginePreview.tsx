@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type BrickifyResult } from "@/lib/brick-engine";
+import { BrickSwatch } from "@/components/b2c/BrickSwatch";
 import { getActivePalette } from "@/lib/brick-engine/palette";
 import { useBrickWorker } from "@/lib/brick-engine/useBrickWorker";
 import { usePaletteInventory } from "@/lib/brick-engine/usePaletteInventory";
@@ -187,22 +188,17 @@ export function B2bEnginePreview({ cols, rows }: { cols: number; rows: number })
 
         <div className="border-t border-outline pt-4">
           <p className="mb-2 text-sm font-medium">צבעים ({enabled.size})</p>
-          <div className="flex flex-wrap gap-1.5">
-            {visibleColors.map((c) => {
-              const on = enabled.has(c.id);
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  title={c.name}
-                  onClick={() => toggleColor(c.id)}
-                  className={`h-8 w-8 rounded-md border-2 ${
-                    on ? "border-primary" : "border-outline opacity-40"
-                  }`}
-                  style={{ backgroundColor: c.hex }}
-                />
-              );
-            })}
+          <div className="flex flex-wrap gap-2">
+            {visibleColors.map((c) => (
+              <BrickSwatch
+                key={c.id}
+                hex={c.hex}
+                name={c.name}
+                on={enabled.has(c.id)}
+                disabled={!c.inStock}
+                onClick={() => toggleColor(c.id)}
+              />
+            ))}
           </div>
         </div>
       </div>
