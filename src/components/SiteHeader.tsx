@@ -4,6 +4,8 @@
  */
 import Link from "next/link";
 
+import { BrandLogo } from "@/components/BrandLogo";
+
 const NAV = [
   { href: "/create", label: "יצירה" },
   { href: "/b2b", label: "לעסקים" },
@@ -14,11 +16,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-outline/70 bg-surface/85 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-6">
-        <Link
-          href="/"
-          className="font-heading text-2xl font-bold tracking-tight text-primary"
-        >
-          Pixipic
+        <Link href="/" aria-label="Pixipic — דף הבית">
+          <BrandLogo className="text-2xl" />
         </Link>
 
         <nav className="hidden items-center gap-6 sm:flex">

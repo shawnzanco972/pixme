@@ -6,7 +6,14 @@
  * The Brick Engine runs in a Web Worker (useBrickWorker); the resulting
  * pixel_map is persisted with the order and later trusted by the PDF route.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { type BrickifyResult } from "@/lib/brick-engine";
 import { BrickSwatch } from "@/components/b2c/BrickSwatch";
@@ -521,10 +528,10 @@ export function Studio({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl p-6">
-    <div className="grid gap-8 md:grid-cols-2">
-      {/* Preview / upload stage */}
-      <section className="flex flex-col gap-4">
+    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+    <div className="flex flex-col gap-6 lg:flex-row-reverse lg:items-start">
+      {/* Canvas stage (DOM-first; flex-row-reverse puts it on the LEFT in RTL) */}
+      <section className="flex min-w-0 flex-1 flex-col gap-3">
         <input
           ref={fileInputRef}
           type="file"
@@ -536,230 +543,399 @@ export function Studio({
           }}
         />
 
-        <div
-          className="relative flex items-center justify-center overflow-hidden rounded-2xl border border-outline bg-[#eceef0] shadow-inner"
-          style={{
-            aspectRatio: `${cols} / ${rows}`,
-            backgroundImage:
-              "radial-gradient(circle, rgba(0,0,0,0.06) 1.4px, transparent 1.6px)",
-            backgroundSize: "14px 14px",
-          }}
-        >
-          {/* Canvas always mounted so its ref is stable for the first paint. */}
-          <canvas
-            ref={canvasRef}
-            onPointerDown={onPanStart}
-            onPointerMove={onPanMove}
-            onPointerUp={onPanEnd}
-            className={`h-full w-full object-contain ${result ? "" : "hidden"} ${
-              zoom > 1 ? "cursor-grab active:cursor-grabbing touch-none" : ""
-            }`}
-          />
-
-          {/* Compare overlay — the original source image on top of the mosaic. */}
-          {result && showOriginal && originalUrl && (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={originalUrl}
-                alt="התמונה המקורית"
-                className="absolute inset-0 h-full w-full bg-surface object-contain"
-              />
-              <span className="absolute top-3 start-3 rounded-full bg-surface/90 px-3 py-1 text-xs shadow">
-                תמונה מקורית
-              </span>
-            </>
-          )}
-
-          {!result && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-zinc-500">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center gap-2"
-              >
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl text-primary">
-                  +
-                </span>
-                <span className="font-heading font-medium">העלו תמונה</span>
-                <span className="text-xs">JPG · PNG · WEBP</span>
-              </button>
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-xs">או בחרו עיצוב מוכן:</span>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {STARTERS.map((st) => (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => void pickStarter(st.id)}
-                      className="flex items-center gap-1 rounded-full border border-outline bg-surface px-3 py-1 text-xs text-foreground transition-colors hover:bg-surface-muted"
-                    >
-                      <span>{STARTER_EMOJI[st.id]}</span>
-                      {st.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        {/* Canvas toolbar — title + live stud count + zoom tools. */}
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="min-w-0">
+            <div className="font-heading text-base font-bold">הפסיפס שלי</div>
+            <div className="truncate text-xs text-foreground/60">
+              {result
+                ? `${Math.round(platesX * CM_PER_PLATE)}×${Math.round(platesY * CM_PER_PLATE)} ס״מ · ${(result.cols * result.rows).toLocaleString("he-IL")} לבנים`
+                : "תצוגה מקדימה חיה"}
             </div>
-          )}
-
-          {/* Zoom controls + drag hint (start/right corner) */}
+          </div>
           {result && (
-            <div className="absolute bottom-3 start-3 flex items-center gap-1 rounded-full bg-surface/90 p-1 shadow">
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 aria-label="הקטן"
                 onClick={() => bumpZoom(-0.2)}
-                className="h-8 w-8 rounded-full text-lg leading-none hover:bg-surface-muted"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-outline bg-surface text-lg leading-none hover:bg-surface-muted active:translate-y-px"
               >
                 −
               </button>
-              <span className="w-10 text-center text-xs tabular-nums">
+              <span className="w-11 text-center text-xs tabular-nums text-foreground/70">
                 {zoom.toFixed(1)}×
               </span>
               <button
                 type="button"
                 aria-label="הגדל"
                 onClick={() => bumpZoom(0.2)}
-                className="h-8 w-8 rounded-full text-lg leading-none hover:bg-surface-muted"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-outline bg-surface text-lg leading-none hover:bg-surface-muted active:translate-y-px"
               >
                 +
               </button>
+              <button
+                type="button"
+                aria-label="התאמה למסך"
+                onClick={() => {
+                  if (imageData) setWorking(true);
+                  setZoom(1);
+                  setPanX(0.5);
+                  setPanY(0.5);
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-outline bg-surface text-base leading-none hover:bg-surface-muted active:translate-y-px"
+              >
+                ⤢
+              </button>
             </div>
-          )}
-          {result && zoom > 1 && (
-            <span className="absolute top-3 end-3 rounded-full bg-surface/90 px-3 py-1 text-xs shadow">
-              גררו להזזת המסגרת ✋
-            </span>
           )}
         </div>
 
-        {working && <p className="text-sm text-zinc-500">מעבד…</p>}
-        {result && (
-          <>
-            <div className="flex items-center justify-between text-sm text-zinc-500">
-              <span>
-                {result.cols}×{result.rows} אריחים · {result.cols * result.rows}{" "}
-                חלקים
-              </span>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowOriginal((v) => !v)}
-                  className="underline"
-                >
-                  {showOriginal ? "תצוגת פסיפס" : "השוואה למקור"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="underline"
-                >
-                  החלפת תמונה
-                </button>
+        {/* Canvas + cm guideline rulers (W along the top, H along the start
+            edge). The wrapper reserves space for the rulers via logical padding
+            so they line up with the recessed baseplate exactly. */}
+        <div
+          className="relative"
+          style={result ? { paddingTop: 28, paddingInlineStart: 40 } : undefined}
+        >
+          {result && (
+            <>
+              {/* Width ruler (top) */}
+              <div className="pointer-events-none absolute top-0 end-0 start-[40px] flex h-7 items-center">
+                <div className="flex w-full items-center gap-2 text-[11px] font-medium text-foreground/55">
+                  <span className="h-2 w-px bg-foreground/25" />
+                  <span className="h-px flex-1 bg-foreground/15" />
+                  <span className="whitespace-nowrap">
+                    {Math.round(platesX * CM_PER_PLATE)} ס&quot;מ
+                  </span>
+                  <span className="h-px flex-1 bg-foreground/15" />
+                  <span className="h-2 w-px bg-foreground/25" />
+                </div>
               </div>
-            </div>
-            <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
-          </>
+              {/* Height ruler (inline-start = right in RTL) */}
+              <div className="pointer-events-none absolute bottom-0 start-0 top-7 flex w-10 justify-center">
+                <div className="flex h-full flex-col items-center gap-2 text-[11px] font-medium text-foreground/55">
+                  <span className="h-px w-2 bg-foreground/25" />
+                  <span className="w-px flex-1 bg-foreground/15" />
+                  <span
+                    style={{ writingMode: "vertical-rl" }}
+                    className="whitespace-nowrap"
+                  >
+                    {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ
+                  </span>
+                  <span className="w-px flex-1 bg-foreground/15" />
+                  <span className="h-px w-2 bg-foreground/25" />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Recessed baseplate — the mosaic sits "into" the plate. Square
+              corners once an image is loaded (the product is square; rounded
+              corners could mislead); rounded only in the empty state. */}
+          <div
+            className={`relative flex items-center justify-center overflow-hidden border border-outline ${
+              result ? "rounded-none" : "rounded-2xl"
+            }`}
+            style={{
+              aspectRatio: `${cols} / ${rows}`,
+              background: "var(--color-surface-muted)",
+              boxShadow: "inset 0 4px 20px rgba(25,28,30,0.06)",
+              backgroundImage:
+                "radial-gradient(circle, rgba(0,0,0,0.06) 1.4px, transparent 1.6px)",
+              backgroundSize: "14px 14px",
+            }}
+          >
+            <canvas
+              ref={canvasRef}
+              onPointerDown={onPanStart}
+              onPointerMove={onPanMove}
+              onPointerUp={onPanEnd}
+              className={`h-full w-full object-contain ${result ? "" : "hidden"} ${
+                zoom > 1 ? "cursor-grab touch-none active:cursor-grabbing" : ""
+              }`}
+            />
+
+            {/* Compare overlay — original source image on top of the mosaic. */}
+            {result && showOriginal && originalUrl && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={originalUrl}
+                  alt="התמונה המקורית"
+                  className="absolute inset-0 h-full w-full bg-surface object-contain"
+                />
+                <span className="absolute top-3 start-3 rounded-full bg-surface/90 px-3 py-1 text-xs shadow">
+                  תמונה מקורית
+                </span>
+              </>
+            )}
+
+            {!result && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-foreground/55"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl text-primary">
+                  +
+                </span>
+                <span className="font-heading font-semibold text-foreground">
+                  העלו תמונה
+                </span>
+                <span className="text-xs">או בחרו עיצוב מוכן מהצד</span>
+              </button>
+            )}
+
+            {result && zoom > 1 && (
+              <span className="absolute top-3 end-3 rounded-full bg-surface/90 px-3 py-1 text-xs shadow">
+                גררו להזזת המסגרת
+              </span>
+            )}
+          </div>
+        </div>
+
+        {working && (
+          <p className="px-1 text-sm text-foreground/55">מעבד…</p>
         )}
+        {result && (
+          <div className="px-1">
+            <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
+          </div>
+        )}
+
+        {/* Order summary + primary action — below the canvas & color breakdown,
+            framed in brand red so it stands out. */}
+        <div className="card flex flex-col gap-3 border-2 border-primary p-4">
+          {!hidePricing && (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground/60">
+                  סה&quot;כ לתשלום
+                </span>
+                <span className="font-heading text-3xl font-black text-primary">
+                  {formatILS(price.total)}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                  משלוח חינם
+                </span>
+                {result && (
+                  <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs text-foreground/60">
+                    {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+          {hidePricing && result && (
+            <span className="text-sm text-foreground/60">
+              {Math.round(platesX * CM_PER_PLATE)}×
+              {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ ·{" "}
+              {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
+            </span>
+          )}
+
+          {authoring ? (
+            <button
+              type="button"
+              onClick={() => result && onSaveSettings?.(currentSettings())}
+              disabled={!result}
+              className="btn btn-primary w-full"
+            >
+              שמירת הגדרות ברירת מחדל
+            </button>
+          ) : embedded ? (
+            <button
+              type="button"
+              onClick={() =>
+                result &&
+                onProceed?.({
+                  file,
+                  pixelMap: result.pixelMap,
+                  cols,
+                  rows,
+                  price: price.total,
+                })
+              }
+              disabled={!result}
+              className="btn btn-primary w-full"
+            >
+              {proceedLabel ?? "המשך לשלב הבא ←"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleOrder()}
+              disabled={submitting || !result}
+              className="btn btn-primary w-full"
+            >
+              {submitting ? "מעבד…" : "הוספה לעגלה"}
+            </button>
+          )}
+
+          {!hidePricing && (
+            <p className="text-xs leading-relaxed text-foreground/55">
+              כל הזמנה כוללת ערכה פיזית עם כל הלבנים + חוברת הוראות (PDF) להורדה
+              חינם בעמוד ההזמנה.
+            </p>
+          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+        </div>
       </section>
 
-      {/* Controls */}
-      <section className="card flex flex-col gap-5 p-6">
-        <h2 className="font-heading text-2xl font-bold">
-          {hidePricing ? "עצבו את הפסיפס שלכם" : "הזמינו את הפסיפס שלכם"}
-        </h2>
+      {/* Sidebar — upload, board, palette, settings, order (RTL start = right) */}
+      <aside className="flex w-full flex-col gap-4 lg:w-[372px] lg:shrink-0">
+        {/* Upload card */}
+        <div className="card flex flex-col gap-3 p-4">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-6 text-center text-primary transition-colors hover:border-primary hover:bg-primary/10"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-8 w-8"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <circle cx="8.5" cy="8.5" r="1.8" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+            <span className="font-heading text-base font-bold text-foreground">
+              {file ? "החלפת תמונה" : "העלו תמונה"}
+            </span>
+            <span className="text-xs text-foreground/55">
+              {file ? "JPG · PNG · WEBP" : "או בחרו מהדוגמאות למטה"}
+            </span>
+          </button>
+
+          {file ? (
+            <button
+              type="button"
+              onClick={() => setShowOriginal((v) => !v)}
+              className="self-center text-sm text-secondary underline"
+            >
+              {showOriginal ? "תצוגת הפסיפס" : "השוואה לתמונה המקורית"}
+            </button>
+          ) : (
+            <div className="flex flex-wrap justify-center gap-2">
+              {STARTERS.map((st) => (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={() => void pickStarter(st.id)}
+                  className="flex items-center gap-1 rounded-full border border-outline bg-surface px-3 py-1 text-xs text-foreground transition-colors hover:bg-surface-muted"
+                >
+                  <span>{STARTER_EMOJI[st.id]}</span>
+                  {st.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {testFull && (
-          <div className="rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-            🧪 מצב בדיקה — פלטת 24 צבעים מלאה (כולל 7 צבעי בוסט שאינם במלאי).
-            לבדיקה בלבד, לא להזמנה.
+          <div className="rounded-lg border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            מצב בדיקה — פלטת 24 צבעים מלאה (כולל 7 צבעי בוסט שאינם במלאי). לבדיקה
+            בלבד, לא להזמנה.
           </div>
         )}
 
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium">מספר לוחות בסיס</p>
-            <span className="text-xs text-zinc-500">
-              {cols}×{rows} אריחים
+        {/* Board size — our plate logic (W × H baseplates). */}
+        <div className="card flex flex-col gap-3 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-heading text-base font-bold">גודל הלוח</h3>
+            <span className="text-xs font-medium text-foreground/60">
+              {Math.round(platesX * CM_PER_PLATE)}×
+              {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ
             </span>
           </div>
-
-          <div className="flex flex-wrap gap-6">
+          <div className="flex items-center justify-center gap-4 rounded-xl border border-outline bg-surface-muted p-3">
             {(
               [
-                ["לרוחב", "x"] as const,
-                ["לגובה", "y"] as const,
+                ["x", "רוחב"],
+                ["y", "גובה"],
               ] as const
-            ).map(([label, axis]) => {
+            ).map(([axis, label], i) => {
               const value = axis === "x" ? platesX : platesY;
               const other = axis === "x" ? platesY : platesX;
-              // Budget mode: an axis can grow while area stays within budget
-              // (the other axis would auto-shrink). Otherwise cap at MAX_PLATES.
+              // Budget mode (employee seat): grow within the plate budget; the
+              // other axis auto-shrinks. Otherwise cap at MAX_PLATES.
               const canIncrease = budgetMode
-                ? (value + 1) * 1 <= plateBudget! && value < plateBudget!
+                ? value + 1 <= plateBudget! && value < plateBudget!
                 : value < MAX_PLATES;
-              const hint = budgetMode
-                ? other > 1 && (value + 1) * other > plateBudget!
-                  ? "↔"
-                  : ""
-                : "";
+              const shrinksOther =
+                budgetMode && other > 1 && (value + 1) * other > plateBudget!;
+              const stepBtn =
+                "flex h-9 w-9 items-center justify-center rounded-lg border border-outline bg-surface text-xl leading-none transition-transform hover:bg-surface-muted active:translate-y-px disabled:opacity-30";
               return (
-                <div key={label} className="flex items-center gap-3">
-                  <span className="text-sm text-zinc-500">{label}</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      aria-label="הפחת"
-                      disabled={value <= 1}
-                      onClick={() => setDims(axis, value - 1)}
-                      className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
-                    >
-                      −
-                    </button>
-                    <span className="w-5 text-center font-medium">{value}</span>
-                    <button
-                      type="button"
-                      aria-label="הוסף"
-                      disabled={!canIncrease}
-                      onClick={() => setDims(axis, value + 1)}
-                      className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
-                    >
-                      +
-                    </button>
-                    {hint && (
-                      <span
-                        className="text-xs text-zinc-400"
-                        title="הגדלה כאן תקטין את הצד השני כדי להישאר בתקציב"
+                <Fragment key={axis}>
+                  {i === 1 && (
+                    <span className="font-heading text-lg text-foreground/40">
+                      ×
+                    </span>
+                  )}
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label="הוסף"
+                        disabled={!canIncrease}
+                        onClick={() => setDims(axis, value + 1)}
+                        className={stepBtn}
+                        title={
+                          shrinksOther
+                            ? "הגדלה כאן תקטין את הצד השני כדי להישאר בתקציב"
+                            : undefined
+                        }
                       >
-                        {hint}
+                        +
+                      </button>
+                      <span className="w-6 text-center font-heading text-xl font-bold">
+                        {value}
                       </span>
-                    )}
+                      <button
+                        type="button"
+                        aria-label="הפחת"
+                        disabled={value <= 1}
+                        onClick={() => setDims(axis, value - 1)}
+                        className={stepBtn}
+                      >
+                        −
+                      </button>
+                    </div>
+                    <span className="text-[11px] text-foreground/50">
+                      {label}
+                    </span>
                   </div>
-                </div>
+                </Fragment>
               );
             })}
           </div>
-
-          <p className="mt-2 text-xs text-zinc-500">
-            גודל סופי: {Math.round(platesX * CM_PER_PLATE)}×
-            {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ · {platesX * platesY}{" "}
-            לוחות
-            {budgetMode ? ` (עד ${plateBudget})` : ""}
+          <p className="text-center text-xs text-foreground/60">
+            מידות פיזיות: {Math.round(platesX * CM_PER_PLATE)}×
+            {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ
+            {budgetMode ? ` (עד ${plateBudget} לוחות)` : ""}
           </p>
         </div>
 
-        {/* Pre-processing: higher contrast keeps edges crisp; saturation keeps
-            colors vivid. Disabled until an image is loaded. */}
-        <div className="grid gap-3 border-t border-outline pt-5">
+        {/* Advanced image settings — disabled until an image is loaded. */}
+        <div className="card flex flex-col gap-3 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">התאמות תמונה</p>
+            <h3 className="font-heading text-base font-bold">הגדרות מתקדמות</h3>
             <button
               type="button"
-              className="text-xs text-zinc-500 underline"
+              className="text-xs text-foreground/50 underline"
               onClick={resetAdjustments}
             >
-              איפוס לברירת מחדל
+              איפוס
             </button>
           </div>
           <label className="flex flex-col gap-1">
@@ -880,25 +1056,25 @@ export function Studio({
           </label>
         </div>
 
-        {/* Color scheme — supply-driven. In-stock colors can be toggled;
-            out-of-stock are disabled. Default scheme is our recommended set. */}
-        <div className="border-t border-outline pt-5">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium">
-              צבעים ({enabled.size})
-            </p>
+        {/* Color palette — stud swatches; click to add/remove a color. */}
+        <div className="card flex flex-col gap-3 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-heading text-base font-bold">פלטת צבעים</h3>
             <button
               type="button"
-              className="text-xs text-zinc-500 underline"
+              className="text-xs text-foreground/50 underline"
               onClick={() => {
                 if (imageData) setWorking(true);
                 setCustomEnabled(null);
               }}
             >
-              איפוס לברירת מחדל
+              איפוס
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <p className="text-xs text-foreground/55">
+            לחצו על לבנה כדי להוסיף או להסיר צבע מהפסיפס.
+          </p>
+          <div className="flex flex-wrap gap-2.5">
             {visibleColors.map((c) => (
               <BrickSwatch
                 key={c.id}
@@ -910,22 +1086,14 @@ export function Studio({
               />
             ))}
           </div>
-          <p className="mt-1 text-xs text-zinc-500">
-            צבע פעיל מסומן במסגרת; צבע עם קו חוצה אינו בשימוש. לחצו כדי
-            להוסיף/להסיר.
-          </p>
+          <span className="text-xs text-foreground/45">
+            {enabled.size} צבעים פעילים
+          </span>
         </div>
 
-        {!hidePricing && (
-          <div className="rounded-lg border border-outline bg-surface-muted px-3 py-2 text-sm text-foreground/70">
-            📦 כל הזמנה כוללת ערכה פיזית עם כל הלבנים + חוברת הוראות. קובץ ההוראות
-            (PDF) זמין להורדה חינם בעמוד ההזמנה.
-          </div>
-        )}
-
         {!embedded && (
-          <div className="grid gap-3 border-t border-outline pt-5">
-            <p className="text-sm font-medium">פרטים ומשלוח</p>
+          <div className="card flex flex-col gap-3 p-4">
+            <h3 className="font-heading text-base font-bold">פרטים ומשלוח</h3>
             <input
               className="input"
               placeholder="שם מלא"
@@ -963,57 +1131,7 @@ export function Studio({
           </div>
         )}
 
-        <div className="mt-2 flex items-center justify-between border-t border-outline pt-4">
-          {hidePricing ? (
-            <span className="text-sm text-zinc-500">
-              {result ? `${result.cols}×${result.rows} אריחים` : ""}
-            </span>
-          ) : (
-            <span className="font-heading text-2xl font-bold">
-              {formatILS(price.total)}
-            </span>
-          )}
-          {authoring ? (
-            <button
-              type="button"
-              onClick={() => result && onSaveSettings?.(currentSettings())}
-              disabled={!result}
-              className="btn btn-primary"
-            >
-              שמירת הגדרות ברירת מחדל
-            </button>
-          ) : embedded ? (
-            <button
-              type="button"
-              onClick={() =>
-                result &&
-                onProceed?.({
-                  file,
-                  pixelMap: result.pixelMap,
-                  cols,
-                  rows,
-                  price: price.total,
-                })
-              }
-              disabled={!result}
-              className="btn btn-primary"
-            >
-              {proceedLabel ?? "המשך לשלב הבא ←"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void handleOrder()}
-              disabled={submitting || !result}
-              className="btn btn-primary"
-            >
-              {submitting ? "מעבד…" : "הוספה לעגלה 🛒"}
-            </button>
-          )}
-        </div>
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
-      </section>
+      </aside>
     </div>
 
       {/* Suggestions strip — pick a ready-made design to load into the engine. */}

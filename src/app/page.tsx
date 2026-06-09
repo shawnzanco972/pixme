@@ -107,34 +107,51 @@ export default async function Home() {
       {/* Ready-made designs gallery (admin-managed; hidden when empty) */}
       <ReadyDesignsGallery />
 
-      {/* How it works */}
+      {/* How it works — each step is a 1×1 brick seen in profile, with a stud
+          bump rising from its top edge (the brand's signature motif). */}
       <section
         id="how"
-        className="mx-auto grid w-full max-w-6xl gap-4 px-6 pb-16 sm:grid-cols-3"
+        className="mx-auto w-full max-w-6xl px-6 pb-16 pt-6"
       >
-        {(
-          [
-            ["1", "מעלים תמונה", "כל תמונה — פורטרט, חיית מחמד, לוגו או טקסט."],
+        <h2 className="mb-8 text-center font-heading text-2xl font-bold">
+          איך זה עובד
+        </h2>
+        <div className="grid gap-6 sm:grid-cols-3">
+          {(
             [
-              "2",
-              "מעצבים פסיפס",
-              "מנוע OKLab ממיר לצבעי לבנים אמיתיים, עם שליטה בגודל, ניגודיות וצבעים.",
-            ],
-            [
-              "3",
-              "מקבלים ערכה",
-              "ערכה פיזית עם כל הלבנים וחוברת הוראות 1:1 להרכבה קלה.",
-            ],
-          ] as const
-        ).map(([n, title, body]) => (
-          <div key={n} className="card flex flex-col gap-2 p-6">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary font-heading font-bold text-on-primary">
-              {n}
-            </span>
-            <h3 className="font-heading text-xl font-semibold">{title}</h3>
-            <p className="text-foreground/70">{body}</p>
-          </div>
-        ))}
+              [
+                "1",
+                "מעלים תמונה",
+                "כל תמונה — פורטרט, חיית מחמד, לוגו או טקסט.",
+                "",
+              ],
+              [
+                "2",
+                "מעצבים פסיפס",
+                "מנוע OKLab ממיר לצבעי לבנים אמיתיים, עם שליטה בגודל, ניגודיות וצבעים.",
+                "studblock--blue",
+              ],
+              [
+                "3",
+                "מקבלים ערכה",
+                "ערכה פיזית עם כל הלבנים וחוברת הוראות 1:1 להרכבה קלה.",
+                "studblock--yellow",
+              ],
+            ] as const
+          ).map(([n, title, body, variant]) => (
+            <div
+              key={n}
+              className={`studblock flex flex-col gap-2 p-6 ${variant}`}
+            >
+              <span className="studblock__stud" aria-hidden />
+              <span className="font-heading text-sm font-bold opacity-80">
+                שלב {n}
+              </span>
+              <h3 className="font-heading text-xl font-bold">{title}</h3>
+              <p className="text-sm leading-relaxed opacity-90">{body}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Sizes & pricing */}

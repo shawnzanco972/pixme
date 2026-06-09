@@ -142,60 +142,77 @@ h6 {
 }
 
 /* ----------------------------------------------------- Brick color swatch */
-/* User-facing palette swatches styled like a real 1×1 brick (NOT admin/PDF). */
+/* User-facing palette swatches as a realistic TOP-DOWN 1×1 plate: a rounded,
+   beveled tile with a raised, lit central cylinder (the stud). Matches the
+   Pixipic design system `.px-brick`. NOT for admin/PDF. */
 .brick-swatch {
   position: relative;
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2.25rem;
+  height: 2.25rem;
   flex: none;
-  border-radius: 5px;
-  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 24%;
+  padding: 0;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.22);
   box-shadow:
     inset 0 2px 2px rgba(255, 255, 255, 0.4),
-    inset 0 -3px 4px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
+    inset 0 -3px 4px rgba(0, 0, 0, 0.26),
+    inset 2px 0 3px rgba(255, 255, 255, 0.14),
+    inset -2px 0 3px rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.2);
   transition:
-    transform 0.12s ease,
-    opacity 0.12s ease;
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .brick-swatch:not(:disabled):hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, 0.4),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.26),
+    0 4px 8px rgba(0, 0, 0, 0.22);
 }
 .brick-swatch:disabled {
   cursor: not-allowed;
 }
-/* The stud — a centered raised circle. */
+/* The raised cylinder — lit top rim + bottom shadow so it reads as 3D. */
 .brick-swatch__stud {
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 52%;
-  height: 52%;
+  width: 58%;
+  height: 58%;
   border-radius: 50%;
   background: inherit;
+  background-image: radial-gradient(
+    circle at 50% 36%,
+    rgba(255, 255, 255, 0.42),
+    rgba(255, 255, 255, 0) 58%
+  );
   box-shadow:
-    inset 0 2px 2px rgba(255, 255, 255, 0.45),
-    inset 0 -2px 2px rgba(0, 0, 0, 0.32),
-    0 0 0 1px rgba(0, 0, 0, 0.08);
+    inset 0 2px 2px rgba(255, 255, 255, 0.55),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 1px 1px rgba(0, 0, 0, 0.18);
 }
-/* Active → a thin stroke around the brick (sits on the surface, so visible on
-   any color). */
+/* Active → a blue outline (the brand's "selected" color). */
 .brick-swatch--on {
-  outline: 2px solid var(--color-foreground);
-  outline-offset: 1px;
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 2px;
 }
 /* Deactivated / out of stock → dim + a diagonal cross-line (two-tone so it
    reads on both light and dark bricks). */
 .brick-swatch--off {
-  opacity: 0.55;
+  opacity: 0.5;
+  filter: saturate(0.7);
 }
 .brick-swatch--off:not(:disabled):hover {
-  opacity: 0.75;
+  opacity: 0.72;
 }
 .brick-swatch__strike {
   position: absolute;
   inset: 0;
-  border-radius: 5px;
+  border-radius: 24%;
   background: linear-gradient(
     45deg,
     transparent 42%,
@@ -205,4 +222,119 @@ h6 {
     rgba(255, 255, 255, 0.6) 57%,
     transparent 58%
   );
+}
+
+/* ----------------------------------------------- Profile stud block (steps)
+   A 1×1 brick seen at a low angle: a solid colored body with a stud bump
+   rising from its top edge. Used for the "how it works" steps. Matches the
+   design system `.px-studblock`. Set a variant for color. */
+.studblock {
+  --sb-color: var(--color-primary);
+  --sb-bevel: var(--color-primary-dark);
+  position: relative;
+  margin-top: 22px; /* leave room for the bump */
+  background: var(--sb-color);
+  border-radius: 1rem;
+  border-bottom: 4px solid var(--sb-bevel);
+  box-shadow:
+    0 4px 10px rgba(25, 28, 30, 0.1),
+    inset 0 2px 2px rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+.studblock__stud {
+  position: absolute;
+  top: -20px;
+  inset-inline-start: 50%;
+  transform: translateX(50%);
+  width: 54px;
+  height: 28px;
+  background: var(--sb-color);
+  border-radius: 13px 13px 5px 5px;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    inset 0 3px 3px rgba(255, 255, 255, 0.3),
+    inset 0 -5px 6px rgba(0, 0, 0, 0.24);
+}
+[dir="ltr"] .studblock__stud {
+  transform: translateX(-50%);
+}
+.studblock--blue {
+  --sb-color: var(--color-secondary);
+  --sb-bevel: var(--color-secondary-dark);
+}
+.studblock--yellow {
+  --sb-color: var(--color-accent);
+  --sb-bevel: #c69100;
+  color: var(--color-foreground);
+}
+
+/* --------------------------------------------------------------- Brand logo
+   "Pixipic" wordmark with the dot (tittle) of the middle "i" replaced by a
+   raised blue stud. The full word is preserved — the stud is the dot, not the
+   whole letter. */
+.brand-logo {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-rubik), system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--color-primary);
+  user-select: none;
+}
+.brand-logo__i {
+  position: relative;
+  display: inline-block;
+  width: 0.34em;
+  height: 0.95em;
+  margin-inline: 0.05em;
+  vertical-align: baseline;
+}
+/* The i stem = a tower of three stacked 1×1 studs (brand red). */
+.brand-logo__tower {
+  position: absolute;
+  bottom: 0;
+  inset-inline: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.035em;
+}
+.brand-logo__brick {
+  width: 0.26em;
+  height: 0.17em;
+  border-radius: 0.05em;
+  background: currentColor;
+  box-shadow:
+    inset 0 0.035em 0.035em rgba(255, 255, 255, 0.5),
+    inset 0 -0.045em 0.05em rgba(0, 0, 0, 0.32),
+    0 0.015em 0.02em rgba(0, 0, 0, 0.22);
+}
+/* The i's dot = a blue 1×1 stud floating above the tower. */
+.brand-logo__dot {
+  position: absolute;
+  bottom: 0.66em;
+  inset-inline: 0;
+  margin-inline: auto;
+  width: 0.26em;
+  height: 0.26em;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  background-image: radial-gradient(
+    circle at 50% 34%,
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0) 60%
+  );
+  box-shadow:
+    inset 0 0.04em 0.04em rgba(255, 255, 255, 0.6),
+    inset 0 -0.05em 0.06em rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 0.02em 0.03em rgba(0, 0, 0, 0.25);
+}
+/* On dark / photo backgrounds: white tower, yellow floating stud. */
+.brand-logo--invert {
+  color: #ffffff;
+}
+.brand-logo--invert .brand-logo__dot {
+  background: var(--color-accent);
 }
