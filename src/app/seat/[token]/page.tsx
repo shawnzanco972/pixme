@@ -10,7 +10,7 @@
  * at which point this locks to a done state.
  */
 import { SeatStudio } from "@/components/b2b/SeatStudio";
-import { workspaceStatus } from "@/lib/b2b";
+import { balancedDims, workspaceStatus } from "@/lib/b2b";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -25,12 +25,12 @@ export default async function SeatPage({
 
   const { data: seat } = await admin
     .from("employee_roster")
-    .select("id, name, workspace_id, submission_id")
+    .select("id, name, workspace_id, submission_id, plates_allocated")
     .eq("invite_token", token)
     .maybeSingle();
 
-  let platesX = 2;
-  let platesY = 2;
+  // Budget = this employee's plate allocation (owner-set, or the default share).
+  let budget = 4;
   let companyName = "";
   let live = false;
   let slotOpen = false;
@@ -54,8 +54,7 @@ export default async function SeatPage({
         .maybeSingle();
       if (order) {
         companyName = order.project_name || order.company_name;
-        platesX = order.plates_x;
-        platesY = order.plates_y;
+        budget = seat.plates_allocated ?? order.plates_x * order.plates_y;
       }
     }
 
@@ -111,9 +110,9 @@ export default async function SeatPage({
       {seat && canEdit && (
         <SeatStudio
           inviteToken={token}
-          plateBudget={platesX * platesY}
-          initialPlatesX={platesX}
-          initialPlatesY={platesY}
+          plateBudget={budget}
+          initialPlatesX={balancedDims(budget).x}
+          initialPlatesY={balancedDims(budget).y}
           alreadySubmitted={hasSubmission && !rejected}
           rejected={rejected}
         />

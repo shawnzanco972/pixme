@@ -11,7 +11,12 @@ import { notFound } from "next/navigation";
 
 import { RosterManager } from "@/components/b2b/RosterManager";
 import type { SeatReviewRow } from "@/components/b2b/SeatRow";
-import { projectProgress, seatStatus } from "@/lib/b2b";
+import {
+  defaultAllocation,
+  projectProgress,
+  seatStatus,
+  totalPlateCredits,
+} from "@/lib/b2b";
 import { isEmailConfigured } from "@/lib/email";
 import { presetStuds } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -30,7 +35,7 @@ export default async function ProjectDashboard({
   const { data: order } = await admin
     .from("b2b_orders")
     .select(
-      "id, company_name, project_name, status, plates_x, plates_y, licenses_purchased",
+      "id, company_name, project_name, status, plates_x, plates_y, licenses_purchased, extra_plate_credits",
     )
     .eq("owner_token", token)
     .maybeSingle();
@@ -70,9 +75,12 @@ export default async function ProjectDashboard({
   // Roster + each seat's submission status.
   const { data: roster } = await admin
     .from("employee_roster")
-    .select("id, name, email, invite_token")
+    .select("id, name, email, invite_token, plates_allocated")
     .eq("workspace_id", ws.id)
     .order("created_at", { ascending: true });
+
+  const defaultAlloc = defaultAllocation(order);
+  const totalCredits = totalPlateCredits(order);
 
   const { data: subs } = await admin
     .from("employee_submissions")
@@ -96,6 +104,8 @@ export default async function ProjectDashboard({
       submissionId: sub?.id ?? null,
       pixelMap: Array.isArray(pm) ? pm : null,
       scheduledFor: sub?.scheduled_for ?? null,
+      effectivePlates: r.plates_allocated ?? defaultAlloc,
+      maxPlates: 0, // computed in RosterManager from the pool
     };
   });
 
@@ -144,6 +154,7 @@ export default async function ProjectDashboard({
         rows={rosterRows}
         seatsLeft={Math.max(0, seatsLeft)}
         emailConfigured={isEmailConfigured()}
+        totalCredits={totalCredits}
       />
     </main>
   );

@@ -12,7 +12,7 @@
  */
 import { NextResponse } from "next/server";
 
-import { computeB2bQuote } from "@/lib/b2b-pricing";
+import { computeB2bQuoteByPlates } from "@/lib/b2b-pricing";
 import { createCheckout } from "@/lib/icount";
 import { computePrice, GIFT_WRAP_FEE, presetById } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -145,23 +145,38 @@ export async function POST(request: Request) {
       const projectName = body.project_name
         ? String(body.project_name)
         : null;
-      // Size + employee count + upsell are the inputs; the price is recomputed
-      // authoritatively here (never trusted from the body) so it always equals
-      // employees × the regular physical mosaic price (+ managed fee).
-      const preset = presetById(String(body.preset_id ?? ""));
+      // Size (width × height plates) + employee count + upsell are the inputs;
+      // the price is recomputed authoritatively here (never trusted from the
+      // body) so it always equals employees × the regular physical mosaic price
+      // (+ managed fee). Falls back to a named preset for older callers.
       const employees = Number(body.employees ?? 0);
       const managed = body.managed === true;
-      if (!contactEmail || !companyName || !preset || !(employees > 0)) {
+      let platesX = Math.floor(Number(body.plates_x));
+      let platesY = Math.floor(Number(body.plates_y));
+      if (!(platesX > 0) || !(platesY > 0)) {
+        const preset = presetById(String(body.preset_id ?? ""));
+        if (preset) {
+          platesX = preset.platesX;
+          platesY = preset.platesY;
+        }
+      }
+      if (
+        !contactEmail ||
+        !companyName ||
+        !(platesX > 0) ||
+        !(platesY > 0) ||
+        !(employees > 0)
+      ) {
         return NextResponse.json(
           {
             error:
-              "Missing company_name, contact_email, a valid preset_id, or employees",
+              "Missing company_name, contact_email, a valid size, or employees",
           },
           { status: 400 },
         );
       }
 
-      const quote = computeB2bQuote(employees, preset.id, managed);
+      const quote = computeB2bQuoteByPlates(employees, platesX, platesY, managed);
       if (quote.requiresQuote) {
         return NextResponse.json(
           { error: "Order exceeds self-serve limit — request a quote instead" },
@@ -175,8 +190,8 @@ export async function POST(request: Request) {
           company_name: companyName,
           contact_email: contactEmail,
           project_name: projectName,
-          plates_x: preset.platesX,
-          plates_y: preset.platesY,
+          plates_x: platesX,
+          plates_y: platesY,
           licenses_purchased: quote.employees,
           managed,
           amount_paid: 0, // set authoritatively on payment confirmation

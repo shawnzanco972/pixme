@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  balancedDims,
+  defaultAllocation,
+  fitPlateDims,
   projectProgress,
   seatStatus,
+  totalPlateCredits,
   workspaceStatus,
   type WorkspaceLike,
 } from "./b2b";
@@ -133,5 +137,53 @@ describe("computeB2bQuote", () => {
     const small = computeB2bQuote(5, "1x1", false).perMosaic;
     const big = computeB2bQuote(5, "3x3", false).perMosaic;
     expect(big).toBeGreaterThan(small);
+  });
+});
+
+describe("plate credits & allocation", () => {
+  const order = { licenses_purchased: 3, plates_x: 3, plates_y: 2 };
+
+  it("default allocation is the purchased per-employee size", () => {
+    expect(defaultAllocation(order)).toBe(6);
+  });
+
+  it("total pool = employees × size + top-ups", () => {
+    expect(totalPlateCredits(order)).toBe(18);
+    expect(totalPlateCredits({ ...order, extra_plate_credits: 6 })).toBe(24);
+  });
+
+  it("balancedDims picks a near-square shape within budget", () => {
+    expect(balancedDims(6)).toEqual({ x: 2, y: 3 });
+    expect(balancedDims(9)).toEqual({ x: 3, y: 3 });
+    expect(balancedDims(8)).toEqual({ x: 2, y: 4 });
+    expect(balancedDims(4)).toEqual({ x: 2, y: 2 });
+  });
+
+  it("fitPlateDims auto-adjusts the other axis to stay within budget", () => {
+    // budget 6: set W=3 → H caps at 2
+    expect(fitPlateDims({ changed: "x", x: 3, y: 3, budget: 6 })).toEqual({
+      x: 3,
+      y: 2,
+    });
+    // then set H=3 → W drops to 2
+    expect(fitPlateDims({ changed: "y", x: 3, y: 3, budget: 6 })).toEqual({
+      x: 2,
+      y: 3,
+    });
+  });
+
+  it("fitPlateDims allows using fewer plates than the budget", () => {
+    // 2×2 = 4 is fine under a budget of 6 (employee gives up plates)
+    expect(fitPlateDims({ changed: "x", x: 2, y: 2, budget: 6 })).toEqual({
+      x: 2,
+      y: 2,
+    });
+  });
+
+  it("fitPlateDims never exceeds budget or drops below 1", () => {
+    const r = fitPlateDims({ changed: "x", x: 99, y: 99, budget: 6 });
+    expect(r.x * r.y).toBeLessThanOrEqual(6);
+    expect(r.x).toBeGreaterThanOrEqual(1);
+    expect(r.y).toBeGreaterThanOrEqual(1);
   });
 });

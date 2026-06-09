@@ -17,6 +17,7 @@ import { renderBricks } from "@/lib/brick-render";
 import { cropToAspect, fileToImageData } from "@/lib/image";
 import { STARTERS, renderStarter } from "@/lib/starters";
 import { computePrice, formatILS, PLATE_STUDS } from "@/lib/pricing";
+import { fitPlateDims } from "@/lib/b2b";
 
 // Physical size of one 24×24 baseplate (24 studs × 8mm pitch ≈ 19.2 cm).
 const CM_PER_PLATE = 19.2;
@@ -75,17 +76,25 @@ export function Studio({
   const [platesY, setPlatesY] = useState(initialPlatesY ?? 2);
   const cols = platesX * PLATE_STUDS;
   const rows = platesY * PLATE_STUDS;
-  // Employee seat flow: the company paid for a fixed number of plates, so the
-  // employee may only REARRANGE that exact count (e.g. a 9-plate / 3×3 budget →
-  // 1×9, 3×3, 9×1). The valid orientations are the divisor pairs of the budget.
-  const orientationOptions = useMemo(() => {
-    if (plateBudget == null) return null;
-    const pairs: Array<[number, number]> = [];
-    for (let x = 1; x <= plateBudget; x++) {
-      if (plateBudget % x === 0) pairs.push([x, plateBudget / x]);
+  // Employee seat flow: the company allocated this employee a plate budget. They
+  // pick width/height freely up to that budget — changing one axis auto-adjusts
+  // the other so the area never exceeds the budget (see fitPlateDims).
+  const budgetMode = plateBudget != null;
+  function setDims(changed: "x" | "y", value: number) {
+    if (imageData) setWorking(true);
+    if (plateBudget == null) {
+      (changed === "x" ? setPlatesX : setPlatesY)(value);
+      return;
     }
-    return pairs;
-  }, [plateBudget]);
+    const next = fitPlateDims({
+      changed,
+      x: changed === "x" ? value : platesX,
+      y: changed === "y" ? value : platesY,
+      budget: plateBudget,
+    });
+    setPlatesX(next.x);
+    setPlatesY(next.y);
+  }
   // Pre-processing controls (defaults bias toward crisp, vivid output).
   const [contrast, setContrast] = useState(1.2);
   const [saturation, setSaturation] = useState(1.1);
@@ -473,99 +482,73 @@ export function Studio({
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium">
-              {orientationOptions ? "כיוון הפסיפס" : "מספר לוחות בסיס"}
-            </p>
+            <p className="text-sm font-medium">מספר לוחות בסיס</p>
             <span className="text-xs text-zinc-500">
               {cols}×{rows} אריחים
             </span>
           </div>
 
-          {orientationOptions ? (
-            // Employee: pick one arrangement of the company's purchased plates.
-            <div className="flex flex-wrap gap-2">
-              {orientationOptions.map(([px, py]) => {
-                const on = px === platesX && py === platesY;
-                return (
-                  <button
-                    key={`${px}x${py}`}
-                    type="button"
-                    onClick={() => {
-                      if (px === platesX && py === platesY) return;
-                      if (imageData) setWorking(true);
-                      setPlatesX(px);
-                      setPlatesY(py);
-                    }}
-                    className={`flex flex-col items-center gap-0.5 rounded-lg border px-3 py-2 text-sm transition ${
-                      on
-                        ? "border-primary bg-primary/10 font-semibold text-primary"
-                        : "border-outline hover:bg-surface-muted"
-                    }`}
-                  >
-                    <span>
-                      {px}×{py}
-                    </span>
-                    <span className="text-[10px] text-zinc-500">
-                      {Math.round(px * CM_PER_PLATE)}×
-                      {Math.round(py * CM_PER_PLATE)} ס&quot;מ
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-6">
-              {(
-                [
-                  ["לרוחב", "x"] as const,
-                  ["לגובה", "y"] as const,
-                ] as const
-              ).map(([label, axis]) => {
-                const value = axis === "x" ? platesX : platesY;
-                const setter = axis === "x" ? setPlatesX : setPlatesY;
-                return (
-                  <div key={label} className="flex items-center gap-3">
-                    <span className="text-sm text-zinc-500">{label}</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        aria-label="הפחת"
-                        disabled={value <= 1}
-                        onClick={() => {
-                          if (imageData) setWorking(true);
-                          setter(Math.max(1, value - 1));
-                        }}
-                        className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
+          <div className="flex flex-wrap gap-6">
+            {(
+              [
+                ["לרוחב", "x"] as const,
+                ["לגובה", "y"] as const,
+              ] as const
+            ).map(([label, axis]) => {
+              const value = axis === "x" ? platesX : platesY;
+              const other = axis === "x" ? platesY : platesX;
+              // Budget mode: an axis can grow while area stays within budget
+              // (the other axis would auto-shrink). Otherwise cap at MAX_PLATES.
+              const canIncrease = budgetMode
+                ? (value + 1) * 1 <= plateBudget! && value < plateBudget!
+                : value < MAX_PLATES;
+              const hint = budgetMode
+                ? other > 1 && (value + 1) * other > plateBudget!
+                  ? "↔"
+                  : ""
+                : "";
+              return (
+                <div key={label} className="flex items-center gap-3">
+                  <span className="text-sm text-zinc-500">{label}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label="הפחת"
+                      disabled={value <= 1}
+                      onClick={() => setDims(axis, value - 1)}
+                      className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
+                    >
+                      −
+                    </button>
+                    <span className="w-5 text-center font-medium">{value}</span>
+                    <button
+                      type="button"
+                      aria-label="הוסף"
+                      disabled={!canIncrease}
+                      onClick={() => setDims(axis, value + 1)}
+                      className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
+                    >
+                      +
+                    </button>
+                    {hint && (
+                      <span
+                        className="text-xs text-zinc-400"
+                        title="הגדלה כאן תקטין את הצד השני כדי להישאר בתקציב"
                       >
-                        −
-                      </button>
-                      <span className="w-5 text-center font-medium">
-                        {value}
+                        {hint}
                       </span>
-                      <button
-                        type="button"
-                        aria-label="הוסף"
-                        disabled={value >= MAX_PLATES}
-                        onClick={() => {
-                          if (imageData) setWorking(true);
-                          setter(Math.min(MAX_PLATES, value + 1));
-                        }}
-                        className="h-8 w-8 rounded-full border border-zinc-300 text-lg leading-none disabled:opacity-30 dark:border-zinc-700"
-                      >
-                        +
-                      </button>
-                    </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
 
           <p className="mt-2 text-xs text-zinc-500">
             גודל סופי: {Math.round(platesX * CM_PER_PLATE)}×
-            {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ ·{" "}
-            {platesX * platesY} לוחות
-            {plateBudget != null ? ` (מתוך ${plateBudget})` : ""}
+            {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ · {platesX * platesY}{" "}
+            לוחות
+            {budgetMode ? ` (עד ${plateBudget})` : ""}
           </p>
         </div>
 

@@ -31,6 +31,7 @@ export type Database = {
           company_name: string
           contact_email: string
           created_at: string
+          extra_plate_credits: number
           icount_invoice_id: string | null
           id: string
           is_test: boolean
@@ -49,6 +50,7 @@ export type Database = {
           company_name: string
           contact_email: string
           created_at?: string
+          extra_plate_credits?: number
           icount_invoice_id?: string | null
           id?: string
           is_test?: boolean
@@ -67,6 +69,7 @@ export type Database = {
           company_name?: string
           contact_email?: string
           created_at?: string
+          extra_plate_credits?: number
           icount_invoice_id?: string | null
           id?: string
           is_test?: boolean
@@ -252,6 +255,7 @@ export type Database = {
           id: string
           invite_token: string
           name: string
+          plates_allocated: number | null
           submission_id: string | null
           updated_at: string
           workspace_id: string
@@ -262,6 +266,7 @@ export type Database = {
           id?: string
           invite_token?: string
           name: string
+          plates_allocated?: number | null
           submission_id?: string | null
           updated_at?: string
           workspace_id: string
@@ -272,6 +277,7 @@ export type Database = {
           id?: string
           invite_token?: string
           name?: string
+          plates_allocated?: number | null
           submission_id?: string | null
           updated_at?: string
           workspace_id?: string

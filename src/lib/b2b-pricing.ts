@@ -101,17 +101,20 @@ export interface B2bQuote {
 }
 
 /**
- * Compute a B2B quote. Falls back to the first preset for an unknown id, and
- * clamps employees to ≥1.
+ * Compute a B2B quote from an explicit baseplate grid (width × height). This is
+ * the authoritative form — the company picks a size, which sets each employee's
+ * default mosaic and the total plate pool. Clamps inputs to ≥1.
  */
-export function computeB2bQuote(
+export function computeB2bQuoteByPlates(
   employees: number,
-  presetId: string,
+  platesX: number,
+  platesY: number,
   managed: boolean,
 ): B2bQuote {
-  const preset = presetById(presetId) ?? B2B_SIZE_PRESETS[0];
+  const px = Math.max(1, Math.floor(platesX || 1));
+  const py = Math.max(1, Math.floor(platesY || 1));
   const n = Math.max(1, Math.floor(employees || 0));
-  const { cols, rows } = presetStuds(preset);
+  const { cols, rows } = presetStuds({ platesX: px, platesY: py });
 
   const perMosaicBase = computePrice(cols, rows, "physical").total;
   const discount = mosaicDiscount(n);
@@ -124,10 +127,10 @@ export function computeB2bQuote(
 
   return {
     employees: n,
-    presetId: preset.id,
+    presetId: `${px}x${py}`,
     cols,
     rows,
-    plates: preset.platesX * preset.platesY,
+    plates: px * py,
     perMosaicBase,
     perMosaic,
     discount,
@@ -139,6 +142,24 @@ export function computeB2bQuote(
     total: mosaicsTotal + managementTotal,
     requiresQuote: n > MAX_SELF_SERVE_SEATS,
   };
+}
+
+/**
+ * Compute a B2B quote from a named size preset. Thin wrapper over
+ * `computeB2bQuoteByPlates`; falls back to the first preset for an unknown id.
+ */
+export function computeB2bQuote(
+  employees: number,
+  presetId: string,
+  managed: boolean,
+): B2bQuote {
+  const preset = presetById(presetId) ?? B2B_SIZE_PRESETS[0];
+  return computeB2bQuoteByPlates(
+    employees,
+    preset.platesX,
+    preset.platesY,
+    managed,
+  );
 }
 
 /** Estimated build time for one employee's set, in minutes. */

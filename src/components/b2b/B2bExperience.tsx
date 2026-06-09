@@ -9,15 +9,15 @@ import { useState } from "react";
 import { B2bCalculator } from "@/components/b2b/B2bCalculator";
 import { B2bEnginePreview } from "@/components/b2b/B2bEnginePreview";
 import { MANAGED_FEE_MIN, MANAGED_FEE_MAX } from "@/lib/b2b-pricing";
-import { formatILS, presetById, presetStuds } from "@/lib/pricing";
+import { formatILS, presetStuds } from "@/lib/pricing";
 
 export function B2bExperience() {
-  const [presetId, setPresetId] = useState("2x2");
+  const [platesX, setPlatesX] = useState(2);
+  const [platesY, setPlatesY] = useState(2);
   const [employees, setEmployees] = useState(15);
   const [managed, setManaged] = useState(true);
 
-  const preset = presetById(presetId)!;
-  const { cols, rows } = presetStuds(preset);
+  const { cols, rows } = presetStuds({ platesX, platesY });
 
   return (
     <>
@@ -29,8 +29,10 @@ export function B2bExperience() {
         </p>
         <div className="mt-8">
           <B2bCalculator
-            presetId={presetId}
-            setPresetId={setPresetId}
+            platesX={platesX}
+            setPlatesX={setPlatesX}
+            platesY={platesY}
+            setPlatesY={setPlatesY}
             employees={employees}
             setEmployees={setEmployees}
             managed={managed}

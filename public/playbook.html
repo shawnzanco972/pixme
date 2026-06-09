@@ -144,6 +144,21 @@
     </style>
   </head>
   <body>
+    <div
+      id="rate-widget"
+      style="position: fixed; inset-block-end: 16px; inset-inline-start: 16px; z-index: 50; background: #fff; border: 1px solid #e0e3e5; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); padding: 10px 14px; font-family: 'Heebo', sans-serif; font-size: 13px; display: flex; align-items: center; gap: 8px"
+    >
+      <label for="rate" style="font-weight: 600">שער $→₪</label>
+      <input
+        id="rate"
+        type="number"
+        min="1"
+        step="0.05"
+        value="3.00"
+        style="width: 64px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 4px 6px; font-size: 13px; text-align: center"
+      />
+      <span style="color: #51585d">לעדכון ידני</span>
+    </div>
     <header class="hero">
       <div class="hero-inner">
         <span class="brand-chip">פיקסיפיק · Pixipic</span>
@@ -269,7 +284,7 @@
             <tr><td>ציוד מקומי</td><td>משקל דיגיטלי, ארגזי אחסון, קופסאות שילוח</td><td class="num">~$280</td></tr>
           </tbody>
           <tfoot>
-            <tr><td colspan="2">סה״כ עלות הקמה ראשונית</td><td class="num">~$1,750 (₪6,520)</td></tr>
+            <tr><td colspan="2">סה״כ עלות הקמה ראשונית</td><td class="num">~$1,750 (<span class="j-nis" data-usd="1750" data-dec="0">₪5,250</span>)</td></tr>
           </tfoot>
         </table>
 
@@ -322,13 +337,16 @@
         <div class="kpi-row">
           <div class="kpi"><div class="big">~65</div><div class="lbl">יצירות מהמלאי הראשוני</div></div>
           <div class="kpi"><div class="big">₪22,850</div><div class="lbl">הכנסה גולמית</div></div>
-          <div class="kpi"><div class="big">₪14,000+</div><div class="lbl">רווח נקי (אחרי החזר ההקמה)</div></div>
+          <div class="kpi"><div class="big j-batch-net">₪12,900</div><div class="lbl">רווח נקי משוער (אחרי הקמה)</div></div>
         </div>
         <div class="callout report">
           <div class="tag">📋 מהניתוח הכלכלי</div>
           <p>
-            מכירת 65 הערכות מכניסה כ־<b>₪22,850</b> ברוטו, ומשאירה <b>מעל ₪14,000
-            רווח נקי</b> — אחרי שכיסיתם את כל עלות ההקמה של $1,750. כלומר ההזמנה
+            מכירת 65 הערכות מכניסה כ־<b>₪22,850</b> ברוטו, ומשאירה
+            <b>כ־<span class="j-batch-net">₪12,900</span> רווח נקי משוער</b> (לפי
+            השער) — אחרי שכיסיתם את כל עלות ההקמה של $1,750
+            (<span class="j-nis" data-usd="1750" data-dec="0">₪5,250</span>).
+            כלומר ההזמנה
             הראשונה מחזירה את עצמה הרבה לפני שהמלאי נגמר.
           </p>
         </div>
@@ -443,6 +461,12 @@
         <h2><span class="sec-num">8</span> תמחור וכלכלת יחידה</h2>
         <p class="intro">
           כאן הלב הכלכלי: עלות מדויקת ליחידה, אסטרטגיית ה־₪399, ו־2×2 כבסיס.
+          <br />
+          <span style="font-size: 13px; color: var(--ink-soft)">
+            💱 כל ערך שמקורו בדולר מומר לשקל לפי השער שמוגדר בפינה התחתונה (ברירת
+            מחדל 3.00 ₪ לדולר). ערכים שקליים מקוריים (מחיר קמעונאי ₪399, סליקה,
+            משלוח מקומי) קבועים.
+          </span>
         </p>
 
         <h3>עלות ייצור ומימוש של פסיפס 3×3 (״גדול״, 72×72 אריחים)</h3>
@@ -452,17 +476,17 @@
         <table>
           <thead><tr><th>רכיב</th><th class="num">₪</th><th class="num">$</th></tr></thead>
           <tbody>
-            <tr><td>לבנים 1×1 (~5,700)</td><td class="num">42.20</td><td class="num">11.40</td></tr>
-            <tr><td>לוחות בסיס שקופים (9)</td><td class="num">11.65</td><td class="num">3.15</td></tr>
-            <tr><td>מפריד לבנים (1)</td><td class="num">0.55</td><td class="num">0.15</td></tr>
-            <tr><td>פסי הדבקה לקיר (Nano Tape)</td><td class="num">1.85</td><td class="num">0.50</td></tr>
-            <tr><td>שקיות Ziploc + מדבקות (~30)</td><td class="num">2.20</td><td class="num">0.60</td></tr>
-            <tr><td>קופסת שילוח</td><td class="num">5.00</td><td class="num">1.35</td></tr>
-            <tr><td>חוברת הוראות מודפסת (9 עמ׳ A4)</td><td class="num">2.00</td><td class="num">0.55</td></tr>
-            <tr><td>רזרבת יבוא (שילוח+מכס מופחת)</td><td class="num">12.20</td><td class="num">3.30</td></tr>
+            <tr><td>לבנים 1×1 (~5,700)</td><td class="num j-nis" data-usd="11.40" data-bare>34.20</td><td class="num">11.40</td></tr>
+            <tr><td>לוחות בסיס שקופים (9)</td><td class="num j-nis" data-usd="3.15" data-bare>9.45</td><td class="num">3.15</td></tr>
+            <tr><td>מפריד לבנים (1)</td><td class="num j-nis" data-usd="0.15" data-bare>0.45</td><td class="num">0.15</td></tr>
+            <tr><td>פסי הדבקה לקיר (Nano Tape)</td><td class="num j-nis" data-usd="0.50" data-bare>1.50</td><td class="num">0.50</td></tr>
+            <tr><td>שקיות Ziploc + מדבקות (~30)</td><td class="num j-nis" data-usd="0.60" data-bare>1.80</td><td class="num">0.60</td></tr>
+            <tr><td>קופסת שילוח</td><td class="num j-nis" data-usd="1.35" data-bare>4.05</td><td class="num">1.35</td></tr>
+            <tr><td>חוברת הוראות מודפסת (9 עמ׳ A4)</td><td class="num j-nis" data-usd="0.55" data-bare>1.65</td><td class="num">0.55</td></tr>
+            <tr><td>רזרבת יבוא (שילוח+מכס מופחת)</td><td class="num j-nis" data-usd="3.30" data-bare>9.90</td><td class="num">3.30</td></tr>
           </tbody>
           <tfoot>
-            <tr><td>סה״כ עלות ייצור (COGS)</td><td class="num">77.65</td><td class="num">21.00</td></tr>
+            <tr><td>סה״כ עלות ייצור (COGS)</td><td class="num j-nis" data-usd="21.00" data-bare>63.00</td><td class="num">21.00</td></tr>
           </tfoot>
         </table>
 
@@ -473,7 +497,7 @@
             <tr><td>משלוח מקומי (צ׳יטה / לוקר Boxit)</td><td class="num">~18.00</td></tr>
           </tbody>
           <tfoot>
-            <tr><td>סה״כ עלות נחיתה + מימוש ל־3×3</td><td class="num">~105.65</td></tr>
+            <tr><td>סה״כ עלות נחיתה + מימוש ל־3×3</td><td class="num j-order-total" data-bare>~91.00</td></tr>
           </tfoot>
         </table>
 
@@ -482,10 +506,52 @@
           <p>
             תמחור ה־3×3 ב־<b>₪399</b> תחרותי מצוין: 99 ליש״ט ≈ ₪470, כך שאתם
             <b>חותכים את המתחרה מחו״ל</b> וגם חוסכים ללקוח שילוח בינלאומי ועיכובי
-            מכס. מכיוון שהעלות הכוללת היא ~₪105.65, נשאר <b class="bignum">רווח נקי
-            של כ־₪294 להזמנה</b>. צעד מעשי במערכת: לכייל את מנוע התמחור כך
-            ש־3×3 ינחת על ₪399.
+            מכס. מכיוון שהעלות הכוללת היא ~<span class="j-order-total">₪91.00</span>,
+            נשאר <b class="bignum">רווח נקי של כ־<span class="j-profit">₪308</span>
+            להזמנה</b>. צעד מעשי במערכת: לכייל את מנוע התמחור כך ש־3×3 ינחת על ₪399.
           </p>
+        </div>
+
+        <h3>🧮 מחשבון עלות הזמנה (אינטראקטיבי)</h3>
+        <p style="font-size: 13px; color: var(--ink-soft)">
+          בחרו גודל, כמות, משלוח ומחיר מכירה — והמחשבון מעריך עלות ורווח לפי השער
+          שמוגדר בפינה. המחירים גסים לעת עתה; עדכנו אותם כשיהיו נתונים מדויקים.
+        </p>
+        <div
+          class="card"
+          style="display: grid; gap: 18px; grid-template-columns: 1fr 1fr; padding: 18px"
+        >
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              רוחב (לוחות)
+              <input id="calc-w" type="number" min="1" max="5" value="3" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              גובה (לוחות)
+              <input id="calc-h" type="number" min="1" max="5" value="3" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              כמות (יחידות)
+              <input id="calc-qty" type="number" min="1" value="1" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              משלוח ליחידה (₪)
+              <input id="calc-ship" type="number" min="0" step="0.5" value="18" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+            <label style="font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px">
+              מחיר מכירה ליחידה (₪)
+              <input id="calc-retail" type="number" min="0" step="5" value="399" style="width: 80px; border: 1px solid #e0e3e5; border-radius: 8px; padding: 5px 8px" />
+            </label>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+            <div style="display: flex; justify-content: space-between"><span class="font-head" style="font-weight: 700">תוצאה</span><span id="r-size" style="color: var(--ink-soft)">3×3 (9 לוחות)</span></div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--outline); padding-top: 6px"><span style="color: var(--ink-soft)">עלות ייצור / יחידה</span><span id="r-cogs">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">עלות מימוש / יחידה</span><span id="r-fulfil">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">עלות נחיתה / יחידה</span><span id="r-landed" style="font-weight: 600">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">רווח / יחידה</span><span id="r-profit" class="bignum">—</span></div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--outline); padding-top: 6px"><span style="color: var(--ink-soft)">עלות כוללת</span><span id="r-total-landed">—</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: var(--ink-soft)">רווח כולל</span><span id="r-total-profit" class="bignum" style="font-size: 18px">—</span></div>
+          </div>
         </div>
 
         <h3>2×2 כבסיס הכניסה</h3>
@@ -619,17 +685,115 @@
           <div class="kpi"><div class="big">~19</div><div class="lbl">צבעי ליבה בפתיחה</div></div>
           <div class="kpi"><div class="big">2–5</div><div class="lbl">ימי אספקה</div></div>
           <div class="kpi"><div class="big">$74.99</div><div class="lbl">תקרת רכש פטורה</div></div>
-          <div class="kpi"><div class="big">₪294</div><div class="lbl">רווח נקי ל־3×3</div></div>
+          <div class="kpi"><div class="big j-profit">₪308</div><div class="lbl">רווח נקי ל־3×3</div></div>
         </div>
         <div class="divider"></div>
         <p style="color: var(--ink-soft); font-size: 14px">
           <b>שורה תחתונה:</b> בהשקעת הקמה של ~$1,750, המלאי הראשוני מייצר ~65
-          יצירות ומחזיר את עצמו עם מעל ₪14,000 רווח. תמחור 3×3 ב־₪399 משאיר ~₪294
-          רווח להזמנה. שילוב של רכש יעיל־מס, מלאי מדורג ולוח ניהול מבוסס־Supabase
+          יצירות ומחזיר את עצמו עם כ־<span class="j-batch-net">₪12,900</span>
+          רווח (משוער). תמחור 3×3 ב־₪399 משאיר
+          ~<span class="j-profit">₪308</span> רווח להזמנה. שילוב של רכש יעיל־מס, מלאי מדורג ולוח ניהול מבוסס־Supabase
           המחובר למנוע ה״לבנים״ — יוצר עסק עם ״חפיר״ גבוה ומסלול סקלבילי ל־B2B.
         </p>
       </section>
     </main>
+
+    <script>
+      (function () {
+        // Live USD→₪ conversion + a parametric cost model. Factory/import costs
+        // are in USD; their ₪ equivalents (and anything derived from them)
+        // recompute from the rate the operator sets. ₪-native figures (retail
+        // ₪399, gross revenue, local gateway/shipping) stay fixed.
+        //
+        // cogsUsd(plates) is calibrated to the report's 3×3 (9 plates) → $21.00:
+        //   per-plate (bricks+baseplates+import buffer) + per-kit fixed items.
+        var COGS_PER_PLATE_USD = 1.98333;
+        var COGS_FIXED_USD = 3.15;
+        var GATEWAY_NIS = 10; // payment gateway, ~2.5% of ₪399
+        var DEFAULT_SHIP_NIS = 18; // domestic shipping
+        var RETAIL_3X3_NIS = 399;
+        var SETUP_USD = 1750;
+        var BATCH_REVENUE_NIS = 22850; // 65-kit gross (₪-native)
+        var rateEl = document.getElementById("rate");
+
+        function cogsUsd(plates) {
+          return plates * COGS_PER_PLATE_USD + COGS_FIXED_USD;
+        }
+        function fmt(n, dec) {
+          return n.toLocaleString("he-IL", {
+            minimumFractionDigits: dec,
+            maximumFractionDigits: dec,
+          });
+        }
+        var nis = (n) => "₪" + fmt(n, 2);
+        var nis0 = (n) => "₪" + fmt(Math.round(n), 0);
+        var num = (id) => parseFloat(document.getElementById(id).value) || 0;
+        var set = (id, t) => {
+          var el = document.getElementById(id);
+          if (el) el.textContent = t;
+        };
+
+        function recompute() {
+          var rate = parseFloat(rateEl.value) || 3;
+          document.querySelectorAll(".j-nis").forEach(function (el) {
+            var usd = parseFloat(el.dataset.usd);
+            var dec = el.dataset.dec !== undefined ? +el.dataset.dec : 2;
+            el.textContent =
+              (el.hasAttribute("data-bare") ? "" : "₪") + fmt(usd * rate, dec);
+          });
+          // 3×3 reference order
+          var orderTotal = cogsUsd(9) * rate + GATEWAY_NIS + DEFAULT_SHIP_NIS;
+          var profit = RETAIL_3X3_NIS - orderTotal;
+          document.querySelectorAll(".j-order-total").forEach(function (el) {
+            el.textContent =
+              (el.hasAttribute("data-bare") ? "" : "₪") + fmt(orderTotal, 2);
+          });
+          document
+            .querySelectorAll(".j-profit")
+            .forEach((el) => (el.textContent = nis0(profit)));
+          // 65-kit batch net (estimate): 40×2×2 + 25×3×3
+          var production = (40 * cogsUsd(4) + 25 * cogsUsd(9)) * rate;
+          var batchNet =
+            BATCH_REVENUE_NIS -
+            SETUP_USD * rate -
+            production -
+            65 * (GATEWAY_NIS + DEFAULT_SHIP_NIS);
+          document
+            .querySelectorAll(".j-batch-net")
+            .forEach((el) => (el.textContent = nis0(batchNet)));
+          calc(rate);
+        }
+
+        function calc(rate) {
+          var w = Math.max(1, num("calc-w"));
+          var h = Math.max(1, num("calc-h"));
+          var plates = w * h;
+          var qty = Math.max(1, num("calc-qty"));
+          var ship = num("calc-ship");
+          var retail = num("calc-retail");
+          var cogs = cogsUsd(plates) * rate;
+          var fulfil = GATEWAY_NIS + ship;
+          var landed = cogs + fulfil;
+          var prof = retail - landed;
+          set("r-size", w + "×" + h + " (" + plates + " לוחות)");
+          set("r-cogs", nis(cogs));
+          set("r-fulfil", nis(fulfil));
+          set("r-landed", nis(landed));
+          set("r-profit", nis(prof));
+          set("r-total-landed", nis0(landed * qty));
+          set("r-total-profit", nis0(prof * qty));
+        }
+
+        rateEl.addEventListener("input", recompute);
+        ["calc-w", "calc-h", "calc-qty", "calc-ship", "calc-retail"].forEach(
+          function (id) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener("input", recompute);
+          },
+        );
+        recompute();
+      })();
+    </script>
 
     <footer>
       Pixipic · פיקסיפיק — מדריך הקמה ותפעול · מסונתז מהדוח האסטרטגי + ניתוח

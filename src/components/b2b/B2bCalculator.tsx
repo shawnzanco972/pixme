@@ -7,16 +7,19 @@
  */
 import { useState } from "react";
 
-import {
-  B2B_SIZE_PRESETS,
-  buildMinutes,
-  computeB2bQuote,
-} from "@/lib/b2b-pricing";
-import { computePrice, formatILS, presetStuds } from "@/lib/pricing";
+import { buildMinutes, computeB2bQuoteByPlates } from "@/lib/b2b-pricing";
+import { formatILS } from "@/lib/pricing";
+
+/** Size bounds for the per-employee mosaic (in 24×24 baseplate units). */
+const MIN_PLATES_AXIS = 1;
+const MAX_PLATES_AXIS = 5;
+const CM_PER_PLATE = 19;
 
 export interface CalculatorState {
-  presetId: string;
-  setPresetId: (id: string) => void;
+  platesX: number;
+  setPlatesX: (n: number) => void;
+  platesY: number;
+  setPlatesY: (n: number) => void;
   employees: number;
   setEmployees: (n: number) => void;
   managed: boolean;
@@ -24,8 +27,16 @@ export interface CalculatorState {
 }
 
 export function B2bCalculator(props: CalculatorState) {
-  const { presetId, setPresetId, employees, setEmployees, managed, setManaged } =
-    props;
+  const {
+    platesX,
+    setPlatesX,
+    platesY,
+    setPlatesY,
+    employees,
+    setEmployees,
+    managed,
+    setManaged,
+  } = props;
   const [company, setCompany] = useState("");
   const [project, setProject] = useState("");
   const [email, setEmail] = useState("");
@@ -34,9 +45,10 @@ export function B2bCalculator(props: CalculatorState) {
   const [error, setError] = useState<string | null>(null);
   const [quoteSent, setQuoteSent] = useState(false);
 
-  const quote = computeB2bQuote(employees, presetId, managed);
+  const quote = computeB2bQuoteByPlates(employees, platesX, platesY, managed);
   const isQuote = quote.requiresQuote;
   const minutes = buildMinutes(quote.plates);
+  const sizeLabel = `${platesX * CM_PER_PLATE}×${platesY * CM_PER_PLATE} ס״מ`;
 
   async function handleBuy() {
     setError(null);
@@ -49,7 +61,8 @@ export function B2bCalculator(props: CalculatorState) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           track: "b2b",
-          preset_id: presetId,
+          plates_x: platesX,
+          plates_y: platesY,
           employees: quote.employees,
           managed,
           company_name: company,
@@ -82,7 +95,9 @@ export function B2bCalculator(props: CalculatorState) {
           company_name: company,
           contact_email: email,
           employees: quote.employees,
-          preset_id: presetId,
+          plates_x: platesX,
+          plates_y: platesY,
+          size: `${quote.cols}×${quote.rows}`,
           managed,
           message,
         }),
@@ -111,35 +126,50 @@ export function B2bCalculator(props: CalculatorState) {
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       {/* Controls */}
       <div className="card flex flex-col gap-6 p-6">
-        {/* Size */}
+        {/* Size — width × height of each employee's mosaic */}
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium">גודל הפסיפס לכל עובד</span>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {B2B_SIZE_PRESETS.map((p) => {
-              const { cols, rows } = presetStuds(p);
-              const per = computePrice(cols, rows, "physical").total;
-              const plates = p.platesX * p.platesY;
-              const active = p.id === presetId;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setPresetId(p.id)}
-                  className={`rounded-xl border p-3 text-start transition ${
-                    active
-                      ? "border-primary ring-1 ring-primary"
-                      : "border-outline hover:border-zinc-300"
-                  }`}
-                >
-                  <div className="font-bold">{p.labelHe}</div>
-                  <div className="text-xs text-zinc-500">
-                    {plates} {plates === 1 ? "לוח" : "לוחות"} · {cols}×{rows}
-                  </div>
-                  <div className="text-xs font-medium">{formatILS(per)}</div>
-                </button>
-              );
-            })}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">גודל הפסיפס לכל עובד</span>
+            <span className="text-xs text-zinc-500">
+              {sizeLabel} · {formatILS(quote.perMosaicBase)}
+            </span>
           </div>
+          <div className="flex flex-wrap gap-6">
+            {(
+              [
+                ["רוחב", platesX, setPlatesX] as const,
+                ["גובה", platesY, setPlatesY] as const,
+              ] as const
+            ).map(([label, value, setter]) => (
+              <div key={label} className="flex items-center gap-3">
+                <span className="text-sm text-zinc-500">{label}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="הקטן"
+                    disabled={value <= MIN_PLATES_AXIS}
+                    onClick={() => setter(Math.max(MIN_PLATES_AXIS, value - 1))}
+                    className="h-8 w-8 rounded-full border border-outline text-lg leading-none disabled:opacity-30"
+                  >
+                    −
+                  </button>
+                  <span className="w-5 text-center font-medium">{value}</span>
+                  <button
+                    type="button"
+                    aria-label="הגדל"
+                    disabled={value >= MAX_PLATES_AXIS}
+                    onClick={() => setter(Math.min(MAX_PLATES_AXIS, value + 1))}
+                    className="h-8 w-8 rounded-full border border-outline text-lg leading-none disabled:opacity-30"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-zinc-500">
+            {quote.cols}×{quote.rows} אריחים · כל עובד מקבל פסיפס בגודל הזה
+          </p>
         </div>
 
         {/* Employees */}
