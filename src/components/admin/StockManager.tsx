@@ -172,6 +172,43 @@ export function StockManager() {
     }
   }
 
+  async function fillThresholds() {
+    if (
+      !window.confirm(
+        "להגדיר סף התראה ל-15% מהמלאי הנוכחי בכל צבע שיש לו מלאי?",
+      )
+    )
+      return;
+    setFilling(true);
+    const targets = CATALOG.filter((c) => onHandOf(c.id) > 0);
+    const payload = targets.map((c) => ({
+      id: c.id,
+      in_stock: inStockOf(c.id),
+      on_hand_grams: onHandOf(c.id),
+      reorder_point_grams: Math.round(onHandOf(c.id) * 0.15),
+    }));
+    const sb = createClient();
+    const { error } = await sb
+      .from("brick_stock")
+      .upsert(payload, { onConflict: "id" });
+    setFilling(false);
+    if (!error) {
+      setRows((prev) => {
+        const next = new Map(prev);
+        for (const p of payload)
+          next.set(p.id, {
+            in_stock: p.in_stock,
+            on_hand_grams: p.on_hand_grams,
+            reorder_point_grams: p.reorder_point_grams,
+          });
+        return next;
+      });
+      flash(`הוגדר סף התראה (15%) ל-${payload.length} צבעים.`);
+    } else {
+      flash("שגיאה בהגדרת הסף.");
+    }
+  }
+
   const inStockCount = CATALOG.filter((c) => inStockOf(c.id)).length;
   const totalGrams = CATALOG.reduce((s, c) => s + onHandOf(c.id), 0);
   const totalPieces = gramsToPieces(totalGrams);
@@ -183,14 +220,24 @@ export function StockManager() {
           מלאי צבעים ({inStockCount}/{CATALOG.length} זמינים ·{" "}
           {formatWeight(totalGrams)} · ~{fmtInt(totalPieces)} לבנים)
         </h2>
-        <button
-          type="button"
-          onClick={() => void fillEstimated()}
-          disabled={filling}
-          className="btn btn-ghost h-9 min-h-9 px-4 text-sm"
-        >
-          {filling ? "ממלא…" : "מילוי הערכת הזמנה ראשונית"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void fillThresholds()}
+            disabled={filling}
+            className="btn btn-ghost h-9 min-h-9 px-4 text-sm"
+          >
+            {filling ? "ממלא…" : "מילוי סף התראה (15%)"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void fillEstimated()}
+            disabled={filling}
+            className="btn btn-ghost h-9 min-h-9 px-4 text-sm"
+          >
+            {filling ? "ממלא…" : "מילוי הערכת הזמנה ראשונית"}
+          </button>
+        </div>
       </div>
 
       {/* Quick add-grams toolbar — less error-prone than the inline cells, with

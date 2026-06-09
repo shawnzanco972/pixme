@@ -707,7 +707,7 @@ export function Studio({
               <BrickSwatch
                 key={c.id}
                 hex={c.hex}
-                name={c.name}
+                name={c.nameHe}
                 on={enabled.has(c.id)}
                 disabled={!c.inStock}
                 onClick={() => toggleColor(c.id, c.inStock)}

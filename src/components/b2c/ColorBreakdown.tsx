@@ -5,7 +5,11 @@
  * design count.)
  */
 import { type BrickColor } from "@/lib/brick-engine";
+import { CATALOG } from "@/lib/brick-engine/palette";
 import { buildInventory } from "@/lib/pdf/inventory";
+
+// Customer-facing Hebrew names (the engine/PDF keep the stable English names).
+const HE_BY_ID = new Map(CATALOG.map((c) => [c.id, c.nameHe]));
 
 export function ColorBreakdown({
   pixelMap,
@@ -28,7 +32,7 @@ export function ColorBreakdown({
               className="inline-block h-4 w-4 shrink-0 rounded border border-black/20"
               style={{ backgroundColor: l.hex }}
             />
-            <span className="flex-1 truncate">{l.name}</span>
+            <span className="flex-1 truncate">{HE_BY_ID.get(l.id) ?? l.name}</span>
             <span className="tabular-nums text-zinc-500">{l.count}</span>
           </li>
         ))}

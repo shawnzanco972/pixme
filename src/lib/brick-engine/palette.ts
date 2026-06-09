@@ -19,8 +19,10 @@ export type BrickMaterial = "solid" | "transparent" | "metallic";
 export interface BrickColorDef {
   /** Stable palette index — this is what gets stored in pixel_map. */
   id: number;
-  /** Human-facing name (kept in English; UI localizes separately). */
+  /** Internal/admin/PDF name (English, stable). */
   name: string;
+  /** Customer-facing Hebrew name (shown in the studio + breakdown). */
+  nameHe: string;
   hex: string;
   material: BrickMaterial;
   /**
@@ -44,38 +46,38 @@ export interface BrickColor extends BrickColorDef {
  */
 const DEFAULT_PALETTE_DEFS: BrickColorDef[] = [
   // Neutrals (4 core)
-  { id: 0, name: "White", hex: "#f2f3f2", material: "solid", core: true },
-  { id: 1, name: "Light Bluish Gray", hex: "#a0a5a9", material: "solid", core: true },
-  { id: 2, name: "Dark Bluish Gray", hex: "#6c6e68", material: "solid", core: true },
-  { id: 3, name: "Black", hex: "#1b1b1b", material: "solid", core: true },
+  { id: 0, name: "White", nameHe: "לבן", hex: "#f2f3f2", material: "solid", core: true },
+  { id: 1, name: "Light Bluish Gray", nameHe: "אפור בהיר", hex: "#a0a5a9", material: "solid", core: true },
+  { id: 2, name: "Dark Bluish Gray", nameHe: "אפור כהה", hex: "#6c6e68", material: "solid", core: true },
+  { id: 3, name: "Black", nameHe: "שחור", hex: "#1b1b1b", material: "solid", core: true },
   // Skin / brown ramp
-  { id: 4, name: "Reddish Brown", hex: "#582a12", material: "solid", core: true },
-  { id: 5, name: "Dark Brown", hex: "#3b2412", material: "solid", core: false },
-  { id: 6, name: "Dark Tan", hex: "#958a73", material: "solid", core: false },
-  { id: 7, name: "Tan", hex: "#e4cd9e", material: "solid", core: true },
-  { id: 8, name: "Medium Nougat", hex: "#aa7d55", material: "solid", core: false },
-  { id: 9, name: "Nougat", hex: "#cc8e69", material: "solid", core: true },
-  { id: 10, name: "Light Nougat", hex: "#f6d7b3", material: "solid", core: true },
+  { id: 4, name: "Reddish Brown", nameHe: "חום אדמדם", hex: "#582a12", material: "solid", core: true },
+  { id: 5, name: "Dark Brown", nameHe: "חום כהה", hex: "#3b2412", material: "solid", core: false },
+  { id: 6, name: "Dark Tan", nameHe: "בז' כהה", hex: "#958a73", material: "solid", core: false },
+  { id: 7, name: "Tan", nameHe: "בז'", hex: "#e4cd9e", material: "solid", core: true },
+  { id: 8, name: "Medium Nougat", nameHe: "נוגט בינוני", hex: "#aa7d55", material: "solid", core: false },
+  { id: 9, name: "Nougat", nameHe: "נוגט", hex: "#cc8e69", material: "solid", core: true },
+  { id: 10, name: "Light Nougat", nameHe: "נוגט בהיר", hex: "#f6d7b3", material: "solid", core: true },
   // Reds / warm
-  { id: 11, name: "Red", hex: "#c91a09", material: "solid", core: true },
-  { id: 12, name: "Dark Red", hex: "#720e0f", material: "solid", core: false },
-  { id: 13, name: "Orange", hex: "#fe8a18", material: "solid", core: true },
-  { id: 14, name: "Yellow", hex: "#f2cd37", material: "solid", core: true },
+  { id: 11, name: "Red", nameHe: "אדום", hex: "#c91a09", material: "solid", core: true },
+  { id: 12, name: "Dark Red", nameHe: "אדום כהה", hex: "#720e0f", material: "solid", core: false },
+  { id: 13, name: "Orange", nameHe: "כתום", hex: "#fe8a18", material: "solid", core: true },
+  { id: 14, name: "Yellow", nameHe: "צהוב", hex: "#f2cd37", material: "solid", core: true },
   // Greens
-  { id: 15, name: "Bright Green", hex: "#4b9f4a", material: "solid", core: true },
-  { id: 16, name: "Dark Green", hex: "#237841", material: "solid", core: true },
+  { id: 15, name: "Bright Green", nameHe: "ירוק", hex: "#4b9f4a", material: "solid", core: true },
+  { id: 16, name: "Dark Green", nameHe: "ירוק כהה", hex: "#237841", material: "solid", core: true },
   // Blues
-  { id: 17, name: "Blue", hex: "#0055bf", material: "solid", core: true },
-  { id: 18, name: "Dark Blue", hex: "#0a3463", material: "solid", core: true },
-  { id: 19, name: "Medium Blue", hex: "#5a93db", material: "solid", core: true },
-  { id: 20, name: "Bright Light Blue", hex: "#9fc3e9", material: "solid", core: true },
+  { id: 17, name: "Blue", nameHe: "כחול", hex: "#0055bf", material: "solid", core: true },
+  { id: 18, name: "Dark Blue", nameHe: "כחול כהה", hex: "#0a3463", material: "solid", core: true },
+  { id: 19, name: "Medium Blue", nameHe: "כחול בינוני", hex: "#5a93db", material: "solid", core: true },
+  { id: 20, name: "Bright Light Blue", nameHe: "תכלת", hex: "#9fc3e9", material: "solid", core: true },
   // Pinks
-  { id: 21, name: "Dark Pink", hex: "#c870a0", material: "solid", core: false },
-  { id: 22, name: "Bright Pink", hex: "#e4adc8", material: "solid", core: true },
+  { id: 21, name: "Dark Pink", nameHe: "ורוד כהה", hex: "#c870a0", material: "solid", core: false },
+  { id: 22, name: "Bright Pink", nameHe: "ורוד", hex: "#e4adc8", material: "solid", core: true },
   // Sand
-  { id: 23, name: "Sand", hex: "#c2b280", material: "solid", core: false },
+  { id: 23, name: "Sand", nameHe: "חול", hex: "#c2b280", material: "solid", core: false },
   // Cyan / azure — cool tones (skies, eyes, teal backgrounds)
-  { id: 24, name: "Medium Azure", hex: "#36aebf", material: "solid", core: true },
+  { id: 24, name: "Medium Azure", nameHe: "טורקיז", hex: "#36aebf", material: "solid", core: true },
 ];
 
 /** Build a runtime palette (with rgb + precomputed OKLab) from defs. */

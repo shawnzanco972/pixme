@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 export interface PaletteColor {
   id: number;
   name: string;
+  nameHe: string;
   hex: string;
   rgb: [number, number, number];
   inStock: boolean;
@@ -48,6 +49,7 @@ export function usePaletteInventory(forceAllInStock = false) {
       CATALOG.map((c) => ({
         id: c.id,
         name: c.name,
+        nameHe: c.nameHe,
         hex: c.hex,
         rgb: c.rgb,
         // DB override → else the color's core default.

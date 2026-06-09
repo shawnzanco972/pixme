@@ -193,7 +193,7 @@ export function B2bEnginePreview({ cols, rows }: { cols: number; rows: number })
               <BrickSwatch
                 key={c.id}
                 hex={c.hex}
-                name={c.name}
+                name={c.nameHe}
                 on={enabled.has(c.id)}
                 disabled={!c.inStock}
                 onClick={() => toggleColor(c.id)}
