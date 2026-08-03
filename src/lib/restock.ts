@@ -10,6 +10,10 @@ import { GRAMS_PER_STUD, packCount } from "@/lib/packing";
 
 export interface RestockLine {
   id: number;
+  /** Canonical slug — the durable key procurement/export use. */
+  colorId: string;
+  /** Our stable customer/print code (e.g. "A1"). */
+  displayCode: string;
   name: string;
   hex: string;
   rgb: [number, number, number];
@@ -63,6 +67,8 @@ export function aggregateRestock(
       const piecesWithSpare = packCount(pieces);
       return {
         id,
+        colorId: c?.colorId ?? `unknown-${id}`,
+        displayCode: c?.displayCode ?? String(id),
         name: c?.name ?? `Unknown #${id}`,
         hex: c?.hex ?? "#000000",
         rgb: c?.rgb ?? [0, 0, 0],

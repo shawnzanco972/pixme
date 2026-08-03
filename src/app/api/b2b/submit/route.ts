@@ -11,6 +11,7 @@
  */
 import { NextResponse } from "next/server";
 
+import { encodePixelMap } from "@/lib/brick-engine/palette";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
 
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
       .from("employee_submissions")
       .update({
         image_url: body.imagePath ?? null,
-        pixel_map: body.pixelMap as Json,
+        pixel_map: encodePixelMap(body.pixelMap) as Json,
         status: "pending",
         approved_at: null,
       })

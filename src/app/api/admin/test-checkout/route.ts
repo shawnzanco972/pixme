@@ -18,7 +18,7 @@
  */
 import { NextResponse } from "next/server";
 
-import { CATALOG, isCore } from "@/lib/brick-engine/palette";
+import { CATALOG, encodePixelMap, isCore } from "@/lib/brick-engine/palette";
 import { computeB2bQuoteByPlates } from "@/lib/b2b-pricing";
 import { provisionB2b, provisionB2c } from "@/lib/provision";
 import { computePrice, presetById, presetStuds } from "@/lib/pricing";
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
           contact_email: contactEmail,
           total_price: totalPrice,
           fulfillment_type: fulfillment,
-          pixel_map: pixelMap as Json,
+          pixel_map: encodePixelMap(pixelMap) as Json,
           intent: "self",
           status: "pending",
           is_test: true,

@@ -194,6 +194,7 @@ export type Database = {
       brick_stock: {
         Row: {
           id: number
+          color_id: string | null
           in_stock: boolean
           on_hand_grams: number
           reorder_point_grams: number
@@ -202,6 +203,7 @@ export type Database = {
         }
         Insert: {
           id: number
+          color_id?: string | null
           in_stock?: boolean
           on_hand_grams?: number
           reorder_point_grams?: number
@@ -210,13 +212,114 @@ export type Database = {
         }
         Update: {
           id?: number
+          color_id?: string | null
           in_stock?: boolean
           on_hand_grams?: number
           reorder_point_grams?: number
           sort_order?: number
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "brick_stock_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: true
+            referencedRelation: "colors"
+            referencedColumns: ["color_id"]
+          },
+        ]
+      }
+      colors: {
+        Row: {
+          color_id: string
+          slug: string
+          display_name: string
+          name_he: string
+          display_code: string
+          hex: string
+          oklab_l: number
+          oklab_a: number
+          oklab_b: number
+          role: string
+          material: string
+          is_core: boolean
+          sort_order: number
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          color_id: string
+          slug: string
+          display_name: string
+          name_he?: string
+          display_code: string
+          hex: string
+          oklab_l: number
+          oklab_a: number
+          oklab_b: number
+          role: string
+          material?: string
+          is_core?: boolean
+          sort_order?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          color_id?: string
+          slug?: string
+          display_name?: string
+          name_he?: string
+          display_code?: string
+          hex?: string
+          oklab_l?: number
+          oklab_a?: number
+          oklab_b?: number
+          role?: string
+          material?: string
+          is_core?: boolean
+          sort_order?: number
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
         Relationships: []
+      }
+      color_manufacturer_codes: {
+        Row: {
+          id: number
+          color_id: string
+          manufacturer: string
+          code: string
+          sku: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          color_id: string
+          manufacturer: string
+          code: string
+          sku?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          color_id?: string
+          manufacturer?: string
+          code?: string
+          sku?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "color_manufacturer_codes_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "colors"
+            referencedColumns: ["color_id"]
+          },
+        ]
       }
       clients: {
         Row: {

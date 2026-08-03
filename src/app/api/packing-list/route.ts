@@ -6,9 +6,10 @@
  */
 import { NextResponse } from "next/server";
 
+import { toEnginePixelMap } from "@/lib/brick-engine/palette";
 import { buildPackingListPdf } from "@/lib/pdf/packing";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
-import type { PixelMap } from "@/lib/supabase/types.helpers";
+import type { StoredPixelMap } from "@/lib/supabase/types.helpers";
 
 export const runtime = "nodejs";
 
@@ -43,8 +44,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  const pixelMap = (data as { pixel_map: PixelMap | null }).pixel_map;
-  if (!Array.isArray(pixelMap)) {
+  const stored = (data as { pixel_map: StoredPixelMap | null }).pixel_map;
+  let pixelMap: number[][] | null;
+  try {
+    pixelMap = toEnginePixelMap(stored);
+  } catch {
+    pixelMap = null;
+  }
+  if (!pixelMap) {
     return NextResponse.json(
       { error: "Order has no pixel_map" },
       { status: 422 },

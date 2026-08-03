@@ -11,8 +11,9 @@ import { StockManager } from "@/components/admin/StockManager";
 import { SuppliesManager } from "@/components/admin/SuppliesManager";
 import { formatWeight } from "@/lib/packing";
 import { aggregateRestock } from "@/lib/restock";
+import { toEnginePixelMap } from "@/lib/brick-engine/palette";
 import { getAdminContext } from "@/lib/supabase/server";
-import type { PixelMap } from "@/lib/supabase/types.helpers";
+import type { StoredPixelMap } from "@/lib/supabase/types.helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +38,8 @@ export default async function AdminInventory() {
 
   const restock = aggregateRestock(
     [...(restockRows ?? []), ...(b2bRows ?? [])]
-      .map((r) => r.pixel_map as PixelMap | null)
-      .filter((m): m is PixelMap => Array.isArray(m)),
+      .map((r) => toEnginePixelMap(r.pixel_map as StoredPixelMap | null))
+      .filter((m): m is number[][] => m !== null),
   );
 
   const onHand = new Map<number, number>(

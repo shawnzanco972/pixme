@@ -10,21 +10,24 @@
  */
 import { NextResponse } from "next/server";
 
+import { toEnginePixelMap } from "@/lib/brick-engine/palette";
 import { buildInstructionsPdf } from "@/lib/pdf/instructions";
 import { HEEBO_TTF_BASE64 } from "@/lib/pdf/heebo-font";
 import { createAdminClient } from "@/lib/supabase/server";
-import type { PixelMap } from "@/lib/supabase/types.helpers";
+import type { StoredPixelMap } from "@/lib/supabase/types.helpers";
 
 export const runtime = "nodejs";
 
-function isPixelMap(value: unknown): value is number[][] {
-  return (
-    Array.isArray(value) &&
-    value.length > 0 &&
-    value.every(
-      (row) => Array.isArray(row) && row.every((n) => typeof n === "number"),
-    )
-  );
+/** Accepts either engine ints or persisted color_id slugs, → engine ints. */
+function toEngineMap(value: unknown): number[][] | null {
+  if (!Array.isArray(value) || value.length === 0 || !Array.isArray(value[0])) {
+    return null;
+  }
+  try {
+    return toEnginePixelMap(value as StoredPixelMap);
+  } catch {
+    return null; // unknown slug in the map
+  }
 }
 
 export async function POST(request: Request) {
@@ -38,8 +41,9 @@ export async function POST(request: Request) {
   try {
     let pixelMap: number[][] | null = null;
 
-    if (isPixelMap(body.pixelMap)) {
-      pixelMap = body.pixelMap;
+    const adHoc = toEngineMap(body.pixelMap);
+    if (adHoc) {
+      pixelMap = adHoc;
     } else if (typeof body.orderId === "string") {
       // Fetch the stored map for a paid order (service-role; trusted context).
       const admin = createAdminClient();
@@ -57,14 +61,15 @@ export async function POST(request: Request) {
           { status: 404 },
         );
       }
-      const stored = (data as { pixel_map: PixelMap | null }).pixel_map;
-      if (!isPixelMap(stored)) {
+      const stored = (data as { pixel_map: StoredPixelMap | null }).pixel_map;
+      const engineMap = toEngineMap(stored);
+      if (!engineMap) {
         return NextResponse.json(
           { error: "Order has no pixel_map yet" },
           { status: 422 },
         );
       }
-      pixelMap = stored;
+      pixelMap = engineMap;
     } else {
       return NextResponse.json(
         { error: "Provide either pixelMap or orderId" },

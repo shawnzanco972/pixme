@@ -262,6 +262,9 @@ function drawModule(
       const id = pixelMap[y0 + yy][x0 + xx];
       const color = byId.get(id);
       const rgb = color?.rgb ?? [0, 0, 0];
+      // Print OUR stable display code (e.g. "A1", "N4") — never a manufacturer
+      // code or internal numeric index (manufacturer-agnostic identity system).
+      const label = color?.displayCode ?? String(id);
       const cx = gridX + xx * cell;
       const cy = gridY + yy * cell;
 
@@ -270,7 +273,7 @@ function drawModule(
 
       const [tr, tg, tb] = readableText(rgb);
       doc.setTextColor(tr, tg, tb);
-      doc.text(String(id), cx + cell / 2, cy + cell / 2 + cell * 0.18, {
+      doc.text(label, cx + cell / 2, cy + cell / 2 + cell * 0.18, {
         align: "center",
       });
     }
@@ -316,8 +319,8 @@ function drawInventory(
     doc.setFillColor(line.rgb[0], line.rgb[1], line.rgb[2]);
     doc.setDrawColor(120, 120, 120);
     doc.rect(swatchX, y - swatch + 1, swatch, swatch, "FD");
-    he(line.name, nameRight, y);
-    he(String(line.id), idRight, y);
+    he(line.nameHe, nameRight, y);
+    he(line.displayCode, idRight, y);
     he(line.count.toLocaleString("he-IL"), qtyRight, y);
     y += rowH;
   }

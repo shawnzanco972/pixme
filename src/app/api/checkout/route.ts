@@ -16,6 +16,7 @@ import { computeB2bQuoteByPlates } from "@/lib/b2b-pricing";
 import { createCheckout } from "@/lib/icount";
 import { computePrice, GIFT_WRAP_FEE, presetById } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
+import { encodePixelMap } from "@/lib/brick-engine/palette";
 import type { Json } from "@/lib/supabase/types";
 import type { FulfillmentType } from "@/lib/supabase/types.helpers";
 
@@ -94,7 +95,9 @@ export async function POST(request: Request) {
           total_price: totalPrice,
           fulfillment_type: fulfillment,
           image_url: (body.image_url as string) ?? null,
-          pixel_map: (body.pixel_map as Json) ?? null,
+          // Persist in canonical color_id (slug) form — never a manufacturer or
+          // numeric index. `pixelMap` is validated integer-indexed engine output.
+          pixel_map: (pixelMap ? encodePixelMap(pixelMap) : null) as Json,
           shipping_address: (body.shipping_address as Json) ?? null,
           intent,
           gift_message:

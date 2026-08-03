@@ -6,7 +6,7 @@
  */
 import "server-only";
 
-import { CATALOG } from "@/lib/brick-engine/palette";
+import { CATALOG, toEnginePixelMap } from "@/lib/brick-engine/palette";
 import {
   inventoryAlerts,
   type AlertCategory,
@@ -16,7 +16,10 @@ import {
 import { aggregateRestock } from "@/lib/restock";
 import type { SupabaseClient as SupabaseJsClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import type { InventorySupply, PixelMap } from "@/lib/supabase/types.helpers";
+import type {
+  InventorySupply,
+  StoredPixelMap,
+} from "@/lib/supabase/types.helpers";
 
 // Either the cookie-bound (RLS) client or the service-role admin client — both
 // are SupabaseClient<Database>, so the cron route can reuse this.
@@ -85,8 +88,8 @@ export async function loadInventory(
   );
 
   const demandMaps = [...(b2cDemand ?? []), ...(b2bDemand ?? [])]
-    .map((r) => r.pixel_map as PixelMap | null)
-    .filter((m): m is PixelMap => Array.isArray(m));
+    .map((r) => toEnginePixelMap(r.pixel_map as StoredPixelMap | null))
+    .filter((m): m is number[][] => m !== null);
   const restock = aggregateRestock(demandMaps);
   const demandById = new Map(restock.lines.map((l) => [l.id, l.grams]));
 

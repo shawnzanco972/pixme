@@ -10,7 +10,12 @@ import { DEFAULT_PALETTE, type BrickColor } from "@/lib/brick-engine/palette";
 
 export interface PartLine {
   id: number;
+  /** Canonical slug (durable identity). */
+  colorId: string;
+  /** Ours, customer-facing code printed in the legend (e.g. "N4", "A1"). */
+  displayCode: string;
   name: string;
+  nameHe: string;
   hex: string;
   rgb: [number, number, number];
   count: number;
@@ -38,7 +43,10 @@ export function buildInventory(
       const c = byId.get(id);
       return {
         id,
+        colorId: c?.colorId ?? `unknown-${id}`,
+        displayCode: c?.displayCode ?? String(id),
         name: c?.name ?? `Unknown #${id}`,
+        nameHe: c?.nameHe ?? `#${id}`,
         hex: c?.hex ?? "#000000",
         rgb: c?.rgb ?? ([0, 0, 0] as [number, number, number]),
         count,

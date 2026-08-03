@@ -11,7 +11,8 @@ import { DownloadInstructions } from "@/components/b2c/DownloadInstructions";
 import { MosaicPreview } from "@/components/MosaicPreview";
 import { formatILS } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
-import type { OrderStatus, PixelMap } from "@/lib/supabase/types.helpers";
+import { toEnginePixelMap } from "@/lib/brick-engine/palette";
+import type { OrderStatus, StoredPixelMap } from "@/lib/supabase/types.helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -41,8 +42,8 @@ export default async function OrderPage({
 
   if (error || !order) notFound();
 
-  const pixelMap = order.pixel_map as PixelMap | null;
-  const hasMap = Array.isArray(pixelMap);
+  const pixelMap = toEnginePixelMap(order.pixel_map as StoredPixelMap | null);
+  const hasMap = pixelMap !== null;
   const isGift = order.intent === "gift";
 
   return (

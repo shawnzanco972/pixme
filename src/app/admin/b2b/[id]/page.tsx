@@ -22,7 +22,8 @@ import {
 import { isEmailConfigured } from "@/lib/email";
 import { formatILS, presetStuds } from "@/lib/pricing";
 import { getAdminContext } from "@/lib/supabase/server";
-import type { OrderStatus, PixelMap } from "@/lib/supabase/types.helpers";
+import { toEnginePixelMap } from "@/lib/brick-engine/palette";
+import type { OrderStatus, StoredPixelMap } from "@/lib/supabase/types.helpers";
 
 const SEAT_HE: Record<SeatStatus, string> = {
   not_started: "טרם התחיל",
@@ -92,7 +93,7 @@ export default async function AdminB2bDetail({
   }
   const seatRows: SeatReviewRow[] = (roster ?? []).map((r) => {
     const sub = subByRoster.get(r.id);
-    const pm = sub?.pixel_map as PixelMap | null;
+    const pm = toEnginePixelMap(sub?.pixel_map as StoredPixelMap | null);
     return {
       id: r.id,
       name: r.name,
@@ -100,7 +101,7 @@ export default async function AdminB2bDetail({
       inviteToken: r.invite_token,
       status: seatStatus(sub?.status),
       submissionId: sub?.id ?? null,
-      pixelMap: Array.isArray(pm) ? pm : null,
+      pixelMap: pm,
       scheduledFor: sub?.scheduled_for ?? null,
       effectivePlates: r.plates_allocated ?? defaultAlloc,
       maxPlates: 0, // computed in RosterManager from the pool

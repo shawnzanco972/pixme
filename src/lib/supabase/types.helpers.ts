@@ -21,8 +21,15 @@ export interface ShippingAddress {
   zip: string;
 }
 
-/** 2D array of palette color indexes (row-major), stored as JSONB pixel_map. */
-export type PixelMap = number[][];
+/**
+ * Persisted pixel_map: a 2D array (row-major) of canonical color_id SLUGS,
+ * stored as JSONB. Legacy rows may still be integer indexes until migration
+ * 0018 runs — read them through {@link toEnginePixelMap}, which accepts either.
+ */
+export type StoredPixelMap = string[][] | number[][];
+
+/** @deprecated Prefer StoredPixelMap for DB values; number[][] for engine. */
+export type PixelMap = StoredPixelMap;
 
 // --- Row aliases -----------------------------------------------------------
 export type B2bOrder = Tables<"b2b_orders">;

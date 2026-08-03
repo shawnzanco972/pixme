@@ -15,11 +15,12 @@ import { MosaicPreview } from "@/components/MosaicPreview";
 import { formatWeight, GRAMS_PER_STUD } from "@/lib/packing";
 import { formatILS } from "@/lib/pricing";
 import { orderPackingList } from "@/lib/restock";
+import { toEnginePixelMap } from "@/lib/brick-engine/palette";
 import { createAdminClient, getAdminContext } from "@/lib/supabase/server";
 import { createSignedDownloadUrl } from "@/lib/supabase/storage";
 import type {
   OrderStatus,
-  PixelMap,
+  StoredPixelMap,
   ShippingAddress,
 } from "@/lib/supabase/types.helpers";
 
@@ -49,7 +50,7 @@ export default async function AdminOrderDetail({
     .single();
   if (!order) notFound();
 
-  const pixelMap = (order.pixel_map as PixelMap | null) ?? null;
+  const pixelMap = toEnginePixelMap(order.pixel_map as StoredPixelMap | null);
   const packing = pixelMap ? orderPackingList(pixelMap) : null;
   const address = order.shipping_address as ShippingAddress | null;
   const isGift = order.intent === "gift";
