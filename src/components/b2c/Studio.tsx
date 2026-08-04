@@ -36,6 +36,18 @@ import {
 // Physical size of one 24×24 baseplate (24 studs × 8mm pitch ≈ 19.2 cm).
 const CM_PER_PLATE = 19.2;
 const MAX_PLATES = 5;
+// Promoted board sizes shown as quick-pick cards (redesign). 3×3 is the hero.
+const SIZE_PRESETS: { x: number; y: number; name: string; popular?: boolean }[] =
+  [
+    { x: 3, y: 2, name: "רחב" },
+    { x: 2, y: 3, name: "גבוה" },
+    { x: 3, y: 3, name: "רגיל", popular: true },
+    { x: 4, y: 4, name: "גדול" },
+    { x: 5, y: 5, name: "ענק" },
+  ];
+// Bidi isolate so a "77×38" pair doesn't reorder to "38×77" inside an RTL run.
+const pair = (a: number | string, b: number | string) =>
+  `⁦${a}×${b}⁩`;
 import { createClient } from "@/lib/supabase/client";
 import { uploadToSignedUrl } from "@/lib/supabase/storage";
 
@@ -179,6 +191,9 @@ export function Studio({
   const [result, setResult] = useState<BrickifyResult | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Redesign: the image-tuning panel is collapsed by default (advanced users
+  // expand it). Auto-opens once an image is loaded so controls are discoverable.
+  const [advOpen, setAdvOpen] = useState(false);
 
   const resetAdjustments = () => {
     if (imageData) setWorking(true);
@@ -547,34 +562,40 @@ export function Studio({
       )}
 
       {/* Order summary + primary action — framed in brand red so it stands out. */}
-      <div className="card flex flex-col gap-3 border-2 border-primary p-4">
+      <div className="card flex flex-col gap-4 border-[3px] border-primary p-5 shadow-[0_8px_0_0_#e7d3d6]">
         {!hidePricing && (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1.5">
               <span className="text-sm text-foreground/60">
                 סה&quot;כ לתשלום
               </span>
-              <span className="font-heading text-3xl font-black text-primary">
+              <span className="font-heading text-[42px] font-black leading-none text-primary">
                 {formatILS(price.total)}
               </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                משלוח חינם
-              </span>
-              {result && (
-                <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs text-foreground/60">
-                  {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
+              <div className="flex flex-wrap gap-2 pt-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
+                  <span className="mi text-[16px]">local_shipping</span>
+                  משלוח חינם
                 </span>
-              )}
+                {result && (
+                  <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-foreground/60">
+                    {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
+                  </span>
+                )}
+                <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-foreground/60">
+                  {platesX * platesY} לוחות בסיס
+                </span>
+              </div>
             </div>
           </>
         )}
         {hidePricing && result && (
           <span className="text-sm text-foreground/60">
-            {Math.round(platesX * CM_PER_PLATE)}×
-            {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ ·{" "}
-            {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
+            {pair(
+              Math.round(platesX * CM_PER_PLATE),
+              Math.round(platesY * CM_PER_PLATE),
+            )}{" "}
+            ס&quot;מ · {(result.cols * result.rows).toLocaleString("he-IL")} לבנים
           </span>
         )}
 
@@ -869,12 +890,97 @@ export function Studio({
         {/* Board size — our plate logic (W × H baseplates). */}
         <div className="card flex flex-col gap-3 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-heading text-base font-bold">גודל הלוח</h3>
-            <span className="text-xs font-medium text-foreground/60">
-              {Math.round(platesX * CM_PER_PLATE)}×
-              {Math.round(platesY * CM_PER_PLATE)} ס&quot;מ
+            <h3 className="flex items-center gap-2 font-heading text-base font-bold">
+              <span className="mi text-[21px] text-secondary">grid_view</span>
+              גודל הלוח
+            </h3>
+            <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-bold text-secondary">
+              {pair(
+                Math.round(platesX * CM_PER_PLATE),
+                Math.round(platesY * CM_PER_PLATE),
+              )}{" "}
+              ס&quot;מ
             </span>
           </div>
+
+          {/* Quick-pick preset sizes (redesign). Hidden in budget mode, where the
+              area is constrained and both axes must stay within the allowance. */}
+          {!budgetMode && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {SIZE_PRESETS.map((p) => {
+                const on = p.x === platesX && p.y === platesY;
+                const cell = p.x >= 5 ? 7 : p.x >= 4 ? 8 : 10;
+                return (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => {
+                      if (imageData) setWorking(true);
+                      setPlatesX(p.x);
+                      setPlatesY(p.y);
+                    }}
+                    className={`relative flex w-[96px] flex-none flex-col items-center gap-1.5 rounded-2xl border-2 px-2 pb-2.5 pt-3 transition-transform active:translate-y-px ${
+                      on
+                        ? "border-secondary bg-secondary/5"
+                        : "border-outline bg-surface"
+                    }`}
+                  >
+                    {p.popular && (
+                      <span className="absolute -top-2.5 start-0 end-0 mx-auto w-max rounded-full bg-accent px-2 py-0.5 text-[11px] font-black text-[#4a3500] shadow-[0_2px_0_0_#c99a13]">
+                        הנמכר ביותר
+                      </span>
+                    )}
+                    <span className="flex h-[42px] items-center justify-center">
+                      <span
+                        className="grid gap-0.5"
+                        style={{
+                          gridTemplateColumns: `repeat(${p.x}, ${cell}px)`,
+                        }}
+                      >
+                        {Array.from({ length: p.x * p.y }).map((_, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              width: cell,
+                              height: cell,
+                              borderRadius: 2,
+                              background: on ? "#1d4ed8" : "#b9c2cb",
+                              boxShadow:
+                                "inset 0 1px 1px rgba(255,255,255,.4), inset 0 -1px 2px rgba(0,0,0,.28)",
+                            }}
+                          />
+                        ))}
+                      </span>
+                    </span>
+                    <span
+                      className={`font-heading text-[13px] font-black ${on ? "text-secondary" : "text-foreground"}`}
+                    >
+                      {p.name}
+                    </span>
+                    <span className="text-[11px] text-foreground/55">
+                      {pair(
+                        Math.round(p.x * CM_PER_PLATE),
+                        Math.round(p.y * CM_PER_PLATE),
+                      )}{" "}
+                      ס&quot;מ
+                    </span>
+                    <span
+                      className={`font-heading text-[13px] font-bold ${on ? "text-secondary" : "text-foreground"}`}
+                    >
+                      {formatILS(
+                        computePrice(
+                          p.x * PLATE_STUDS,
+                          p.y * PLATE_STUDS,
+                          "physical",
+                        ).total,
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex items-center justify-center gap-4 rounded-xl border border-outline bg-surface-muted p-3">
             {(
               [
@@ -946,16 +1052,29 @@ export function Studio({
 
         {/* Advanced image settings — disabled until an image is loaded. */}
         <div className="card flex flex-col gap-3 p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-heading text-base font-bold">הגדרות מתקדמות</h3>
-            <button
-              type="button"
-              className="text-xs text-foreground/50 underline"
-              onClick={resetAdjustments}
-            >
-              איפוס
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setAdvOpen((v) => !v)}
+            className="flex items-center justify-between gap-2 text-start"
+          >
+            <h3 className="flex items-center gap-2 font-heading text-base font-bold">
+              <span className="mi text-[21px]" style={{ color: "#9a7400" }}>
+                tune
+              </span>
+              כיוונון התמונה
+            </h3>
+            <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/55">
+              {advOpen ? "סגירה" : "ניגודיות, רוויה, זום"}
+              <span
+                className="mi text-[22px]"
+                style={{ rotate: advOpen ? "180deg" : "0deg" }}
+              >
+                expand_more
+              </span>
+            </span>
+          </button>
+          {advOpen && (
+            <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">
               זום / חיתוך: {zoom.toFixed(1)}×
@@ -1089,12 +1208,24 @@ export function Studio({
             />
             מצב טקסט / קו (ללוגו וכיתוב)
           </label>
+          <button
+            type="button"
+            onClick={resetAdjustments}
+            className="self-start text-xs font-medium text-foreground/50 underline"
+          >
+            איפוס הכיוונונים
+          </button>
+            </div>
+          )}
         </div>
 
         {/* Color palette — stud swatches; click to add/remove a color. */}
         <div className="card flex flex-col gap-3 p-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-heading text-base font-bold">פלטת צבעים</h3>
+            <h3 className="flex items-center gap-2 font-heading text-base font-bold">
+              <span className="mi text-[21px] text-success">palette</span>
+              פלטת צבעים
+            </h3>
             <button
               type="button"
               className="text-xs text-foreground/50 underline"
