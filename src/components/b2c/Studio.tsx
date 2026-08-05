@@ -194,6 +194,9 @@ export function Studio({
   // Redesign: the image-tuning panel is collapsed by default (advanced users
   // expand it). Auto-opens once an image is loaded so controls are discoverable.
   const [advOpen, setAdvOpen] = useState(false);
+  // On mobile the palette grid is collapsible too (it's long); always shown on
+  // desktop. Default collapsed on mobile.
+  const [palOpen, setPalOpen] = useState(false);
 
   const resetAdjustments = () => {
     if (imageData) setWorking(true);
@@ -648,8 +651,31 @@ export function Studio({
     </>
   );
 
+  // Primary action + label, shared by the desktop order card and the mobile
+  // fixed bottom bar (authoring → save, embedded → proceed, else → order).
+  const primaryAction = () => {
+    if (authoring) {
+      if (result) onSaveSettings?.(currentSettings());
+      return;
+    }
+    if (embedded) {
+      if (result)
+        onProceed?.({ file, pixelMap: result.pixelMap, cols, rows, price: price.total });
+      return;
+    }
+    void handleOrder();
+  };
+  const ctaLabel = authoring
+    ? "שמירת הגדרות"
+    : embedded
+      ? (proceedLabel ?? "המשך")
+      : submitting
+        ? "מעבד…"
+        : "הוספה לעגלה";
+  const ctaDisabled = submitting || !result;
+
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-6xl p-4 pb-28 sm:p-6 lg:pb-6">
     <div className="flex flex-col gap-6 lg:flex-row-reverse lg:items-start">
       {/* Canvas stage (DOM-first; flex-row-reverse puts it on the LEFT in RTL).
           On mobile/tablet it STICKS below the site header so the live preview
@@ -905,7 +931,7 @@ export function Studio({
           {/* Quick-pick preset sizes (redesign). Hidden in budget mode, where the
               area is constrained and both axes must stay within the allowance. */}
           {!budgetMode && (
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="-mt-3.5 flex gap-2 overflow-x-auto pb-1 pt-[22px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:mt-0 lg:flex-wrap lg:overflow-visible lg:pt-2">
               {SIZE_PRESETS.map((p) => {
                 const on = p.x === platesX && p.y === platesY;
                 const cell = p.x >= 5 ? 7 : p.x >= 4 ? 8 : 10;
@@ -1220,40 +1246,59 @@ export function Studio({
 
         {/* Color palette — stud swatches; click to add/remove a color. */}
         <div className="card flex flex-col gap-3 p-4">
-          <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setPalOpen((v) => !v)}
+            className="flex items-center justify-between gap-2 text-start"
+          >
             <h3 className="flex items-center gap-2 font-heading text-base font-bold">
               <span className="mi text-[21px] text-success">palette</span>
               פלטת צבעים
             </h3>
-            <button
-              type="button"
-              className="text-xs text-foreground/50 underline"
-              onClick={() => {
-                if (imageData) setWorking(true);
-                setCustomEnabled(null);
-              }}
-            >
-              איפוס
-            </button>
+            <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/55 lg:hidden">
+              {enabled.size} פעילים
+              <span
+                className="mi text-[22px]"
+                style={{ rotate: palOpen ? "180deg" : "0deg" }}
+              >
+                expand_more
+              </span>
+            </span>
+          </button>
+          <div
+            className={`flex flex-col gap-3 ${palOpen ? "" : "max-lg:hidden"}`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-foreground/55">
+                לחצו על לבנה כדי להוסיף או להסיר צבע מהפסיפס.
+              </p>
+              <button
+                type="button"
+                className="flex-none text-xs text-foreground/50 underline"
+                onClick={() => {
+                  if (imageData) setWorking(true);
+                  setCustomEnabled(null);
+                }}
+              >
+                איפוס
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              {visibleColors.map((c) => (
+                <BrickSwatch
+                  key={c.id}
+                  hex={c.hex}
+                  name={c.nameHe}
+                  on={enabled.has(c.id)}
+                  disabled={!c.inStock}
+                  onClick={() => toggleColor(c.id, c.inStock)}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-foreground/45">
+              {enabled.size} צבעים פעילים
+            </span>
           </div>
-          <p className="text-xs text-foreground/55">
-            לחצו על לבנה כדי להוסיף או להסיר צבע מהפסיפס.
-          </p>
-          <div className="flex flex-wrap gap-2.5">
-            {visibleColors.map((c) => (
-              <BrickSwatch
-                key={c.id}
-                hex={c.hex}
-                name={c.nameHe}
-                on={enabled.has(c.id)}
-                disabled={!c.inStock}
-                onClick={() => toggleColor(c.id, c.inStock)}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-foreground/45">
-            {enabled.size} צבעים פעילים
-          </span>
         </div>
 
         {!embedded && (
@@ -1296,8 +1341,16 @@ export function Studio({
           </div>
         )}
 
-        {/* Mobile/tablet slot: breakdown + checkout below the settings. */}
-        <div className="flex flex-col gap-3 lg:hidden">{breakdownAndOrder}</div>
+        {/* Mobile: color breakdown stays in-flow; price + CTA move to the fixed
+            bottom bar so they're always reachable while editing. */}
+        {result && (
+          <div className="px-1 lg:hidden">
+            <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
+          </div>
+        )}
+        {error && (
+          <p className="px-1 text-sm text-red-600 lg:hidden">{error}</p>
+        )}
       </aside>
     </div>
 
@@ -1342,6 +1395,42 @@ export function Studio({
           </div>
         </div>
       )}
+
+      {/* Mobile fixed action bar — total + primary CTA, always reachable while
+          the canvas stays pinned at the top. Hidden on desktop (lg). */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-outline bg-surface/95 backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+          <div className="flex flex-none flex-col gap-0.5">
+            {!hidePricing ? (
+              <>
+                <span className="font-heading text-2xl font-black leading-none text-primary">
+                  {formatILS(price.total)}
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
+                  <span className="mi text-[15px]">local_shipping</span>
+                  משלוח חינם
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-foreground/60">
+                {pair(
+                  Math.round(platesX * CM_PER_PLATE),
+                  Math.round(platesY * CM_PER_PLATE),
+                )}{" "}
+                ס״מ
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={primaryAction}
+            disabled={ctaDisabled}
+            className="btn btn-primary min-h-[52px] flex-1 text-base"
+          >
+            {ctaLabel}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
