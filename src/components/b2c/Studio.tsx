@@ -853,32 +853,21 @@ export function Studio({
       <aside className="flex w-full flex-col gap-4 lg:w-[372px] lg:shrink-0">
         {/* Upload card */}
         <div className="card flex flex-col gap-3 p-4">
+          <h3 className="flex items-center gap-2 font-heading text-base font-bold">
+            <span className="mi text-[21px] text-primary">image</span>
+            התמונה
+          </h3>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-6 text-center text-primary transition-colors hover:border-primary hover:bg-primary/10"
+            className="btn btn-primary min-h-[56px] w-full text-base"
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-8 w-8"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <rect x="3" y="3" width="18" height="18" rx="3" />
-              <circle cx="8.5" cy="8.5" r="1.8" />
-              <path d="M21 15l-5-5L5 21" />
-            </svg>
-            <span className="font-heading text-base font-bold text-foreground">
-              {file ? "החלפת תמונה" : "העלו תמונה"}
-            </span>
-            <span className="text-xs text-foreground/55">
-              {file ? "JPG · PNG · WEBP" : "או בחרו מהדוגמאות למטה"}
-            </span>
+            <span className="mi text-[22px]">add_photo_alternate</span>
+            {file ? "החלפת תמונה" : "העלו תמונה"}
           </button>
+          <span className="text-center text-xs text-foreground/55">
+            {file ? "JPG · PNG · WEBP" : "או התחילו מעיצוב מוכן:"}
+          </span>
 
           {file ? (
             <button
