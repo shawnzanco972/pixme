@@ -651,8 +651,10 @@ export function Studio({
   return (
     <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
     <div className="flex flex-col gap-6 lg:flex-row-reverse lg:items-start">
-      {/* Canvas stage (DOM-first; flex-row-reverse puts it on the LEFT in RTL) */}
-      <section className="flex min-w-0 flex-1 flex-col gap-3">
+      {/* Canvas stage (DOM-first; flex-row-reverse puts it on the LEFT in RTL).
+          On mobile/tablet it STICKS below the site header so the live preview
+          stays in view while the settings scroll underneath it. */}
+      <section className="flex min-w-0 flex-1 flex-col gap-3 max-lg:sticky max-lg:top-16 max-lg:z-20 max-lg:self-start max-lg:-mx-4 max-lg:bg-background/95 max-lg:px-4 max-lg:pb-3 max-lg:backdrop-blur sm:max-lg:-mx-6 sm:max-lg:px-6">
         <input
           ref={fileInputRef}
           type="file"
@@ -715,14 +717,11 @@ export function Studio({
         {/* Canvas + cm guideline rulers (W along the top, H along the start
             edge). The wrapper reserves space for the rulers via logical padding
             so they line up with the recessed baseplate exactly. */}
-        <div
-          className="relative"
-          style={result ? { paddingTop: 28, paddingInlineStart: 40 } : undefined}
-        >
+        <div className={`relative ${result ? "lg:pt-7 lg:ps-10" : ""}`}>
           {result && (
             <>
-              {/* Width ruler (top) */}
-              <div className="pointer-events-none absolute top-0 end-0 start-[40px] flex h-7 items-center">
+              {/* Width ruler (top) — desktop only; mobile keeps the canvas tall. */}
+              <div className="pointer-events-none absolute top-0 end-0 start-[40px] flex h-7 items-center max-lg:hidden">
                 <div className="flex w-full items-center gap-2 text-[11px] font-medium text-foreground/55">
                   <span className="h-2 w-px bg-foreground/25" />
                   <span className="h-px flex-1 bg-foreground/15" />
@@ -733,8 +732,8 @@ export function Studio({
                   <span className="h-2 w-px bg-foreground/25" />
                 </div>
               </div>
-              {/* Height ruler (inline-start = right in RTL) */}
-              <div className="pointer-events-none absolute bottom-0 start-0 top-7 flex w-10 justify-center">
+              {/* Height ruler (inline-start = right in RTL) — desktop only. */}
+              <div className="pointer-events-none absolute bottom-0 start-0 top-7 flex w-10 justify-center max-lg:hidden">
                 <div className="flex h-full flex-col items-center gap-2 text-[11px] font-medium text-foreground/55">
                   <span className="h-px w-2 bg-foreground/25" />
                   <span className="w-px flex-1 bg-foreground/15" />
@@ -755,7 +754,7 @@ export function Studio({
               corners once an image is loaded (the product is square; rounded
               corners could mislead); rounded only in the empty state. */}
           <div
-            className={`relative flex items-center justify-center overflow-hidden border border-outline ${
+            className={`relative mx-auto flex items-center justify-center overflow-hidden border border-outline max-lg:h-[42vh] max-lg:w-fit max-lg:max-w-full ${
               result ? "rounded-none" : "rounded-2xl"
             }`}
             style={{
