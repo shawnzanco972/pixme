@@ -41,9 +41,19 @@ export interface MatchOptions {
    * colors (Bright Light Blue, Medium Azure) so tints have somewhere to go.
    */
   neutralPenalty?: number;
+  /**
+   * Chroma-OVERSHOOT penalty: added per unit of OKLab chroma by which a
+   * candidate is MORE saturated than the target. Asymmetric on purpose —
+   * reproducing a photo faithfully should never invent saturation the source
+   * doesn't have. This is the guard that keeps skin (chroma ≈ 0.08) off Red
+   * (chroma ≈ 0.21) when a photo runs warm, while leaving genuinely saturated
+   * targets (a red logo → Red) untouched. Default 0.6.
+   */
+  overshootPenalty?: number;
 }
 
 const DEFAULT_PENALTY = 0.15;
+const DEFAULT_OVERSHOOT_PENALTY = 0.6;
 const DEFAULT_CHROMA_WEIGHT = 1.6;
 const DEFAULT_HUE_WEIGHT = 2.4;
 const DEFAULT_NEUTRAL_PENALTY = 1.2;
@@ -95,6 +105,7 @@ export function effectiveDistanceSq(
   const chromaWeight = opts.chromaWeight ?? DEFAULT_CHROMA_WEIGHT;
   const hueWeight = opts.hueWeight ?? DEFAULT_HUE_WEIGHT;
   const neutralPenalty = opts.neutralPenalty ?? DEFAULT_NEUTRAL_PENALTY;
+  const overshootPenalty = opts.overshootPenalty ?? DEFAULT_OVERSHOOT_PENALTY;
 
   let dist = Math.sqrt(
     weightedDistanceSq(target, candidate.oklab, chromaWeight, hueWeight),
@@ -104,9 +115,18 @@ export function effectiveDistanceSq(
   // Capped (a vivid red doesn't need an unbounded shove) and faded out in deep
   // shadow, where a faint tint is noise and the honest match IS black/gray.
   const targetChroma = chromaOf(target);
+  const candChroma = chromaOf(candidate.oklab);
+
+  // Never invent saturation the source doesn't have. Penalize only the amount
+  // by which the candidate is MORE saturated than the target (undershoot is
+  // already handled by the chroma term). This is what keeps skin off Red.
+  if (candChroma > targetChroma) {
+    dist += overshootPenalty * (candChroma - targetChroma);
+  }
+
   if (
     targetChroma > NEUTRAL_CHROMA &&
-    chromaOf(candidate.oklab) < NEUTRAL_CHROMA
+    candChroma < NEUTRAL_CHROMA
   ) {
     const excess = Math.min(targetChroma, NEUTRAL_CHROMA_CAP) - NEUTRAL_CHROMA;
     const lightFade = clamp01(

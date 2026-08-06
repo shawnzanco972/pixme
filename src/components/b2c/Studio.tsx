@@ -29,6 +29,7 @@ import { computePrice, formatILS, PLATE_STUDS } from "@/lib/pricing";
 import { fitPlateDims } from "@/lib/b2b";
 import {
   DEFAULT_ENGINE_SETTINGS,
+  ENGINE_PRESETS,
   type DesignSettings,
   type EngineSettings,
 } from "@/lib/design-settings";
@@ -198,15 +199,34 @@ export function Studio({
   // desktop. Default collapsed on mobile.
   const [palOpen, setPalOpen] = useState(false);
 
+  // Which named look is currently applied (null = custom / hand-tuned).
+  const [presetId, setPresetId] = useState<string>("original");
+
+  /** Apply a curated look (contrast/saturation/auto-levels/mode toggles). */
+  const applyPreset = (id: string) => {
+    const p = ENGINE_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    if (imageData) setWorking(true);
+    setPresetId(id);
+    setContrast(p.settings.contrast);
+    setSaturation(p.settings.saturation);
+    setAutoLevels(p.settings.autoLevels);
+    setFaceAware(p.settings.faceAware);
+    setSmoothGradients(p.settings.smoothGradients);
+    setLineArt(p.settings.lineArt);
+    setDither(p.settings.dither);
+  };
+
   const resetAdjustments = () => {
     if (imageData) setWorking(true);
-    setContrast(1.2);
-    setSaturation(1.1);
-    setAutoLevels(true);
-    setDither(0);
-    setSmoothGradients(false);
-    setFaceAware(false);
-    setLineArt(false);
+    setPresetId("original");
+    setContrast(DEFAULT_ENGINE_SETTINGS.contrast);
+    setSaturation(DEFAULT_ENGINE_SETTINGS.saturation);
+    setAutoLevels(DEFAULT_ENGINE_SETTINGS.autoLevels);
+    setDither(DEFAULT_ENGINE_SETTINGS.dither);
+    setSmoothGradients(DEFAULT_ENGINE_SETTINGS.smoothGradients);
+    setFaceAware(DEFAULT_ENGINE_SETTINGS.faceAware);
+    setLineArt(DEFAULT_ENGINE_SETTINGS.lineArt);
     setDetail(DEFAULT_ENGINE_SETTINGS.detail);
     setZoom(1);
     setPanX(0.5);
@@ -215,6 +235,13 @@ export function Studio({
 
   const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
+  /**
+   * Drag-to-pan. Re-running the whole engine on every pointermove made this
+   * unusable on phones (each move queued a worker pass, so the frame you were
+   * dragging to only appeared seconds later). Instead we translate the already
+   * rendered canvas with a CSS transform for instant feedback — no React
+   * re-render, no worker — and commit the real pan (one engine pass) on release.
+   */
   function onPanStart(e: React.PointerEvent) {
     if (zoom <= 1 || !result) return;
     dragRef.current = { x: e.clientX, y: e.clientY, px: panX, py: panY };
@@ -223,18 +250,37 @@ export function Studio({
   function onPanMove(e: React.PointerEvent) {
     const d = dragRef.current;
     if (!d || !canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const dx = (e.clientX - d.x) / rect.width / zoom;
-    const dy = (e.clientY - d.y) / rect.height / zoom;
-    if (imageData) setWorking(true);
-    setPanX(clamp01(d.px - dx));
-    setPanY(clamp01(d.py - dy));
+    const el = canvasRef.current;
+    const rect = el.getBoundingClientRect();
+    // Clamp the preview to the pan range actually available at this zoom, so
+    // the image can't be dragged past its own edges.
+    const maxX = rect.width * (1 - 1 / zoom);
+    const maxY = rect.height * (1 - 1 / zoom);
+    const rawX = e.clientX - d.x;
+    const rawY = e.clientY - d.y;
+    const tx = Math.max(-maxX * (1 - d.px), Math.min(maxX * d.px, rawX));
+    const ty = Math.max(-maxY * (1 - d.py), Math.min(maxY * d.py, rawY));
+    el.style.transform = `translate(${tx}px, ${ty}px)`;
   }
   function onPanEnd(e: React.PointerEvent) {
+    const d = dragRef.current;
     dragRef.current = null;
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {}
+    if (!d || !canvasRef.current) return;
+    const el = canvasRef.current;
+    const rect = el.getBoundingClientRect();
+    // Read back the preview offset and convert it to a crop-centre delta.
+    const m = /translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/.exec(el.style.transform);
+    el.style.transform = "";
+    if (!m) return;
+    const dx = Number(m[1]) / rect.width / zoom;
+    const dy = Number(m[2]) / rect.height / zoom;
+    if (dx === 0 && dy === 0) return;
+    if (imageData) setWorking(true);
+    setPanX(clamp01(d.px - dx));
+    setPanY(clamp01(d.py - dy));
   }
 
   function bumpZoom(delta: number) {
@@ -553,19 +599,19 @@ export function Studio({
     }
   }
 
-  // Color breakdown + order summary. Rendered in two responsive slots: under
-  // the canvas on desktop (lg+), below the settings sidebar on mobile/tablet —
-  // so settings stay reachable before the checkout card on small screens.
-  const breakdownAndOrder = (
-    <>
-      {result && (
-        <div className="px-1">
-          <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
-        </div>
-      )}
+  // Color breakdown — full width under the canvas on desktop.
+  const breakdown = result ? (
+    <div className="px-1">
+      <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
+    </div>
+  ) : null;
 
-      {/* Order summary + primary action — framed in brand red so it stands out. */}
-      <div className="card flex flex-col gap-4 border-[3px] border-primary p-5 shadow-[0_8px_0_0_#e7d3d6]">
+  // Order summary + primary action. On desktop it sits at the BOTTOM-LEFT of
+  // the canvas column (ms-auto = inline-end = left in RTL); on mobile the price
+  // and CTA live in the fixed bottom bar instead.
+  const orderCard = (
+    <>
+      <div className="card flex w-full flex-col gap-4 border-[3px] border-primary p-5 shadow-[0_8px_0_0_#e7d3d6] lg:ms-auto lg:max-w-sm">
         {!hidePricing && (
           <>
             <div className="flex flex-col gap-1.5">
@@ -651,6 +697,94 @@ export function Studio({
     </>
   );
 
+  // Tuning controls, declared once so the panel stays readable. Ranges are
+  // deliberately tighter than before (contrast used to run 0.5–2, which made
+  // every nudge a big jump); finer steps make the sliders feel accurate.
+  const SLIDERS = [
+    {
+      key: "zoom" as const,
+      label: "זום / חיתוך",
+      min: 1,
+      max: 3,
+      step: 0.05,
+      set: setZoom,
+      fmt: (v: number) => `${v.toFixed(2)}×`,
+    },
+    {
+      key: "contrast" as const,
+      label: "ניגודיות",
+      min: 0.7,
+      max: 1.6,
+      step: 0.02,
+      set: setContrast,
+      fmt: (v: number) => (v === 1 ? "רגיל" : v.toFixed(2)),
+    },
+    {
+      key: "saturation" as const,
+      label: "רוויה",
+      min: 0,
+      max: 1.6,
+      step: 0.02,
+      set: setSaturation,
+      fmt: (v: number) => (v === 1 ? "רגיל" : v.toFixed(2)),
+    },
+    {
+      key: "detail" as const,
+      label: "חידוד פרטים (טקסט וקווים)",
+      min: 0,
+      max: 1,
+      step: 0.05,
+      set: setDetail,
+      fmt: (v: number) => `${Math.round(v * 100)}%`,
+    },
+    {
+      key: "dither" as const,
+      label: "פיזור (Dithering)",
+      min: 0,
+      max: 0.05,
+      step: 0.005,
+      set: setDither,
+      fmt: (v: number) => (v === 0 ? "כבוי" : v.toFixed(3)),
+    },
+  ];
+  const sliderValue = (k: (typeof SLIDERS)[number]["key"]): number =>
+    k === "zoom"
+      ? zoom
+      : k === "contrast"
+        ? contrast
+        : k === "saturation"
+          ? saturation
+          : k === "detail"
+            ? detail
+            : dither;
+
+  const TOGGLES = [
+    {
+      key: "autoLevels",
+      label: "שיפור אוטומטי (ניגודיות חכמה)",
+      value: autoLevels,
+      set: setAutoLevels,
+    },
+    {
+      key: "faceAware",
+      label: "הדגשת פנים (לדיוקנאות)",
+      value: faceAware,
+      set: setFaceAware,
+    },
+    {
+      key: "smoothGradients",
+      label: "מעברי צבע חלקים (לתמונות)",
+      value: smoothGradients,
+      set: setSmoothGradients,
+    },
+    {
+      key: "lineArt",
+      label: "מצב טקסט / קו (ללוגו וכיתוב)",
+      value: lineArt,
+      set: setLineArt,
+    },
+  ];
+
   // Primary action + label, shared by the desktop order card and the mobile
   // fixed bottom bar (authoring → save, embedded → proceed, else → order).
   const primaryAction = () => {
@@ -678,9 +812,10 @@ export function Studio({
     <div className="mx-auto w-full max-w-6xl p-4 pb-28 sm:p-6 lg:pb-6">
     <div className="flex flex-col gap-6 lg:flex-row-reverse lg:items-start">
       {/* Canvas stage (DOM-first; flex-row-reverse puts it on the LEFT in RTL).
-          On mobile/tablet it STICKS below the site header so the live preview
-          stays in view while the settings scroll underneath it. */}
-      <section className="flex min-w-0 flex-1 flex-col gap-3 max-lg:sticky max-lg:top-16 max-lg:z-20 max-lg:self-start max-lg:-mx-4 max-lg:bg-background/95 max-lg:px-4 max-lg:pb-3 max-lg:backdrop-blur sm:max-lg:-mx-6 sm:max-lg:px-6">
+          On mobile/tablet this is its OWN full-bleed section that occupies the
+          first screen — the settings are a separate section below it, not
+          content sliding underneath a floating overlay. */}
+      <section className="flex min-w-0 flex-1 flex-col gap-3 max-lg:-mx-4 max-lg:border-b max-lg:border-outline max-lg:bg-surface max-lg:px-4 max-lg:pb-5 max-lg:pt-1 sm:max-lg:-mx-6 sm:max-lg:px-6">
         <input
           ref={fileInputRef}
           type="file"
@@ -780,10 +915,15 @@ export function Studio({
               corners once an image is loaded (the product is square; rounded
               corners could mislead); rounded only in the empty state. */}
           <div
-            className={`relative mx-auto flex items-center justify-center overflow-hidden border border-outline max-lg:h-[42vh] max-lg:w-fit max-lg:max-w-full ${
+            className={`relative mx-auto flex items-center justify-center overflow-hidden border border-outline [--canvas-h:44vh] lg:[--canvas-h:400vh] ${
               result ? "rounded-none" : "rounded-2xl"
             }`}
             style={{
+              // Never taller than --canvas-h (so the canvas section fits the
+              // first screen on any phone/tablet) and never wider than its
+              // column. Height follows from the aspect ratio, so the board is
+              // always fully visible and centred whatever the plate shape.
+              width: `min(100%, calc(var(--canvas-h) * ${cols} / ${rows}))`,
               aspectRatio: `${cols} / ${rows}`,
               background: "var(--color-surface-muted)",
               boxShadow: "inset 0 4px 20px rgba(25,28,30,0.06)",
@@ -845,8 +985,12 @@ export function Studio({
           <p className="px-1 text-sm text-foreground/55">מעבד…</p>
         )}
 
-        {/* Desktop slot: breakdown + checkout under the canvas. */}
-        <div className="hidden flex-col gap-3 lg:flex">{breakdownAndOrder}</div>
+        {/* Desktop slot: colour breakdown full-width, then the price / add-to-cart
+            box pinned to the bottom-left of the canvas column. */}
+        <div className="hidden flex-col gap-3 lg:flex">
+          {breakdown}
+          {orderCard}
+        </div>
       </section>
 
       {/* Sidebar — upload, board, palette, settings, order (RTL start = right) */}
@@ -1088,147 +1232,82 @@ export function Studio({
             </span>
           </button>
           {advOpen && (
-            <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">
-              זום / חיתוך: {zoom.toFixed(1)}×
-            </span>
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.1}
-              value={zoom}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setZoom(Number(e.target.value));
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">
-              ניגודיות: {contrast.toFixed(2)}
-            </span>
-            <input
-              type="range"
-              min={0.5}
-              max={2}
-              step={0.05}
-              value={contrast}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setContrast(Number(e.target.value));
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">
-              רוויה: {saturation.toFixed(2)}
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={2}
-              step={0.05}
-              value={saturation}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setSaturation(Number(e.target.value));
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">
-              חידוד פרטים (טקסט וקווים): {Math.round(detail * 100)}%
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={detail}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setDetail(Number(e.target.value));
-              }}
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">
-              פיזור (Dithering): {dither === 0 ? "כבוי" : dither.toFixed(3)}
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={0.05}
-              step={0.005}
-              value={dither}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setDither(Number(e.target.value));
-              }}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={autoLevels}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setAutoLevels(e.target.checked);
-              }}
-            />
-            שיפור אוטומטי (ניגודיות חכמה)
-          </label>
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={faceAware}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setFaceAware(e.target.checked);
-              }}
-            />
-            הדגשת פנים (לדיוקנאות)
-          </label>
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={smoothGradients}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setSmoothGradients(e.target.checked);
-              }}
-            />
-            מעברי צבע חלקים (לתמונות)
-          </label>
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={lineArt}
-              disabled={!imageData}
-              onChange={(e) => {
-                if (imageData) setWorking(true);
-                setLineArt(e.target.checked);
-              }}
-            />
-            מצב טקסט / קו (ללוגו וכיתוב)
-          </label>
-          <button
-            type="button"
-            onClick={resetAdjustments}
-            className="self-start text-xs font-medium text-foreground/50 underline"
-          >
-            איפוס הכיוונונים
-          </button>
+            <div className="flex flex-col gap-4">
+              {/* One-tap looks. "מקורי" is the default and is pure fidelity —
+                  no contrast/saturation push, so skin stays skin. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium">סגנון</span>
+                <div className="flex flex-wrap gap-2">
+                  {ENGINE_PRESETS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={!imageData}
+                      onClick={() => applyPreset(p.id)}
+                      className={`rounded-full border-2 px-3.5 py-1.5 font-heading text-sm font-semibold transition-colors disabled:opacity-40 ${
+                        presetId === p.id
+                          ? "border-secondary bg-secondary/10 text-secondary"
+                          : "border-outline bg-surface text-foreground/70 hover:bg-surface-muted"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {SLIDERS.map((s) => (
+                <label key={s.key} className="flex flex-col gap-1">
+                  <span className="flex items-baseline justify-between gap-2 text-sm font-medium">
+                    {s.label}
+                    <span className="font-heading text-sm font-bold text-secondary">
+                      {s.fmt(sliderValue(s.key))}
+                    </span>
+                  </span>
+                  <input
+                    className="slider"
+                    type="range"
+                    min={s.min}
+                    max={s.max}
+                    step={s.step}
+                    value={sliderValue(s.key)}
+                    disabled={!imageData}
+                    onChange={(e) => {
+                      if (imageData) setWorking(true);
+                      setPresetId("custom");
+                      s.set(Number(e.target.value));
+                    }}
+                  />
+                </label>
+              ))}
+
+              {TOGGLES.map((t) => (
+                <label
+                  key={t.key}
+                  className="flex min-h-[44px] items-center justify-between gap-3 text-sm font-medium"
+                >
+                  {t.label}
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 flex-none accent-[var(--color-secondary)]"
+                    checked={t.value}
+                    disabled={!imageData}
+                    onChange={(e) => {
+                      if (imageData) setWorking(true);
+                      setPresetId("custom");
+                      t.set(e.target.checked);
+                    }}
+                  />
+                </label>
+              ))}
+
+              <button
+                type="button"
+                onClick={resetAdjustments}
+                className="self-start text-xs font-medium text-foreground/50 underline"
+              >
+                איפוס הכיוונונים
+              </button>
             </div>
           )}
         </div>

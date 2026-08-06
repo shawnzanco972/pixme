@@ -24,10 +24,19 @@ export interface EngineSettings {
   panY: number;
 }
 
+/**
+ * FIDELITY defaults: reproduce the photo as faithfully as possible.
+ *
+ * These used to be a "vivid" preset (contrast 1.2 / saturation 1.1 / autoLevels
+ * on). Because contrast is applied per-channel around mid-gray, warm subjects
+ * (skin is R>G>B) gained chroma on every pass — inflating skin toward Red and
+ * producing the classic "red face" failure. Neutral tone ops keep the OKLab
+ * match honest; users can still reach for a vivid look via the presets.
+ */
 export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
-  contrast: 1.2,
-  saturation: 1.1,
-  autoLevels: true,
+  contrast: 1,
+  saturation: 1,
+  autoLevels: false,
   dither: 0,
   smoothGradients: false,
   faceAware: false,
@@ -37,6 +46,81 @@ export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
   panX: 0.5,
   panY: 0.5,
 };
+
+/** A named look the customer can apply in one tap (studio "presets"). */
+export interface EnginePreset {
+  id: string;
+  label: string;
+  settings: Pick<
+    EngineSettings,
+    | "contrast"
+    | "saturation"
+    | "autoLevels"
+    | "faceAware"
+    | "smoothGradients"
+    | "lineArt"
+    | "dither"
+  >;
+}
+
+/**
+ * Curated looks. "original" is the default (pure fidelity); the rest are
+ * coherent combinations so users don't have to reason about five sliders.
+ */
+export const ENGINE_PRESETS: EnginePreset[] = [
+  {
+    id: "original",
+    label: "מקורי",
+    settings: {
+      contrast: 1,
+      saturation: 1,
+      autoLevels: false,
+      faceAware: false,
+      smoothGradients: false,
+      lineArt: false,
+      dither: 0,
+    },
+  },
+  {
+    id: "portrait",
+    label: "דיוקן",
+    settings: {
+      contrast: 1.05,
+      saturation: 0.95,
+      autoLevels: false,
+      faceAware: true,
+      smoothGradients: true,
+      lineArt: false,
+      dither: 0,
+    },
+  },
+  {
+    id: "vivid",
+    label: "חי",
+    settings: {
+      contrast: 1.18,
+      saturation: 1.15,
+      autoLevels: true,
+      faceAware: false,
+      smoothGradients: false,
+      lineArt: false,
+      dither: 0,
+    },
+  },
+  {
+    id: "lineart",
+    label: "לוגו / טקסט",
+    settings: {
+      contrast: 1.3,
+      saturation: 1,
+      autoLevels: true,
+      faceAware: false,
+      smoothGradients: false,
+      lineArt: true,
+      dither: 0,
+    },
+  },
+];
 
 /** Full snapshot saved on a design: engine settings + baseplate dimensions. */
 export interface DesignSettings extends EngineSettings {
