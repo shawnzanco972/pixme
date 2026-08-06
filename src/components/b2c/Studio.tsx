@@ -40,6 +40,7 @@ const MAX_PLATES = 5;
 // Promoted board sizes shown as quick-pick cards (redesign). 3×3 is the hero.
 const SIZE_PRESETS: { x: number; y: number; name: string; popular?: boolean }[] =
   [
+    { x: 2, y: 2, name: "קטן" },
     { x: 3, y: 2, name: "רחב" },
     { x: 2, y: 3, name: "גבוה" },
     { x: 3, y: 3, name: "רגיל", popular: true },
@@ -198,6 +199,15 @@ export function Studio({
   // On mobile the palette grid is collapsible too (it's long); always shown on
   // desktop. Default collapsed on mobile.
   const [palOpen, setPalOpen] = useState(false);
+  // Desktop: the colour breakdown floats above the price box and is collapsed
+  // by default — customers care about the artwork, not the parts list.
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
+  /**
+   * Drag-to-reframe is LOCKED by default. An unlocked canvas has to swallow
+   * touch gestures to pan, which makes the page impossible to scroll past on a
+   * phone; locking it keeps scrolling natural until you deliberately opt in.
+   */
+  const [panLocked, setPanLocked] = useState(true);
 
   // Which named look is currently applied (null = custom / hand-tuned).
   const [presetId, setPresetId] = useState<string>("original");
@@ -243,7 +253,7 @@ export function Studio({
    * re-render, no worker — and commit the real pan (one engine pass) on release.
    */
   function onPanStart(e: React.PointerEvent) {
-    if (zoom <= 1 || !result) return;
+    if (panLocked || zoom <= 1 || !result) return;
     dragRef.current = { x: e.clientX, y: e.clientY, px: panX, py: panY };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
@@ -599,19 +609,12 @@ export function Studio({
     }
   }
 
-  // Color breakdown — full width under the canvas on desktop.
-  const breakdown = result ? (
-    <div className="px-1">
-      <ColorBreakdown pixelMap={result.pixelMap} palette={activePalette} />
-    </div>
-  ) : null;
-
-  // Order summary + primary action. On desktop it sits at the BOTTOM-LEFT of
-  // the canvas column (ms-auto = inline-end = left in RTL); on mobile the price
-  // and CTA live in the fixed bottom bar instead.
+  // Order summary + primary action. On desktop it floats in the bottom-left
+  // corner (see the fixed stack below); on mobile the price and CTA live in the
+  // fixed bottom bar instead.
   const orderCard = (
     <>
-      <div className="card flex w-full flex-col gap-4 border-[3px] border-primary p-5 shadow-[0_8px_0_0_#e7d3d6] lg:ms-auto lg:max-w-sm">
+      <div className="card flex w-full flex-col gap-4 border-[3px] border-primary p-5 shadow-[0_8px_0_0_#e7d3d6]">
         {!hidePricing && (
           <>
             <div className="flex flex-col gap-1.5">
@@ -809,13 +812,14 @@ export function Studio({
   const ctaDisabled = submitting || !result;
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 pb-28 sm:p-6 lg:pb-6">
+    <div className="mx-auto w-full max-w-6xl p-4 pb-28 sm:p-6 lg:pb-28">
     <div className="flex flex-col gap-6 lg:flex-row-reverse lg:items-start">
       {/* Canvas stage (DOM-first; flex-row-reverse puts it on the LEFT in RTL).
-          On mobile/tablet this is its OWN full-bleed section that occupies the
-          first screen — the settings are a separate section below it, not
-          content sliding underneath a floating overlay. */}
-      <section className="flex min-w-0 flex-1 flex-col gap-3 max-lg:-mx-4 max-lg:border-b max-lg:border-outline max-lg:bg-surface max-lg:px-4 max-lg:pb-5 max-lg:pt-1 sm:max-lg:-mx-6 sm:max-lg:px-6">
+          On mobile/tablet it's a full-bleed panel PINNED below the site header,
+          so the artwork stays visible while you work the settings underneath.
+          Opaque (not translucent) + a hard bottom edge so it reads as its own
+          section rather than something floating over the page. */}
+      <section className="flex min-w-0 flex-1 flex-col gap-3 max-lg:sticky max-lg:top-16 max-lg:z-30 max-lg:self-start max-lg:-mx-4 max-lg:border-b-2 max-lg:border-outline max-lg:bg-surface max-lg:px-4 max-lg:pb-3 max-lg:pt-1 max-lg:shadow-[0_10px_18px_-14px_rgba(25,28,30,0.5)] sm:max-lg:-mx-6 sm:max-lg:px-6">
         <input
           ref={fileInputRef}
           type="file"
@@ -871,6 +875,33 @@ export function Studio({
               >
                 ⤢
               </button>
+              {/* Reframe lock — while locked the canvas never swallows touch
+                  gestures, so the page scrolls normally over the artwork. */}
+              <button
+                type="button"
+                aria-pressed={!panLocked}
+                title={
+                  zoom > 1
+                    ? panLocked
+                      ? "פתיחת נעילה להזזת התמונה"
+                      : "נעילת ההזזה"
+                    : "הגדילו את הזום כדי להזיז את התמונה"
+                }
+                disabled={zoom <= 1}
+                onClick={() => setPanLocked((v) => !v)}
+                className={`flex h-9 items-center justify-center gap-1 rounded-lg border px-2 text-xs font-medium leading-none transition-colors active:translate-y-px disabled:opacity-40 ${
+                  !panLocked && zoom > 1
+                    ? "border-secondary bg-secondary/10 text-secondary"
+                    : "border-outline bg-surface hover:bg-surface-muted"
+                }`}
+              >
+                <span className="mi text-[18px]">
+                  {panLocked ? "lock" : "lock_open"}
+                </span>
+                <span className="max-sm:hidden">
+                  {panLocked ? "נעול" : "הזזה"}
+                </span>
+              </button>
             </div>
           )}
         </div>
@@ -915,7 +946,7 @@ export function Studio({
               corners once an image is loaded (the product is square; rounded
               corners could mislead); rounded only in the empty state. */}
           <div
-            className={`relative mx-auto flex items-center justify-center overflow-hidden border border-outline [--canvas-h:44vh] lg:[--canvas-h:400vh] ${
+            className={`relative mx-auto flex items-center justify-center overflow-hidden border border-outline [--canvas-h:38vh] lg:[--canvas-h:400vh] ${
               result ? "rounded-none" : "rounded-2xl"
             }`}
             style={{
@@ -938,7 +969,9 @@ export function Studio({
               onPointerMove={onPanMove}
               onPointerUp={onPanEnd}
               className={`h-full w-full object-contain ${result ? "" : "hidden"} ${
-                zoom > 1 ? "cursor-grab touch-none active:cursor-grabbing" : ""
+                !panLocked && zoom > 1
+                  ? "cursor-grab touch-none active:cursor-grabbing"
+                  : ""
               }`}
             />
 
@@ -973,8 +1006,8 @@ export function Studio({
               </button>
             )}
 
-            {result && zoom > 1 && (
-              <span className="absolute top-3 end-3 rounded-full bg-surface/90 px-3 py-1 text-xs shadow">
+            {result && zoom > 1 && !panLocked && (
+              <span className="absolute top-3 end-3 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-on-secondary shadow">
                 גררו להזזת המסגרת
               </span>
             )}
@@ -985,12 +1018,6 @@ export function Studio({
           <p className="px-1 text-sm text-foreground/55">מעבד…</p>
         )}
 
-        {/* Desktop slot: colour breakdown full-width, then the price / add-to-cart
-            box pinned to the bottom-left of the canvas column. */}
-        <div className="hidden flex-col gap-3 lg:flex">
-          {breakdown}
-          {orderCard}
-        </div>
       </section>
 
       {/* Sidebar — upload, board, palette, settings, order (RTL start = right) */}
@@ -1257,27 +1284,39 @@ export function Studio({
               </div>
 
               {SLIDERS.map((s) => (
-                <label key={s.key} className="flex flex-col gap-1">
+                <label
+                  key={s.key}
+                  // Generous vertical padding + a horizontal gutter around the
+                  // track: it leaves dead space to start a scroll gesture in,
+                  // so a thumb never lands straight on a slider.
+                  className="flex flex-col gap-1.5 py-1.5"
+                >
                   <span className="flex items-baseline justify-between gap-2 text-sm font-medium">
                     {s.label}
                     <span className="font-heading text-sm font-bold text-secondary">
                       {s.fmt(sliderValue(s.key))}
                     </span>
                   </span>
-                  <input
-                    className="slider"
-                    type="range"
-                    min={s.min}
-                    max={s.max}
-                    step={s.step}
-                    value={sliderValue(s.key)}
-                    disabled={!imageData}
-                    onChange={(e) => {
-                      if (imageData) setWorking(true);
-                      setPresetId("custom");
-                      s.set(Number(e.target.value));
-                    }}
-                  />
+                  {/* px gutter: leaves a dead strip at each edge of the row to
+                      start a scroll gesture in, so a thumb never lands on the
+                      track by accident. (Sizing lives here, not on the input —
+                      the .slider rule sets width:100%.) */}
+                  <span className="block px-3">
+                    <input
+                      className="slider"
+                      type="range"
+                      min={s.min}
+                      max={s.max}
+                      step={s.step}
+                      value={sliderValue(s.key)}
+                      disabled={!imageData}
+                      onChange={(e) => {
+                        if (imageData) setWorking(true);
+                        setPresetId("custom");
+                        s.set(Number(e.target.value));
+                      }}
+                    />
+                  </span>
                 </label>
               ))}
 
@@ -1463,6 +1502,44 @@ export function Studio({
           </div>
         </div>
       )}
+
+      {/* Desktop floating cart — bottom-LEFT corner (end-* is left in RTL), so
+          the canvas stays the isolated focus of the page. The colour breakdown
+          sits directly above it and is collapsed by default: it's reference
+          detail, not something a customer needs while designing. */}
+      <div className="fixed bottom-6 end-6 z-40 hidden w-[340px] flex-col gap-3 lg:flex">
+        {result && (
+          <div className="card overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setBreakdownOpen((v) => !v)}
+              className="flex w-full items-center justify-between gap-2 px-4 py-3 text-start"
+            >
+              <span className="font-heading text-sm font-bold">
+                פירוט צבעים
+              </span>
+              <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/55">
+                {enabled.size} צבעים
+                <span
+                  className="mi text-[20px]"
+                  style={{ rotate: breakdownOpen ? "0deg" : "180deg" }}
+                >
+                  expand_more
+                </span>
+              </span>
+            </button>
+            {breakdownOpen && (
+              <div className="max-h-[45vh] overflow-y-auto border-t border-outline p-3">
+                <ColorBreakdown
+                  pixelMap={result.pixelMap}
+                  palette={activePalette}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        {orderCard}
+      </div>
 
       {/* Mobile fixed action bar — total + primary CTA, always reachable while
           the canvas stays pinned at the top. Hidden on desktop (lg). */}

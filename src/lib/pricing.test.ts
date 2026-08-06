@@ -61,3 +61,27 @@ describe("computeB2bPrice", () => {
     expect(computeB2bPrice(9.7).licenses).toBe(9);
   });
 });
+
+describe("headline price points", () => {
+  it("prices the hero 3×3 at ₪399 (deliberate override, not the linear model)", () => {
+    expect(computePrice(72, 72, "physical").total).toBe(399);
+  });
+
+  it("leaves every other size on the linear model", () => {
+    expect(computePrice(48, 48, "physical").total).toBe(290); // 2×2
+    expect(computePrice(72, 48, "physical").total).toBe(355); // 3×2
+    expect(computePrice(96, 96, "physical").total).toBe(675); // 4×4
+    expect(computePrice(120, 120, "physical").total).toBe(960); // 5×5
+  });
+
+  it("keeps prices monotonic in area", () => {
+    const at = (n: number) => computePrice(n, n, "physical").total;
+    expect(at(48)).toBeLessThan(at(72));
+    expect(at(72)).toBeLessThan(at(96));
+    expect(at(96)).toBeLessThan(at(120));
+  });
+
+  it("does not override a non-plate-aligned grid of the same area", () => {
+    expect(computePrice(5184, 1, "physical").total).not.toBe(399);
+  });
+});

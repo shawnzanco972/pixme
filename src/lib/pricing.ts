@@ -76,6 +76,26 @@ const PHYSICAL_PER_STUD = 0.05556;
 
 const round5 = (n: number) => Math.round(n / 5) * 5;
 
+/**
+ * Explicit price points for headline sizes (physical, ₪), keyed "platesX×platesY".
+ *
+ * The linear model above prices the whole catalogue consistently; this table
+ * lets us set a deliberate charm price on the sizes we actually promote without
+ * silently repricing everything else. 3×3 is the hero size and sells at ₪399
+ * (the model would say ₪450). Only exact whole-plate grids can match.
+ */
+const PHYSICAL_PRICE_OVERRIDES: Readonly<Record<string, number>> = {
+  "3x3": 399,
+};
+
+/** Look up a deliberate price point for an exact plate grid, if one exists. */
+function overridePrice(cols: number, rows: number): number | undefined {
+  if (cols % PLATE_STUDS !== 0 || rows % PLATE_STUDS !== 0) return undefined;
+  return PHYSICAL_PRICE_OVERRIDES[
+    `${cols / PLATE_STUDS}x${rows / PLATE_STUDS}`
+  ];
+}
+
 /** Price from the total stud count (cols × rows). */
 export function computePrice(
   cols: number,
@@ -90,7 +110,9 @@ export function computePrice(
     return { studs, base, physicalSurcharge: 0, total: base, currency: "ILS" };
   }
 
-  const physicalTotal = round5(PHYSICAL_FIXED + studs * PHYSICAL_PER_STUD);
+  const physicalTotal =
+    overridePrice(cols, rows) ??
+    round5(PHYSICAL_FIXED + studs * PHYSICAL_PER_STUD);
   return {
     studs,
     base,
