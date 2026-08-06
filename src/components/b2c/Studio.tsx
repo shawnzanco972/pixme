@@ -810,26 +810,35 @@ export function Studio({
         ? "מעבד…"
         : "הוספה לעגלה";
   const ctaDisabled = submitting || !result;
+  /**
+   * The canvas only exists once there's something to show. An empty baseplate
+   * asking for an upload just duplicated the upload card below it, and read as
+   * a broken box on small screens.
+   */
+  const hasImage = Boolean(imageData || result);
 
   return (
     <div className="mx-auto w-full max-w-6xl p-4 pb-28 sm:p-6 lg:pb-28">
+      {/* Lives outside the canvas section so the upload button still works
+          before any image exists (the section is unmounted until then). */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onPick(f);
+        }}
+      />
     <div className="flex flex-col gap-6 lg:flex-row-reverse lg:items-start">
       {/* Canvas stage (DOM-first; flex-row-reverse puts it on the LEFT in RTL).
           On mobile/tablet it's a full-bleed panel PINNED below the site header,
           so the artwork stays visible while you work the settings underneath.
           Opaque (not translucent) + a hard bottom edge so it reads as its own
           section rather than something floating over the page. */}
+      {hasImage && (
       <section className="flex min-w-0 flex-1 flex-col gap-3 max-lg:sticky max-lg:top-16 max-lg:z-30 max-lg:self-start max-lg:-mx-4 max-lg:border-b-2 max-lg:border-outline max-lg:bg-surface max-lg:px-4 max-lg:pb-3 max-lg:pt-1 max-lg:shadow-[0_10px_18px_-14px_rgba(25,28,30,0.5)] sm:max-lg:-mx-6 sm:max-lg:px-6">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void onPick(f);
-          }}
-        />
 
         {/* Canvas toolbar — title + live stud count + zoom tools. */}
         <div className="flex items-center justify-between gap-2 px-1">
@@ -990,20 +999,11 @@ export function Studio({
               </>
             )}
 
+            {/* First pass: the board exists but the worker hasn't returned yet. */}
             {!result && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-foreground/55"
-              >
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl text-primary">
-                  +
-                </span>
-                <span className="font-heading font-semibold text-foreground">
-                  העלו תמונה
-                </span>
-                <span className="text-xs">או בחרו עיצוב מוכן מהצד</span>
-              </button>
+              <span className="absolute inset-0 flex items-center justify-center text-sm text-foreground/55">
+                בונים את הפסיפס…
+              </span>
             )}
 
             {result && zoom > 1 && !panLocked && (
@@ -1014,14 +1014,21 @@ export function Studio({
           </div>
         </div>
 
-        {working && (
+        {working && result && (
           <p className="px-1 text-sm text-foreground/55">מעבד…</p>
         )}
 
       </section>
+      )}
 
-      {/* Sidebar — upload, board, palette, settings, order (RTL start = right) */}
-      <aside className="flex w-full flex-col gap-4 lg:w-[372px] lg:shrink-0">
+      {/* Sidebar — upload, board, palette, settings, order (RTL start = right).
+          Before an image exists there's no canvas beside it, so it takes the
+          full width and centres instead of hugging one edge. */}
+      <aside
+        className={`flex w-full flex-col gap-4 ${
+          hasImage ? "lg:w-[372px] lg:shrink-0" : "lg:mx-auto lg:max-w-2xl"
+        }`}
+      >
         {/* Upload card */}
         <div className="card flex flex-col gap-3 p-4">
           <h3 className="flex items-center gap-2 font-heading text-base font-bold">
