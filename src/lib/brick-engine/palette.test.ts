@@ -14,12 +14,12 @@ import {
 } from "./palette";
 
 describe("catalog", () => {
-  it("defines 31 colors with unique id/colorId/displayCode/hex", () => {
-    expect(CATALOG.length).toBe(31);
-    expect(new Set(CATALOG.map((c) => c.id)).size).toBe(31);
-    expect(new Set(CATALOG.map((c) => c.colorId)).size).toBe(31);
-    expect(new Set(CATALOG.map((c) => c.displayCode)).size).toBe(31);
-    expect(new Set(CATALOG.map((c) => c.hex.toLowerCase())).size).toBe(31);
+  it("defines 39 colors with unique id/colorId/displayCode/hex", () => {
+    expect(CATALOG.length).toBe(39);
+    expect(new Set(CATALOG.map((c) => c.id)).size).toBe(39);
+    expect(new Set(CATALOG.map((c) => c.colorId)).size).toBe(39);
+    expect(new Set(CATALOG.map((c) => c.displayCode)).size).toBe(39);
+    expect(new Set(CATALOG.map((c) => c.hex.toLowerCase())).size).toBe(39);
   });
 
   it("keeps colorId slugs kebab-case and displayCode ≤3 chars", () => {
@@ -42,10 +42,18 @@ describe("catalog", () => {
     }
   });
 
-  it("marks 19 core colors (launch order) in stock by default", () => {
-    expect(CORE_SLUGS.size).toBe(19);
-    expect(CATALOG.filter((c) => c.core)).toHaveLength(19);
+  it("marks 27 core colors (launch order) in stock by default", () => {
+    // 19 original launch colours + the 8 skin-ramp fills (K8–K15).
+    expect(CORE_SLUGS.size).toBe(27);
+    expect(CATALOG.filter((c) => c.core)).toHaveLength(27);
     expect(CATALOG.filter((c) => !c.core)).toHaveLength(12); // boosters
+  });
+
+  it("resolves the skin ramp without collapsing distinct tones", () => {
+    // The defect this palette expansion fixes: four visually distinct skin
+    // tones used to all match Medium Nougat, flattening faces.
+    const skin = CATALOG.filter((c) => c.role === "skin");
+    expect(skin.length).toBeGreaterThanOrEqual(15);
   });
 });
 

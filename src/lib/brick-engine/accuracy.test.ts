@@ -21,13 +21,15 @@ describe("matching accuracy (green-square regression)", () => {
   const greens = DEFAULT_PALETTE.filter((c) => c.name.includes("Green")).map(
     (c) => c.id,
   );
-  const darkNeutralish = DEFAULT_PALETTE.filter((c) =>
-    ["Black", "Dark Bluish Gray", "Dark Brown"].includes(c.name),
-  ).map((c) => c.id);
-
   it("dark, faintly tinted pixels stay dark/neutral instead of going green", () => {
     // Shadow pixels with slight green/teal sensor tint — the classic source of
     // the "random green stud". Neutral-avoidance must fade out in shadow.
+    //
+    // Asserted by PROPERTY (dark + low chroma) rather than an allowlist of
+    // brick names: the palette gains colours over time, and a new dark brick
+    // that matches better should pass, not fail. (Coffee, added with the skin
+    // ramp, is a closer match for mid-shadows than Black — raw OKLab 0.053 vs
+    // 0.130 — because its lightness actually lines up.)
     for (const rgb of [
       [38, 48, 40],
       [50, 62, 52],
@@ -38,7 +40,13 @@ describe("matching accuracy (green-square regression)", () => {
         DEFAULT_PALETTE,
       );
       expect(greens).not.toContain(idx);
-      expect(darkNeutralish).toContain(idx);
+
+      const picked = DEFAULT_PALETTE.find((c) => c.id === idx)!;
+      expect(picked.oklab.L, `${picked.name} too light`).toBeLessThan(0.45);
+      expect(
+        Math.hypot(picked.oklab.a, picked.oklab.b),
+        `${picked.name} too saturated`,
+      ).toBeLessThan(0.09);
     }
   });
 

@@ -107,6 +107,19 @@ const DEFAULT_PALETTE_DEFS: BrickColorDef[] = [
   { id: 7, colorId: "tan", displayCode: "K5", name: "Tan", nameHe: "בז'", hex: "#e4cd9e", material: "solid", role: "skin", core: true },
   { id: 4, colorId: "reddish-brown", displayCode: "K6", name: "Reddish Brown", nameHe: "חום אדמדם", hex: "#582a12", material: "solid", role: "skin", core: true },
   { id: 5, colorId: "dark-brown", displayCode: "K7", name: "Dark Brown", nameHe: "חום כהה", hex: "#3b2412", material: "solid", role: "skin", core: false },
+  // Skin-ramp fill (K8–K15). Added after measuring that four visually distinct
+  // skin tones all collapsed onto Medium Nougat — which is what made faces read
+  // flat and posterised. These eight subdivide the light→deep ramp so a face
+  // gets actual modelling. Chosen by greedily minimising mean OKLab error over
+  // a Fitzpatrick I–VI sample (0.0491 → 0.0343).
+  { id: 31, colorId: "blush", displayCode: "K8", name: "Blush", nameHe: "ורדרד בהיר", hex: "#ffd7c3", material: "solid", role: "skin", core: true },
+  { id: 32, colorId: "light-peach", displayCode: "K9", name: "Light Peach", nameHe: "אפרסק בהיר", hex: "#f2ba93", material: "solid", role: "skin", core: true },
+  { id: 33, colorId: "peach", displayCode: "K10", name: "Peach", nameHe: "אפרסק", hex: "#f0c4a0", material: "solid", role: "skin", core: true },
+  { id: 34, colorId: "warm-nougat", displayCode: "K11", name: "Warm Nougat", nameHe: "נוגט חם", hex: "#e59e6d", material: "solid", role: "skin", core: true },
+  { id: 35, colorId: "taupe", displayCode: "K12", name: "Taupe", nameHe: "טאופ", hex: "#9e7d5e", material: "solid", role: "skin", core: true },
+  { id: 36, colorId: "sienna", displayCode: "K13", name: "Sienna", nameHe: "סיינה", hex: "#a65523", material: "solid", role: "skin", core: true },
+  { id: 37, colorId: "deep-umber", displayCode: "K14", name: "Deep Umber", nameHe: "חום עמוק", hex: "#693f23", material: "solid", role: "skin", core: true },
+  { id: 38, colorId: "coffee", displayCode: "K15", name: "Coffee", nameHe: "חום קפה", hex: "#4e3524", material: "solid", role: "skin", core: true },
   // Accents — A
   { id: 11, colorId: "red", displayCode: "A1", name: "Red", nameHe: "אדום", hex: "#c91a09", material: "solid", role: "accent", core: true },
   { id: 12, colorId: "dark-red", displayCode: "A2", name: "Dark Red", nameHe: "אדום כהה", hex: "#720e0f", material: "solid", role: "accent", core: false },

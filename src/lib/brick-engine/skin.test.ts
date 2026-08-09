@@ -53,6 +53,22 @@ describe("skin tones never match to saturated accents", () => {
     });
   }
 
+  it("resolves the mid-deep ramp into DISTINCT bricks (no flat faces)", () => {
+    // The realism defect: these four tones all used to match Medium Nougat, so
+    // a face lost every bit of modelling through its mid-tones. They must now
+    // land on at least 3 different bricks.
+    const ramp: [number, number, number][] = [
+      [180, 138, 120],
+      [172, 112, 80],
+      [152, 104, 80],
+      [141, 85, 56],
+    ];
+    const picked = ramp.map(([r, g, b]) =>
+      slugForId(nearestColorIndex(srgbToOklab(r, g, b), PALETTE)),
+    );
+    expect(new Set(picked).size, `got ${picked.join(", ")}`).toBeGreaterThanOrEqual(3);
+  });
+
   it("keeps a genuinely saturated red target on Red (no over-correction)", () => {
     // The overshoot guard must not make vivid logos go muddy.
     const id = nearestColorIndex(srgbToOklab(0xc9, 0x1a, 0x09), PALETTE);
