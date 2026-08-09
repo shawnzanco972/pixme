@@ -36,6 +36,7 @@ import {
   type RGBAImage,
 } from "./quantize";
 import { mulberry32 } from "./rng";
+import { selectAdaptivePalette } from "./select";
 import { computeEdgeMask } from "./sobel";
 
 export interface EdgePreservationOptions {
@@ -84,6 +85,12 @@ export interface BrickifyOptions {
   optimize?: OptimizeOptions;
   /** Seed for the deterministic RNG (dither + swap). Default 1337. */
   seed?: number;
+  /**
+   * Adaptive palette: auto-pick the best `count` colours from `palette` for
+   * THIS image instead of matching against all of them. A style/cost control,
+   * not an accuracy one — see select.ts. Pass null (default) to use everything.
+   */
+  adaptive?: { count: number } | null;
 }
 
 const DEFAULT_EDGE_THRESHOLD = 0.1;
@@ -93,6 +100,11 @@ export interface BrickifyResult {
   pixelMap: number[][];
   cols: number;
   rows: number;
+  /**
+   * The palette the matcher actually ran against — the adaptive subset when
+   * `adaptive` is set, otherwise the palette that was passed in.
+   */
+  palette: BrickColor[];
 }
 
 /** Flatten a 2D pixel_map to a row-major 1D array. */
@@ -114,7 +126,7 @@ export function brickifyImage(
 ): BrickifyResult {
   const cols = options.cols ?? 48;
   const rows = options.rows ?? 48;
-  const palette = options.palette ?? DEFAULT_PALETTE;
+  const basePalette = options.palette ?? DEFAULT_PALETTE;
   const rng = mulberry32(options.seed ?? 1337);
 
   // 0) User pre-processing on the full-res image (contrast keeps edges sharp).
@@ -135,6 +147,18 @@ export function brickifyImage(
   const targets: OKLab[] = linGrid.map((lin) =>
     ditherLinearToOklab(lin, ditherAmount, rng),
   );
+
+  // 2.5) Adaptive palette — narrow the catalogue to the colours that actually
+  //      serve THIS image, before any matching happens. Deterministic.
+  const palette =
+    options.adaptive && options.adaptive.count < basePalette.length
+      ? selectAdaptivePalette(
+          targets,
+          basePalette,
+          options.adaptive.count,
+          options.match,
+        )
+      : basePalette;
 
   // 3) Phase 1 — either greedy nearest-color match or FS error diffusion.
   let indices: number[];
@@ -197,7 +221,7 @@ export function brickifyImage(
     });
   }
 
-  return { pixelMap: inflate(indices, cols), cols, rows };
+  return { pixelMap: inflate(indices, cols), cols, rows, palette };
 }
 
 /**

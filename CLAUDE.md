@@ -15,7 +15,11 @@ We are building a highly automated, **zero-stock (or low-inventory) e-commerce p
 
 ### Two fulfillment tracks
 1. **Digital-only (B2C & B2B):** Customers receive a digital PDF manual and a parts list.
-2. **On-demand physical:** Source generic 1x1 plates from China (e.g. GoBricks) and ship via local Israeli logistics (**HFD / Chita**).
+2. **On-demand physical:** Source generic 1x1 plates from China — the first-order
+   supplier is **Shantou Chenghai Peiye Toys Firm** (BCM, via Alibaba), part
+   **3024** (Plate 1×1). NOT GoBricks (priced too high). Ship via local Israeli
+   logistics (**HFD / Chita**). Procurement export (`procurement.ts`) emits a
+   reorder list in any supplier's numbering; default manufacturer `peiye`.
 
 ## TECH STACK & ARCHITECTURAL PLAN
 
@@ -41,13 +45,40 @@ We are building a highly automated, **zero-stock (or low-inventory) e-commerce p
 - Never match colors in raw sRGB. Always convert to **OKLab** first.
 - Distance metric: **chroma-weighted Euclidean in OKLab** (chromaWeight ~1.6, so
   saturated colors don't collapse to gray) + **neutral-avoidance** (tinted pixels
-  avoid white/gray) + **material mismatch penalty**. See `match.ts`.
+  avoid white/gray) + **chroma-overshoot penalty** + **material mismatch
+  penalty**. See `match.ts`.
+- **Chroma overshoot is penalized asymmetrically**: choosing a brick MORE
+  saturated than the source is punished, undershoot is not. Reproducing a photo
+  must never invent saturation the source lacks. This is the guard that keeps
+  warm skin off Red/Orange; without it, warm skin matched `orange`/`red`.
+- **Defaults are fidelity-neutral** (`design-settings.ts`): contrast 1,
+  saturation 1, autoLevels OFF. They used to be a "vivid" preset, and because
+  contrast is applied per-channel around mid-gray, warm subjects (skin is
+  R>G>B) gained chroma on every pass and drifted red. Reach for vividness via
+  the named presets, never by moving the defaults.
+- **Floyd–Steinberg dithering is ON by default for photographs.** It raises
+  per-cell error (~0.042 → 0.056) but cuts PERCEIVED error — the local average
+  the eye integrates at viewing distance — by ~73% (0.0391 → 0.0105 over a 3×3
+  window). Judge dithering by perceived error, never per-cell. The line-art /
+  logo preset turns it off, where hard edges must stay hard.
 - Apply coarse block quantization and despeckling to reduce noise before/after matching.
-- **Palette = physical stock** (`palette.ts`): 25 defined colors, `core` flag →
-  19 in stock by default (incl. cool tones Bright Light Blue + Medium Azure),
-  6 boosters out of stock. Availability override in DB `brick_stock`
-  (in_stock + on_hand_grams). `getActivePalette()` filters; `remapPixelMap()`
-  handles out-of-stock. `?testPalette=full` shows all 25.
+- **Palette = physical stock** (`palette.ts`): **39 defined colors**, all
+  currently in stock. 15 of them are skin/warm tones (`role: "skin"`) — the
+  ramp was deliberately densified after measuring that four visually distinct
+  skin tones were collapsing onto one brick, which made faces look flat.
+  Availability override lives in DB `brick_stock` (in_stock + on_hand_grams),
+  keyed by `color_id`; a MISSING row falls back to the palette's `core` flag,
+  which is how the 6 newest colors were once invisible in the studio.
+  `getActivePalette()` filters; `remapPixelMap()` handles out-of-stock.
+- **Three-layer color identity** — never couple to a supplier's numbering:
+  `color_id` (canonical slug, persisted in pixel_map) · `display_code` (ours,
+  printed on instructions: N/K/A families) · `color_manufacturer_codes` (DB
+  table mapping each supplier's SKU). Adding a supplier is data-only.
+- **Adaptive palette** (`select.ts`): `brickifyImage({ adaptive: { count } })`
+  greedily picks the best N colors for THIS image. It is a STYLE + PACKING
+  cost control, not an accuracy feature — accuracy plateaus around 20 colors,
+  past which extra bricks are never chosen. Deterministic (no RNG; ties resolve
+  to the earlier catalogue entry).
 
 ### Brick Engine pipeline (crispness, in order) — `src/lib/brick-engine`
 1. **Pre-processing** (`preprocess.ts`): brightness/contrast/saturation on the
@@ -55,7 +86,12 @@ We are building a highly automated, **zero-stock (or low-inventory) e-commerce p
 2. **Block quantization** (`quantize.ts`): gamma-correct linear-RGB averaging.
 3. **Dithering** (`dither.ts`): tiny sRGB noise *before* OKLab conversion to
    break ties / kill banding.
-4. **Phase 1 — greedy match** (`match.ts`): nearest OKLab + material penalty.
+3.5 **Adaptive palette** (`select.ts`), when `adaptive` is set: narrow the
+   catalogue to the N colors that best serve this image, before matching.
+4. **Phase 1 — match** (`match.ts`): greedy nearest OKLab + penalties, OR
+   Floyd–Steinberg error diffusion (`fsdither.ts`) when `fsDither` is on — the
+   default for photos. NOTE: FS automatically disables despeckle + swap
+   optimize, since both erase the diffusion texture.
 5. **Despeckle with Sobel edge preservation** (`despeckle.ts` + `sobel.ts`):
    skip smoothing on strong edges so outlines stay crisp.
 6. **Phase 2 — swap optimization** (`optimize.ts`): swap two cells' colors when

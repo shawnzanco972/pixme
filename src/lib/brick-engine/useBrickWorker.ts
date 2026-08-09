@@ -39,10 +39,10 @@ export function useBrickWorker() {
     );
 
     worker.onmessage = (event: MessageEvent<BrickWorkerResponse>) => {
-      const { id, pixelMap, cols, rows } = event.data;
+      const { id, pixelMap, cols, rows, palette } = event.data;
       const pending = pendingRef.current.get(id);
       if (pending) {
-        pending.resolve({ pixelMap, cols, rows });
+        pending.resolve({ pixelMap, cols, rows, palette });
         pendingRef.current.delete(id);
       }
     };

@@ -311,6 +311,16 @@ export function Studio({
   const visibleColors = colors.filter((c) => c.inStock);
   const [customEnabled, setCustomEnabled] = useState<Set<number> | null>(null);
   const enabled = customEnabled ?? defaultEnabledIds;
+  /**
+   * Adaptive palette. The engine picks the best N colours from the in-stock set
+   * for THIS image. Measured on a portrait, accuracy plateaus around 20 colours
+   * — past that the extra bricks are never chosen — so the default trades no
+   * visible quality for a kit that's far quicker to pack (one bag per colour).
+   */
+  const [autoPalette, setAutoPalette] = useState(true);
+  const [colorCount, setColorCount] = useState(24);
+  /** Colours the engine actually selected for the current image (auto mode). */
+  const [autoUsedIds, setAutoUsedIds] = useState<Set<number>>(new Set());
   const enabledKey = useMemo(
     () => [...enabled].sort((a, b) => a - b).join(","),
     [enabled],
@@ -528,10 +538,12 @@ export function Studio({
       detail,
       dither: dither > 0 ? { amount: dither } : null,
       fsDither: smoothGradients,
+      adaptive: autoPalette ? { count: colorCount } : null,
     })
       .then((r) => {
         if (cancelled) return;
         setResult(r);
+        setAutoUsedIds(new Set(r.palette.map((c) => c.id)));
         if (canvasRef.current) renderBricks(canvasRef.current, r.pixelMap);
       })
       .catch(() => !cancelled && setError("שגיאה בעיבוד התמונה."))
@@ -556,6 +568,8 @@ export function Studio({
     panY,
     enabledKey,
     activePalette,
+    autoPalette,
+    colorCount,
     brickify,
   ]);
 
@@ -1370,7 +1384,7 @@ export function Studio({
               פלטת צבעים
             </h3>
             <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/55 lg:hidden">
-              {enabled.size} פעילים
+              {autoPalette ? autoUsedIds.size || colorCount : enabled.size} פעילים
               <span
                 className="mi text-[22px]"
                 style={{ rotate: palOpen ? "180deg" : "0deg" }}
@@ -1382,35 +1396,98 @@ export function Studio({
           <div
             className={`flex flex-col gap-3 ${palOpen ? "" : "max-lg:hidden"}`}
           >
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs text-foreground/55">
-                לחצו על לבנה כדי להוסיף או להסיר צבע מהפסיפס.
-              </p>
-              <button
-                type="button"
-                className="flex-none text-xs text-foreground/50 underline"
-                onClick={() => {
-                  if (imageData) setWorking(true);
-                  setCustomEnabled(null);
-                }}
-              >
-                איפוס
-              </button>
+            {/* Auto vs manual. In auto the engine picks the best N colours for
+                this specific photo; in manual the customer curates the set. */}
+            <div className="flex gap-2">
+              {(
+                [
+                  [true, "אוטומטי"],
+                  [false, "בחירה ידנית"],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    if (imageData) setWorking(true);
+                    setAutoPalette(mode);
+                  }}
+                  className={`flex-1 rounded-xl border-2 px-3 py-2 font-heading text-sm font-semibold transition-colors ${
+                    autoPalette === mode
+                      ? "border-secondary bg-secondary/10 text-secondary"
+                      : "border-outline bg-surface text-foreground/70 hover:bg-surface-muted"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
+
+            {autoPalette ? (
+              <label className="flex flex-col gap-1.5 py-1.5">
+                <span className="flex items-baseline justify-between gap-2 text-sm font-medium">
+                  מספר צבעים
+                  <span className="font-heading text-sm font-bold text-secondary">
+                    {colorCount}
+                  </span>
+                </span>
+                <span className="block px-3">
+                  <input
+                    className="slider"
+                    type="range"
+                    min={6}
+                    max={visibleColors.length}
+                    step={1}
+                    value={Math.min(colorCount, visibleColors.length)}
+                    disabled={!imageData}
+                    onChange={(e) => {
+                      if (imageData) setWorking(true);
+                      setColorCount(Number(e.target.value));
+                    }}
+                  />
+                </span>
+                <span className="text-xs leading-relaxed text-foreground/55">
+                  פחות צבעים = מראה נקי ובולט וערכה פשוטה יותר להרכבה. יותר
+                  צבעים = מעברים עדינים יותר. מעל ~20 צבעים ההבדל כמעט לא מורגש.
+                </span>
+              </label>
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-foreground/55">
+                  לחצו על לבנה כדי להוסיף או להסיר צבע מהפסיפס.
+                </p>
+                <button
+                  type="button"
+                  className="flex-none text-xs text-foreground/50 underline"
+                  onClick={() => {
+                    if (imageData) setWorking(true);
+                    setCustomEnabled(null);
+                  }}
+                >
+                  איפוס
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2.5">
               {visibleColors.map((c) => (
                 <BrickSwatch
                   key={c.id}
                   hex={c.hex}
                   name={c.nameHe}
-                  on={enabled.has(c.id)}
+                  // In auto mode the swatches become a read-out of what the
+                  // engine actually chose for this image.
+                  on={autoPalette ? autoUsedIds.has(c.id) : enabled.has(c.id)}
                   disabled={!c.inStock}
+                  readOnly={autoPalette}
                   onClick={() => toggleColor(c.id, c.inStock)}
                 />
               ))}
             </div>
             <span className="text-xs text-foreground/45">
-              {enabled.size} צבעים פעילים
+              {autoPalette
+                ? `${autoUsedIds.size || colorCount} צבעים נבחרו אוטומטית מתוך ${visibleColors.length}`
+                : `${enabled.size} צבעים פעילים`}
             </span>
           </div>
         </div>

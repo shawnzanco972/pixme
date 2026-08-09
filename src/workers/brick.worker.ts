@@ -5,7 +5,11 @@
  * Runs the (potentially heavy) image → pixel_map pipeline off the main thread
  * so the UI never blocks while the customer tweaks their mosaic.
  */
-import { brickifyImage, type BrickifyOptions } from "@/lib/brick-engine";
+import {
+  brickifyImage,
+  type BrickColor,
+  type BrickifyOptions,
+} from "@/lib/brick-engine";
 
 export interface BrickWorkerRequest {
   id: number;
@@ -20,6 +24,8 @@ export interface BrickWorkerResponse {
   pixelMap: number[][];
   cols: number;
   rows: number;
+  /** The palette actually matched against (the adaptive subset, when enabled). */
+  palette: BrickColor[];
 }
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
