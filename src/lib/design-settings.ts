@@ -38,13 +38,25 @@ export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
   saturation: 1,
   autoLevels: false,
   dither: 0,
-  // Floyd–Steinberg error diffusion ON for photographs. Per-cell error is
-  // slightly higher, but PERCEIVED error — the local average the eye actually
-  // integrates at viewing distance — drops ~73% on gradients (0.0391 → 0.0105
-  // over a 3×3 window), and the mosaic recruits 12 colours instead of 8. This
-  // is the difference between a flat, posterised face and a modelled one.
-  // The line-art preset turns it back off, where hard edges must stay hard.
-  smoothGradients: true,
+  /**
+   * Floyd–Steinberg error diffusion OFF by default.
+   *
+   * This was briefly ON, justified by a ~73% "perceived error" reduction — but
+   * that was measured on a SYNTHETIC SMOOTH GRADIENT, the single best case for
+   * dithering. On real photographs at stud resolution it is salt-and-pepper
+   * noise: measured on a portrait at 72×72, isolated single studs went from
+   * 11.2% to 40.5% and neighbour agreement collapsed from 68.6% to 27.7%.
+   * Faces came out blotchy.
+   *
+   * It compounds: `fsDither` also auto-disables despeckle and swap-optimize
+   * (they would erase the diffusion texture), so turning it on simultaneously
+   * removes the two passes that clean speckle up.
+   *
+   * Judge dithering on a real photo by isolated-stud rate, never on a gradient
+   * by local-average error. It stays available for large, genuinely smooth
+   * images where the mosaic is big enough to carry the texture.
+   */
+  smoothGradients: false,
   faceAware: false,
   lineArt: false,
   detail: 0.35,
@@ -82,7 +94,7 @@ export const ENGINE_PRESETS: EnginePreset[] = [
       saturation: 1,
       autoLevels: false,
       faceAware: false,
-      smoothGradients: true,
+      smoothGradients: false,
       lineArt: false,
       dither: 0,
     },
@@ -95,7 +107,7 @@ export const ENGINE_PRESETS: EnginePreset[] = [
       saturation: 0.95,
       autoLevels: false,
       faceAware: true,
-      smoothGradients: true,
+      smoothGradients: false,
       lineArt: false,
       dither: 0,
     },
@@ -108,7 +120,7 @@ export const ENGINE_PRESETS: EnginePreset[] = [
       saturation: 1.15,
       autoLevels: true,
       faceAware: false,
-      smoothGradients: true,
+      smoothGradients: false,
       lineArt: false,
       dither: 0,
     },

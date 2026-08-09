@@ -320,7 +320,21 @@ export function Studio({
    * visible quality for a kit that's far quicker to pack (one bag per colour).
    */
   const [autoPalette, setAutoPalette] = useState(true);
-  const [colorCount, setColorCount] = useState(24);
+  /**
+   * Colour budget scales with the board. A small mosaic has far fewer studs to
+   * spend, so a big palette just produces near-ties that scatter as speckle:
+   * measured on a 2×2 portrait, dropping 24 → 14 colours took isolated single
+   * studs from 14.4% to 11.7%. Big boards can carry more colour without noise.
+   * The customer can still override with the slider.
+   */
+  const suggestedColorCount = useMemo(() => {
+    const n = Math.round(Math.sqrt(cols * rows) * 0.22 + 4);
+    return Math.max(12, Math.min(30, n));
+  }, [cols, rows]);
+  const [colorCountOverride, setColorCountOverride] = useState<number | null>(
+    null,
+  );
+  const colorCount = colorCountOverride ?? suggestedColorCount;
   /** Colours the engine actually selected for the current image (auto mode). */
   const [autoUsedIds, setAutoUsedIds] = useState<Set<number>>(new Set());
   const enabledKey = useMemo(
@@ -1022,6 +1036,25 @@ export function Studio({
               </span>
             )}
 
+            {/* Baseplate seams. The kit ships as platesX × platesY separate
+                24×24 boards, so show where they join — it makes the physical
+                product legible ("this is 9 panels") instead of one flat image. */}
+            {result && (platesX > 1 || platesY > 1) && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage: [
+                    `repeating-linear-gradient(to right, rgba(255,255,255,.42) 0 1px, transparent 1px ${100 / platesX}%)`,
+                    `repeating-linear-gradient(to bottom, rgba(255,255,255,.42) 0 1px, transparent 1px ${100 / platesY}%)`,
+                    `repeating-linear-gradient(to right, rgba(0,0,0,.30) 0 1px, transparent 1px ${100 / platesX}%)`,
+                    `repeating-linear-gradient(to bottom, rgba(0,0,0,.30) 0 1px, transparent 1px ${100 / platesY}%)`,
+                  ].join(","),
+                  backgroundPosition: "0 0, 0 0, 1px 0, 0 1px",
+                }}
+              />
+            )}
+
             {result && zoom > 1 && !panLocked && (
               <span className="absolute top-3 end-3 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-on-secondary shadow">
                 גררו להזזת המסגרת
@@ -1444,7 +1477,7 @@ export function Studio({
                     disabled={!imageData}
                     onChange={(e) => {
                       if (imageData) setWorking(true);
-                      setColorCount(Number(e.target.value));
+                      setColorCountOverride(Number(e.target.value));
                     }}
                   />
                 </span>
