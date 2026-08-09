@@ -131,3 +131,41 @@ describe("buildPalette sanity for new defs", () => {
     expect(buildPalette(defs)[0].oklab.L).toBeGreaterThan(0.9);
   });
 });
+
+describe("random green studs (mid-grey lightness hole)", () => {
+  // Our greys used to jump from L 0.535 to L 0.719. A mid-tone grey had no
+  // brick at its own lightness, so it landed on Sand Green (L 0.663) — the
+  // "random green stud" customers reported. The grey ramp (N8-N10) closes it.
+  const greens = new Set(["bright-green", "dark-green", "olive-green", "sand-green"]);
+  const chroma = (c: { a: number; b: number }) => Math.hypot(c.a, c.b);
+
+  it("keeps genuinely neutral pixels off green bricks", () => {
+    const slugOf = new Map(DEFAULT_PALETTE.map((c) => [c.id, c.colorId]));
+    const bad: string[] = [];
+    for (let r = 0; r < 256; r += 11)
+      for (let g = 0; g < 256; g += 11)
+        for (let b = 0; b < 256; b += 11) {
+          const lab = srgbToOklab(r, g, b);
+          if (chroma(lab) > 0.028) continue; // genuinely neutral only
+          const slug = slugOf.get(nearestColorIndex(lab, DEFAULT_PALETTE))!;
+          if (greens.has(slug)) bad.push(`rgb(${r},${g},${b})->${slug}`);
+        }
+    expect(bad, `neutral pixels went green: ${bad.join(", ")}`).toEqual([]);
+  });
+
+  it("has no big lightness gap in the MID neutral ramp", () => {
+    // Scoped to L 0.35–0.85, where the bug actually lived: a mid grey with no
+    // neutral at its lightness defects to a tinted brick. The extremes are
+    // deliberately sparser (black→charcoal, pale-grey→white) — vision
+    // compresses there and extra near-black/near-white bricks buy little.
+    const ls = DEFAULT_PALETTE.filter(
+      (c) => chroma(c.oklab) < 0.03 && c.oklab.L >= 0.35 && c.oklab.L <= 0.85,
+    )
+      .map((c) => c.oklab.L)
+      .sort((a, b) => a - b);
+    expect(ls.length).toBeGreaterThanOrEqual(4);
+    for (let i = 1; i < ls.length; i++) {
+      expect(ls[i] - ls[i - 1], `gap at L=${ls[i - 1].toFixed(3)}`).toBeLessThan(0.12);
+    }
+  });
+});

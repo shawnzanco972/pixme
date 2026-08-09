@@ -196,6 +196,7 @@ export type Database = {
           id: number
           color_id: string | null
           in_stock: boolean
+          supply_confirmed: boolean
           on_hand_grams: number
           reorder_point_grams: number
           sort_order: number
@@ -205,6 +206,7 @@ export type Database = {
           id: number
           color_id?: string | null
           in_stock?: boolean
+          supply_confirmed?: boolean
           on_hand_grams?: number
           reorder_point_grams?: number
           sort_order?: number
@@ -214,6 +216,7 @@ export type Database = {
           id?: number
           color_id?: string | null
           in_stock?: boolean
+          supply_confirmed?: boolean
           on_hand_grams?: number
           reorder_point_grams?: number
           sort_order?: number

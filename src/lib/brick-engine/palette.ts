@@ -99,6 +99,14 @@ const DEFAULT_PALETTE_DEFS: BrickColorDef[] = [
   { id: 23, colorId: "sand", displayCode: "N5", name: "Sand", nameHe: "חול", hex: "#c2b280", material: "solid", role: "base", core: false },
   { id: 25, colorId: "sand-blue", displayCode: "N6", name: "Sand Blue", nameHe: "כחול חול", hex: "#5a748c", material: "solid", role: "base", core: false },
   { id: 26, colorId: "sand-green", displayCode: "N7", name: "Sand Green", nameHe: "ירוק חול", hex: "#7d9c86", material: "solid", role: "base", core: false },
+  // Grey ramp fill (N8–N10). Our greys jumped from L 0.535 straight to L 0.719,
+  // so a mid-tone grey subject (concrete, overcast sky, grey clothing) had
+  // nowhere to land and fell onto whichever chromatic brick shared its
+  // lightness — Sand Green, at L 0.663. That is the "random green stud".
+  // All three exist in the supplier catalogue (B45 / A02 / A29).
+  { id: 39, colorId: "mid-gray", displayCode: "N8", name: "Mid Gray", nameHe: "אפור בינוני", hex: "#868684", material: "solid", role: "base", core: true },
+  { id: 40, colorId: "pale-gray", displayCode: "N9", name: "Pale Gray", nameHe: "אפור חיוור", hex: "#bfc3c9", material: "solid", role: "base", core: true },
+  { id: 41, colorId: "charcoal", displayCode: "N10", name: "Charcoal", nameHe: "פחם", hex: "#4b4c50", material: "solid", role: "base", core: true },
   // Skin / brown — K
   { id: 10, colorId: "light-nougat", displayCode: "K1", name: "Light Nougat", nameHe: "נוגט בהיר", hex: "#f6d7b3", material: "solid", role: "skin", core: true },
   { id: 9, colorId: "nougat", displayCode: "K2", name: "Nougat", nameHe: "נוגט", hex: "#cc8e69", material: "solid", role: "skin", core: true },

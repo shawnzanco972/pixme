@@ -22,19 +22,39 @@ export interface PaletteColor {
   rgb: [number, number, number];
   inStock: boolean;
   core: boolean;
+  /**
+   * The supplier has confirmed/sampled this colour. Independent of `inStock` —
+   * an unconfirmed colour is still fully usable in the studio, it's just
+   * flagged so we know what's still pending validation.
+   */
+  confirmed: boolean;
+}
+
+interface StockRow {
+  inStock: boolean;
+  confirmed: boolean;
 }
 
 export function usePaletteInventory(forceAllInStock = false) {
-  const [stock, setStock] = useState<Map<number, boolean> | null>(null);
+  const [stock, setStock] = useState<Map<number, StockRow> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const sb = createClient();
-        const { data } = await sb.from("brick_stock").select("id, in_stock");
+        const { data } = await sb
+          .from("brick_stock")
+          .select("id, in_stock, supply_confirmed");
         if (cancelled) return;
-        setStock(new Map((data ?? []).map((r) => [r.id, r.in_stock])));
+        setStock(
+          new Map(
+            (data ?? []).map((r) => [
+              r.id,
+              { inStock: r.in_stock, confirmed: r.supply_confirmed },
+            ]),
+          ),
+        );
       } catch {
         if (!cancelled) setStock(new Map());
       }
@@ -53,8 +73,9 @@ export function usePaletteInventory(forceAllInStock = false) {
         hex: c.hex,
         rgb: c.rgb,
         // DB override → else the color's core default.
-        inStock: forceAllInStock ? true : (stock?.get(c.id) ?? c.core),
+        inStock: forceAllInStock ? true : (stock?.get(c.id)?.inStock ?? c.core),
         core: isCore(c.id),
+        confirmed: stock?.get(c.id)?.confirmed ?? false,
       })),
     [stock, forceAllInStock],
   );

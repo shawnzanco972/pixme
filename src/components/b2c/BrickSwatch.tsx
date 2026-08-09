@@ -18,6 +18,7 @@ export function BrickSwatch({
   on,
   disabled = false,
   readOnly = false,
+  pending = false,
   onClick,
 }: {
   hex: string;
@@ -25,6 +26,8 @@ export function BrickSwatch({
   on: boolean;
   disabled?: boolean;
   readOnly?: boolean;
+  /** Supplier hasn't confirmed this colour yet — usable, but flagged. */
+  pending?: boolean;
   onClick?: () => void;
 }) {
   const struck = !on || disabled;
@@ -36,7 +39,9 @@ export function BrickSwatch({
       title={
         disabled
           ? `${name} — אזל מהמלאי`
-          : name + (on ? (readOnly ? " (נבחר אוטומטית)" : " (פעיל)") : "")
+          : name +
+            (on ? (readOnly ? " (נבחר אוטומטית)" : " (פעיל)") : "") +
+            (pending ? " — ממתין לאישור הספק" : "")
       }
       onClick={onClick}
       className={`brick-swatch ${on && !disabled ? "brick-swatch--on" : ""} ${
@@ -46,6 +51,9 @@ export function BrickSwatch({
     >
       <span className="brick-swatch__stud" aria-hidden />
       {struck && <span className="brick-swatch__strike" aria-hidden />}
+      {pending && !disabled && (
+        <span className="brick-swatch__pending" aria-hidden />
+      )}
     </button>
   );
 }

@@ -309,6 +309,8 @@ export function Studio({
   // Normal users only ever see/process in-stock colors (the 17 core).
   const { colors, defaultEnabledIds } = usePaletteInventory(testFull);
   const visibleColors = colors.filter((c) => c.inStock);
+  /** Usable, but the supplier hasn't confirmed they can make them yet. */
+  const pendingCount = visibleColors.filter((c) => !c.confirmed).length;
   const [customEnabled, setCustomEnabled] = useState<Set<number> | null>(null);
   const enabled = customEnabled ?? defaultEnabledIds;
   /**
@@ -1480,6 +1482,7 @@ export function Studio({
                   on={autoPalette ? autoUsedIds.has(c.id) : enabled.has(c.id)}
                   disabled={!c.inStock}
                   readOnly={autoPalette}
+                  pending={!c.confirmed}
                   onClick={() => toggleColor(c.id, c.inStock)}
                 />
               ))}
@@ -1489,6 +1492,17 @@ export function Studio({
                 ? `${autoUsedIds.size || colorCount} צבעים נבחרו אוטומטית מתוך ${visibleColors.length}`
                 : `${enabled.size} צבעים פעילים`}
             </span>
+            {/* Internal supply status — every colour is usable, the pip just
+                marks the ones the supplier hasn't confirmed yet. */}
+            {pendingCount > 0 && (
+              <span className="flex items-center gap-1.5 text-xs text-foreground/45">
+                <span
+                  className="inline-block h-2.5 w-2.5 flex-none rounded-full"
+                  style={{ background: "var(--color-accent)" }}
+                />
+                {pendingCount} צבעים ממתינים לאישור הספק
+              </span>
+            )}
           </div>
         </div>
 

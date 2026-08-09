@@ -54,6 +54,12 @@ export interface MatchOptions {
 
 const DEFAULT_PENALTY = 0.15;
 const DEFAULT_OVERSHOOT_PENALTY = 0.6;
+/**
+ * Extra multiplier on the overshoot penalty as the target approaches neutral
+ * (0 chroma). At a fully neutral target the penalty is (1 + this) × base, which
+ * is what stops near-grey pixels drifting onto tinted bricks.
+ */
+const NEUTRAL_OVERSHOOT_BOOST = 3;
 const DEFAULT_CHROMA_WEIGHT = 1.6;
 const DEFAULT_HUE_WEIGHT = 2.4;
 const DEFAULT_NEUTRAL_PENALTY = 1.2;
@@ -120,8 +126,17 @@ export function effectiveDistanceSq(
   // Never invent saturation the source doesn't have. Penalize only the amount
   // by which the candidate is MORE saturated than the target (undershoot is
   // already handled by the chroma term). This is what keeps skin off Red.
+  //
+  // The penalty ramps up as the TARGET approaches neutral: a grey pixel must
+  // stay grey. Without this, desaturated bricks that sit near the grey axis
+  // (Sand Green, Olive Green) win for slightly-tinted greys — which is how
+  // random green studs appeared in skies, walls and shadows.
   if (candChroma > targetChroma) {
-    dist += overshootPenalty * (candChroma - targetChroma);
+    const neutralBoost =
+      1 +
+      NEUTRAL_OVERSHOOT_BOOST *
+        clamp01((NEUTRAL_CHROMA - targetChroma) / NEUTRAL_CHROMA);
+    dist += overshootPenalty * neutralBoost * (candChroma - targetChroma);
   }
 
   if (

@@ -14,12 +14,12 @@ import {
 } from "./palette";
 
 describe("catalog", () => {
-  it("defines 39 colors with unique id/colorId/displayCode/hex", () => {
-    expect(CATALOG.length).toBe(39);
-    expect(new Set(CATALOG.map((c) => c.id)).size).toBe(39);
-    expect(new Set(CATALOG.map((c) => c.colorId)).size).toBe(39);
-    expect(new Set(CATALOG.map((c) => c.displayCode)).size).toBe(39);
-    expect(new Set(CATALOG.map((c) => c.hex.toLowerCase())).size).toBe(39);
+  it("defines 42 colors with unique id/colorId/displayCode/hex", () => {
+    expect(CATALOG.length).toBe(42);
+    expect(new Set(CATALOG.map((c) => c.id)).size).toBe(42);
+    expect(new Set(CATALOG.map((c) => c.colorId)).size).toBe(42);
+    expect(new Set(CATALOG.map((c) => c.displayCode)).size).toBe(42);
+    expect(new Set(CATALOG.map((c) => c.hex.toLowerCase())).size).toBe(42);
   });
 
   it("keeps colorId slugs kebab-case and displayCode ≤3 chars", () => {
@@ -42,10 +42,10 @@ describe("catalog", () => {
     }
   });
 
-  it("marks 27 core colors (launch order) in stock by default", () => {
-    // 19 original launch colours + the 8 skin-ramp fills (K8–K15).
-    expect(CORE_SLUGS.size).toBe(27);
-    expect(CATALOG.filter((c) => c.core)).toHaveLength(27);
+  it("marks 30 core colors (launch order) in stock by default", () => {
+    // 19 original + 8 skin-ramp fills (K8–K15) + 3 grey-ramp fills (N8–N10).
+    expect(CORE_SLUGS.size).toBe(30);
+    expect(CATALOG.filter((c) => c.core)).toHaveLength(30);
     expect(CATALOG.filter((c) => !c.core)).toHaveLength(12); // boosters
   });
 

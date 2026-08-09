@@ -299,6 +299,20 @@ h6 {
 .brick-swatch--off:not(:disabled):hover {
   opacity: 0.72;
 }
+/* Supplier hasn't confirmed this colour yet — a small amber pip in the corner.
+   Deliberately NOT a disabled state: the colour is fully usable for testing. */
+.brick-swatch__pending {
+  position: absolute;
+  top: -3px;
+  inset-inline-end: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
 .brick-swatch__strike {
   position: absolute;
   inset: 0;
