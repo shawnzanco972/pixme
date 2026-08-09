@@ -83,11 +83,26 @@ describe("skin tones never match to saturated accents", () => {
   });
 });
 
-describe("default engine settings are fidelity-neutral", () => {
-  it("does not boost contrast/saturation or auto-level by default", () => {
+describe("default engine settings stay fidelity-safe", () => {
+  it("never boosts per-channel contrast or auto-levels by default", () => {
+    // These two are what inflated skin chroma into Red. Contrast is applied
+    // per channel around mid-gray, and auto-levels stretches the histogram —
+    // both push R away from B on warm subjects. They must stay neutral.
     expect(DEFAULT_ENGINE_SETTINGS.contrast).toBe(1);
-    expect(DEFAULT_ENGINE_SETTINGS.saturation).toBe(1);
     expect(DEFAULT_ENGINE_SETTINGS.autoLevels).toBe(false);
+  });
+
+  it("keeps the saturation lift small and bounded", () => {
+    // A modest lift is deliberate: snapping to ~20 bricks desaturates, so 1.0
+    // renders greyer than the source. Saturation scales around luma and does
+    // not reorder channels, and the overshoot guard covers the rest — but it
+    // must not creep up unchecked.
+    expect(DEFAULT_ENGINE_SETTINGS.saturation).toBeGreaterThanOrEqual(1);
+    expect(DEFAULT_ENGINE_SETTINGS.saturation).toBeLessThanOrEqual(1.2);
+  });
+
+  it("ships dithering off (it speckles photos at stud resolution)", () => {
+    expect(DEFAULT_ENGINE_SETTINGS.smoothGradients).toBe(false);
   });
 });
 
@@ -122,5 +137,40 @@ describe("full pipeline with default settings", () => {
     for (const forbidden of ["red", "dark-red", "orange"]) {
       expect(slugs.has(forbidden), `used ${forbidden}`).toBe(false);
     }
+  });
+});
+
+describe("saturation lift is safe for skin", () => {
+  // The default lifts saturation to 1.15 to counter the desaturation inherent
+  // in snapping every pixel to ~20 bricks. That is only acceptable while the
+  // chroma-overshoot guard holds skin off the warm accents — this pins it.
+  it("a skin-toned image stays on skin bricks at the default saturation", () => {
+    const img = solid(96, 96, [224, 172, 135]);
+    const { pixelMap } = brickifyImage(img, {
+      cols: 32,
+      rows: 32,
+      palette: PALETTE,
+      preprocess: {
+        contrast: DEFAULT_ENGINE_SETTINGS.contrast,
+        saturation: DEFAULT_ENGINE_SETTINGS.saturation,
+        autoLevels: DEFAULT_ENGINE_SETTINGS.autoLevels,
+      },
+      dither: null,
+    });
+    const slugs = new Set(pixelMap.flat().map(slugForId));
+    for (const bad of ["red", "dark-red", "orange", "dark-pink"]) {
+      expect(slugs.has(bad), `used ${bad}`).toBe(false);
+    }
+  });
+
+  it("stays safe even one step above the default", () => {
+    const img = solid(96, 96, [198, 134, 96]);
+    const { pixelMap } = brickifyImage(img, {
+      cols: 32, rows: 32, palette: PALETTE,
+      preprocess: { contrast: 1, saturation: 1.3, autoLevels: false },
+      dither: null,
+    });
+    const slugs = new Set(pixelMap.flat().map(slugForId));
+    expect(slugs.has("red"), "used red").toBe(false);
   });
 });

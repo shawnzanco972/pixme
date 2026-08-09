@@ -178,6 +178,7 @@ export function Studio({
   const [lineArt, setLineArt] = useState(seed.lineArt);
   // Detail preservation: commit high-contrast cells to text/stroke colors.
   const [detail, setDetail] = useState(seed.detail);
+  const [localContrast, setLocalContrast] = useState(seed.localContrast);
   // Zoom/crop (1 = fit; >1 crops tighter so the subject gets more studs).
   const [zoom, setZoom] = useState(seed.zoom);
   // Crop center (0..1) for drag-to-pan when zoomed in.
@@ -225,6 +226,7 @@ export function Studio({
     setSmoothGradients(p.settings.smoothGradients);
     setLineArt(p.settings.lineArt);
     setDither(p.settings.dither);
+    setLocalContrast(p.settings.localContrast);
   };
 
   const resetAdjustments = () => {
@@ -238,6 +240,7 @@ export function Studio({
     setFaceAware(DEFAULT_ENGINE_SETTINGS.faceAware);
     setLineArt(DEFAULT_ENGINE_SETTINGS.lineArt);
     setDetail(DEFAULT_ENGINE_SETTINGS.detail);
+    setLocalContrast(DEFAULT_ENGINE_SETTINGS.localContrast);
     setZoom(1);
     setPanX(0.5);
     setPanY(0.5);
@@ -426,6 +429,7 @@ export function Studio({
     setFaceAware(s.faceAware);
     setLineArt(s.lineArt);
     setDetail(s.detail);
+    setLocalContrast(s.localContrast);
     setZoom(s.zoom);
     setPanX(s.panX);
     setPanY(s.panY);
@@ -444,6 +448,7 @@ export function Studio({
       faceAware,
       lineArt,
       detail,
+      localContrast,
       zoom,
       panX,
       panY,
@@ -459,6 +464,7 @@ export function Studio({
       faceAware,
       lineArt,
       detail,
+      localContrast,
       zoom,
       panX,
       panY,
@@ -550,7 +556,7 @@ export function Studio({
       cols,
       rows,
       palette: activePalette,
-      preprocess: { contrast, saturation, autoLevels, faceAware, lineArt },
+      preprocess: { contrast, saturation, autoLevels, faceAware, lineArt, localContrast },
       detail,
       dither: dither > 0 ? { amount: dither } : null,
       fsDither: smoothGradients,
@@ -579,6 +585,7 @@ export function Studio({
     faceAware,
     lineArt,
     detail,
+    localContrast,
     zoom,
     panX,
     panY,
@@ -762,6 +769,15 @@ export function Studio({
       fmt: (v: number) => (v === 1 ? "רגיל" : v.toFixed(2)),
     },
     {
+      key: "localContrast" as const,
+      label: "עומק ופרטים",
+      min: 0,
+      max: 1.2,
+      step: 0.05,
+      set: setLocalContrast,
+      fmt: (v: number) => (v === 0 ? "כבוי" : `${Math.round((v / 1.2) * 100)}%`),
+    },
+    {
       key: "detail" as const,
       label: "חידוד פרטים (טקסט וקווים)",
       min: 0,
@@ -789,7 +805,9 @@ export function Studio({
           ? saturation
           : k === "detail"
             ? detail
-            : dither;
+            : k === "localContrast"
+              ? localContrast
+              : dither;
 
   const TOGGLES = [
     {

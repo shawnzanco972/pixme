@@ -19,6 +19,13 @@ export interface EngineSettings {
   lineArt: boolean;
   /** Detail preservation (0..1): keeps text/strokes legible at stud resolution. */
   detail: number;
+  /**
+   * Local contrast at STUD scale (0..~1.2). The cure for a flat, grey mosaic:
+   * downsampling averages away the light/shadow modelling that gives a face
+   * depth, and this amplifies exactly the band the board reproduces. Does NOT
+   * inflate chroma, so unlike a global contrast boost it never drags skin red.
+   */
+  localContrast: number;
   zoom: number;
   panX: number;
   panY: number;
@@ -35,7 +42,18 @@ export interface EngineSettings {
  */
 export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
   contrast: 1,
-  saturation: 1,
+  /**
+   * Slight saturation lift. Quantizing to ~20 bricks is itself desaturating —
+   * every pixel snaps to the nearest available colour, which on average pulls
+   * chroma DOWN — so a neutral 1.0 renders visibly greyer than the source.
+   * Measured on a portrait: 1.0 → mean output chroma 0.0694, 1.2 → 0.0736,
+   * with isolated studs unchanged (8.5% → 8.9%).
+   *
+   * This is only safe because match.ts now penalises chroma OVERSHOOT: the
+   * original red-face bug came from boosting saturation with no such guard.
+   * Do not raise this without re-running skin.test.ts.
+   */
+  saturation: 1.15,
   autoLevels: false,
   dither: 0,
   /**
@@ -60,6 +78,14 @@ export const DEFAULT_ENGINE_SETTINGS: EngineSettings = {
   faceAware: false,
   lineArt: false,
   detail: 0.35,
+  /**
+   * Local contrast defaults OFF. Measured on a real photo it raised tonal
+   * spread slightly (lumaSD 0.1452 → 0.1525) but cost noise AND colour
+   * (isolated studs 8.5% → 12.7%, chroma 0.0694 → 0.0609) — the wrong trade,
+   * since greyness was the complaint. Kept as a control for users who want a
+   * harder, more graphic look.
+   */
+  localContrast: 0,
   zoom: 1,
   panX: 0.5,
   panY: 0.5,
@@ -78,6 +104,7 @@ export interface EnginePreset {
     | "smoothGradients"
     | "lineArt"
     | "dither"
+    | "localContrast"
   >;
 }
 
@@ -91,12 +118,20 @@ export const ENGINE_PRESETS: EnginePreset[] = [
     label: "מקורי",
     settings: {
       contrast: 1,
-      saturation: 1,
+      saturation: 1.15,
       autoLevels: false,
       faceAware: false,
       smoothGradients: false,
       lineArt: false,
       dither: 0,
+      /**
+   * Local contrast defaults OFF. Measured on a real photo it raised tonal
+   * spread slightly (lumaSD 0.1452 → 0.1525) but cost noise AND colour
+   * (isolated studs 8.5% → 12.7%, chroma 0.0694 → 0.0609) — the wrong trade,
+   * since greyness was the complaint. Kept as a control for users who want a
+   * harder, more graphic look.
+   */
+  localContrast: 0,
     },
   },
   {
@@ -104,12 +139,13 @@ export const ENGINE_PRESETS: EnginePreset[] = [
     label: "דיוקן",
     settings: {
       contrast: 1.05,
-      saturation: 0.95,
+      saturation: 1.08,
       autoLevels: false,
       faceAware: true,
       smoothGradients: false,
       lineArt: false,
       dither: 0,
+      localContrast: 0.2,
     },
   },
   {
@@ -123,6 +159,7 @@ export const ENGINE_PRESETS: EnginePreset[] = [
       smoothGradients: false,
       lineArt: false,
       dither: 0,
+      localContrast: 0.3,
     },
   },
   {
@@ -136,6 +173,7 @@ export const ENGINE_PRESETS: EnginePreset[] = [
       smoothGradients: false,
       lineArt: true,
       dither: 0,
+      localContrast: 0.5,
     },
   },
 ];
@@ -168,6 +206,7 @@ export function parseEngineSettings(raw: unknown): EngineSettings {
     faceAware: bool(r.faceAware, DEFAULT_ENGINE_SETTINGS.faceAware),
     lineArt: bool(r.lineArt, DEFAULT_ENGINE_SETTINGS.lineArt),
     detail: num(r.detail, DEFAULT_ENGINE_SETTINGS.detail),
+    localContrast: num(r.localContrast, DEFAULT_ENGINE_SETTINGS.localContrast),
     zoom: num(r.zoom, DEFAULT_ENGINE_SETTINGS.zoom),
     panX: num(r.panX, DEFAULT_ENGINE_SETTINGS.panX),
     panY: num(r.panY, DEFAULT_ENGINE_SETTINGS.panY),

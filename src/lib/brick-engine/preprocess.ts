@@ -33,6 +33,20 @@ export interface PreprocessOptions {
    * Default off.
    */
   lineArt?: boolean;
+  /**
+   * Local-contrast (unsharp) strength at STUD scale, 0..~1.5. This is what
+   * stops a mosaic reading flat and grey: downsampling averages away the
+   * light/shadow modelling that makes a face look three-dimensional, and this
+   * amplifies exactly the detail band the board can reproduce. Unlike a global
+   * contrast boost it does not inflate chroma, so it adds depth without
+   * dragging warm skin toward red.
+   */
+  localContrast?: number;
+  /**
+   * Unsharp blur radius in SOURCE pixels — pass `studRadius(...)` so the
+   * enhancement is tied to the stud pitch rather than to raw pixels.
+   */
+  unsharpRadius?: number;
 }
 
 const REC601 = { r: 0.299, g: 0.587, b: 0.114 };
@@ -97,7 +111,12 @@ export function preprocessImage(
 ): RGBAImage {
   // Spatial passes first (they read neighborhoods), on the full-res image.
   let work = image;
-  if (options.lineArt) work = unsharpMask(work);
+  // NOTE: `localContrast` is applied to the STUD GRID after downsampling (see
+  // brickifyImage) — sharpening here would be cancelled by block-averaging.
+  // Line art still crisps at source scale, where sub-stud strokes need to be
+  // widened enough to survive decimation at all.
+  const radius = options.unsharpRadius ?? 1;
+  if (options.lineArt) work = unsharpMask(work, 0.8, radius);
   if (options.faceAware) work = faceAwareContrast(work);
 
   // Per-pixel tone ops can short-circuit if neutral.

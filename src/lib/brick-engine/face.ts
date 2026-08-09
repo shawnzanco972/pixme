@@ -102,11 +102,22 @@ export function faceAwareContrast(
       out[i + 3] = src[i + 3];
       continue;
     }
+    // Expand LUMA only, preserving the pixel's chroma ratios.
+    //
+    // This used to expand each channel independently around a shared pivot.
+    // Skin is R > G > B, so R sat above the pivot and B below it: the two moved
+    // apart, chroma inflated on every pixel, and portraits came out red — the
+    // exact failure the "דיוקן" preset was supposed to help with. Scaling all
+    // three channels by one luma ratio adds tonal modelling (eyes, nose shadow,
+    // highlights separate onto different bricks) without shifting hue at all.
     const contrast = 1 + strength * w;
-    for (let c = 0; c < 3; c++) {
-      const v = src[i + c] / 255;
-      out[i + c] = clamp255(((v - pivot) * contrast + pivot) * 255);
-    }
+    const luma =
+      (REC601.r * src[i] + REC601.g * src[i + 1] + REC601.b * src[i + 2]) / 255;
+    const k =
+      luma > 0.001 ? ((luma - pivot) * contrast + pivot) / luma : 1;
+    out[i] = clamp255(src[i] * k);
+    out[i + 1] = clamp255(src[i + 1] * k);
+    out[i + 2] = clamp255(src[i + 2] * k);
     out[i + 3] = src[i + 3];
   }
 

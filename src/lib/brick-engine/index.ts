@@ -30,6 +30,7 @@ import { effectiveDistanceSq, nearestColorIndex, type MatchOptions } from "./mat
 import { swapOptimize, type SwapOptions } from "./optimize";
 import { DEFAULT_PALETTE, type BrickColor } from "./palette";
 import { preprocessImage, type PreprocessOptions } from "./preprocess";
+import { studRadius } from "./unsharp";
 import {
   quantizeToLinearGrid,
   type QuantizeOptions,
@@ -129,13 +130,32 @@ export function brickifyImage(
   const basePalette = options.palette ?? DEFAULT_PALETTE;
   const rng = mulberry32(options.seed ?? 1337);
 
-  // 0) User pre-processing on the full-res image (contrast keeps edges sharp).
-  const src = preprocessImage(image, options.preprocess ?? {});
+  // 0) User pre-processing on the full-res image. The unsharp radius is tied to
+  //    the STUD pitch, so local contrast lands on the detail band the board can
+  //    actually reproduce rather than on invisible pixel-level noise.
+  const pre = options.preprocess ?? {};
+  const src = preprocessImage(image, {
+    ...pre,
+    unsharpRadius:
+      pre.unsharpRadius ?? studRadius(image.width, image.height, cols, rows),
+  });
 
   // 1) Coarse block quantization → grid of average LINEAR-RGB colors, with
   //    dominant-cluster detail preservation so strokes/text survive.
   const detail = options.detail ?? (options.preprocess?.lineArt ? 0.7 : 0.35);
-  const linGrid = quantizeToLinearGrid(src, cols, rows, { detail });
+  let linGrid = quantizeToLinearGrid(src, cols, rows, { detail });
+
+  // 1.5) Local contrast ON THE STUD GRID.
+  //
+  //      This deliberately runs AFTER downsampling. Sharpening the full-res
+  //      image first is close to a no-op: unsharp is zero-mean over its blur
+  //      radius, so block-averaging afterwards cancels most of it — measured,
+  //      it made the mosaic slightly greyer AND noisier. Operating on the grid
+  //      pushes each stud away from its neighbours' mean, which is what puts
+  //      modelling back into a face and separates lettering from its
+  //      background. Luma-only, so chroma (and therefore skin hue) is untouched.
+  const lc = options.preprocess?.localContrast ?? 0;
+  if (lc > 0) linGrid = gridLocalContrast(linGrid, cols, rows, lc);
 
   // Floyd–Steinberg mode diffuses error itself, so noise dither would only add
   // grit; force it off when FS is on (unless the caller explicitly asked).
@@ -273,3 +293,52 @@ export function countParts(pixelMap: number[][]): Map<number, number> {
 export { DEFAULT_PALETTE } from "./palette";
 export type { BrickColor } from "./palette";
 export type { RGBAImage } from "./quantize";
+
+/**
+ * Local contrast on the quantized stud grid (linear RGB triples, row-major).
+ *
+ * For each stud, compare its luma to the mean luma of its 3×3 neighbourhood and
+ * push it away from that mean. Scaling all three channels by one ratio keeps
+ * hue and saturation exactly as matched — only tonal modelling changes, so this
+ * can never drag warm skin toward red the way a global contrast boost does.
+ */
+export function gridLocalContrast(
+  grid: [number, number, number][],
+  cols: number,
+  rows: number,
+  amount: number,
+): [number, number, number][] {
+  const luma = (c: [number, number, number]) =>
+    0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  const L = grid.map(luma);
+  const out: [number, number, number][] = new Array(grid.length);
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const i = y * cols + x;
+      let sum = 0;
+      let n = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        const ny = y + dy;
+        if (ny < 0 || ny >= rows) continue;
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx;
+          if (nx < 0 || nx >= cols) continue;
+          sum += L[ny * cols + nx];
+          n++;
+        }
+      }
+      const local = sum / n;
+      const cur = L[i];
+      const target = cur + amount * (cur - local);
+      const k = cur > 1e-4 ? Math.max(0, target) / cur : 1;
+      const c = grid[i];
+      out[i] = [
+        Math.min(1, c[0] * k),
+        Math.min(1, c[1] * k),
+        Math.min(1, c[2] * k),
+      ];
+    }
+  }
+  return out;
+}
