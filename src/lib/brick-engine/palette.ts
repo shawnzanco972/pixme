@@ -19,14 +19,29 @@
  * detail: the PERSISTED pixel_map stores `colorId` slugs (see encode/decode).
  * Convert at the DB boundary with {@link encodePixelMap} / {@link decodePixelMap}.
  *
- * Launch strategy: 31 defined, 19 in stock. The 19 marked `core: true` ship in
- * the first GoBricks order; the 12 `core: false` "fidelity boosters" (incl. all
- * 6 newest colours) are defined but OUT OF STOCK by default until demand (or the
- * ?testPalette=full mode) justifies ordering them. Availability is overridden
- * per-color in DB `brick_stock` (keyed by `colorId`), no deploy needed.
+ * Launch strategy: 42 defined, 30 in stock. The 30 marked `core: true` are the
+ * FIRST PEIYE ORDER (350,000 pcs of part 3024 — see
+ * Pixipic_FirstOrder_Peiye_Brief.md); the 12 `core: false` are defined and
+ * already assigned a distinct Peiye SKU, so a follow-up order is data-only.
+ * Availability is overridden per-color in DB `brick_stock` (keyed by
+ * `colorId`), no deploy needed; `remapPixelMap` folds anything out of stock
+ * onto its nearest in-stock neighbour.
  *
- * OKLab values are precomputed once at module load from the (BrickLink-verified)
- * hex, and are authoritative — they must match the `colors` table seed.
+ * HEXES ARE THE SUPPLIER'S OWN RGB, NOT LEGO/BrickLink VALUES (migration 0024).
+ * They were realigned to Peiye's published `2021-6` chart because the engine
+ * must match against the brick we actually ship — previously the studio preview
+ * was up to 0.106 OKLab away from the physical plate (`reddish-brown`), i.e. it
+ * showed customers a colour they would never receive. Consequences to know:
+ *   - Peiye has NO true black. Their darkest plate is #302e32 (OKLab L 0.305),
+ *     so `black` is a very dark grey and deep shadows read lighter than they
+ *     did under the old #1b1b1b.
+ *   - `coffee` (K15) is the ONE colour with no Peiye equivalent: their catalogue
+ *     has no brown darker than `dark-brown`/308. It keeps its designed hex, has
+ *     no `color_manufacturer_codes` row, and is permanently out of stock until a
+ *     supplier carries it. Do NOT map it to B32 — that SKU is 军绿 army green.
+ *
+ * OKLab values are precomputed once at module load from the hex, and are
+ * authoritative — they must match the `colors` table seed.
  */
 import { hexToRgb, srgbToOklab, type OKLab } from "./color";
 import { nearestColorIndex } from "./match";
@@ -58,7 +73,7 @@ export interface BrickColorDef {
   material: BrickMaterial;
   role?: BrickRole;
   /**
-   * Part of the 19-color launch order (in stock by default). `false` = one of
+   * Part of the 30-color launch order (in stock by default). `false` = one of
    * the 12 booster colors, defined but out of stock until ordered.
    */
   core: boolean;
@@ -79,7 +94,7 @@ function slugify(name: string): string {
 }
 
 /**
- * The 31-color catalog, grouped by family so `displayCode`s read in order:
+ * The 42-color catalog, grouped by family so `displayCode`s read in order:
  *   N1–N7  neutrals / base    K1–K7  skin / brown    A1–A17  accents
  *
  * `id` (array position) is an internal engine index only — safe to REORDER
@@ -92,13 +107,13 @@ const DEFAULT_PALETTE_DEFS: BrickColorDef[] = [
   // 25–30 appended for the new ones) so legacy integer pixel_maps + brick_stock
   // rows keep working. `displayCode` is family-grouped (N/K/A) independently.
   // Neutrals / base — N
-  { id: 0, colorId: "white", displayCode: "N1", name: "White", nameHe: "לבן", hex: "#f2f3f2", material: "solid", role: "base", core: true },
-  { id: 1, colorId: "light-bluish-gray", displayCode: "N2", name: "Light Bluish Gray", nameHe: "אפור בהיר", hex: "#a0a5a9", material: "solid", role: "base", core: true },
-  { id: 2, colorId: "dark-bluish-gray", displayCode: "N3", name: "Dark Bluish Gray", nameHe: "אפור כהה", hex: "#6c6e68", material: "solid", role: "base", core: true },
-  { id: 3, colorId: "black", displayCode: "N4", name: "Black", nameHe: "שחור", hex: "#1b1b1b", material: "solid", role: "base", core: true },
-  { id: 23, colorId: "sand", displayCode: "N5", name: "Sand", nameHe: "חול", hex: "#c2b280", material: "solid", role: "base", core: false },
-  { id: 25, colorId: "sand-blue", displayCode: "N6", name: "Sand Blue", nameHe: "כחול חול", hex: "#5a748c", material: "solid", role: "base", core: false },
-  { id: 26, colorId: "sand-green", displayCode: "N7", name: "Sand Green", nameHe: "ירוק חול", hex: "#7d9c86", material: "solid", role: "base", core: false },
+  { id: 0, colorId: "white", displayCode: "N1", name: "White", nameHe: "לבן", hex: "#f7f0e3", material: "solid", role: "base", core: true },
+  { id: 1, colorId: "light-bluish-gray", displayCode: "N2", name: "Light Bluish Gray", nameHe: "אפור בהיר", hex: "#a3a9aa", material: "solid", role: "base", core: true },
+  { id: 2, colorId: "dark-bluish-gray", displayCode: "N3", name: "Dark Bluish Gray", nameHe: "אפור כהה", hex: "#6f7176", material: "solid", role: "base", core: true },
+  { id: 3, colorId: "black", displayCode: "N4", name: "Black", nameHe: "שחור", hex: "#302e32", material: "solid", role: "base", core: true },
+  { id: 23, colorId: "sand", displayCode: "N5", name: "Sand", nameHe: "חול", hex: "#c0bba2", material: "solid", role: "base", core: false },
+  { id: 25, colorId: "sand-blue", displayCode: "N6", name: "Sand Blue", nameHe: "כחול חול", hex: "#576c7a", material: "solid", role: "base", core: false },
+  { id: 26, colorId: "sand-green", displayCode: "N7", name: "Sand Green", nameHe: "ירוק חול", hex: "#749883", material: "solid", role: "base", core: true },
   // Grey ramp fill (N8–N10). Our greys jumped from L 0.535 straight to L 0.719,
   // so a mid-tone grey subject (concrete, overcast sky, grey clothing) had
   // nowhere to land and fell onto whichever chromatic brick shared its
@@ -108,44 +123,44 @@ const DEFAULT_PALETTE_DEFS: BrickColorDef[] = [
   { id: 40, colorId: "pale-gray", displayCode: "N9", name: "Pale Gray", nameHe: "אפור חיוור", hex: "#bfc3c9", material: "solid", role: "base", core: true },
   { id: 41, colorId: "charcoal", displayCode: "N10", name: "Charcoal", nameHe: "פחם", hex: "#4b4c50", material: "solid", role: "base", core: true },
   // Skin / brown — K
-  { id: 10, colorId: "light-nougat", displayCode: "K1", name: "Light Nougat", nameHe: "נוגט בהיר", hex: "#f6d7b3", material: "solid", role: "skin", core: true },
-  { id: 9, colorId: "nougat", displayCode: "K2", name: "Nougat", nameHe: "נוגט", hex: "#cc8e69", material: "solid", role: "skin", core: true },
-  { id: 8, colorId: "medium-nougat", displayCode: "K3", name: "Medium Nougat", nameHe: "נוגט בינוני", hex: "#aa7d55", material: "solid", role: "skin", core: false },
-  { id: 6, colorId: "dark-tan", displayCode: "K4", name: "Dark Tan", nameHe: "בז' כהה", hex: "#958a73", material: "solid", role: "skin", core: false },
-  { id: 7, colorId: "tan", displayCode: "K5", name: "Tan", nameHe: "בז'", hex: "#e4cd9e", material: "solid", role: "skin", core: true },
-  { id: 4, colorId: "reddish-brown", displayCode: "K6", name: "Reddish Brown", nameHe: "חום אדמדם", hex: "#582a12", material: "solid", role: "skin", core: true },
-  { id: 5, colorId: "dark-brown", displayCode: "K7", name: "Dark Brown", nameHe: "חום כהה", hex: "#3b2412", material: "solid", role: "skin", core: false },
+  { id: 10, colorId: "light-nougat", displayCode: "K1", name: "Light Nougat", nameHe: "נוגט בהיר", hex: "#ffd4b9", material: "solid", role: "skin", core: true },
+  { id: 9, colorId: "nougat", displayCode: "K2", name: "Nougat", nameHe: "נוגט", hex: "#de9064", material: "solid", role: "skin", core: true },
+  { id: 8, colorId: "medium-nougat", displayCode: "K3", name: "Medium Nougat", nameHe: "נוגט בינוני", hex: "#b37c51", material: "solid", role: "skin", core: true },
+  { id: 6, colorId: "dark-tan", displayCode: "K4", name: "Dark Tan", nameHe: "בז' כהה", hex: "#998769", material: "solid", role: "skin", core: true },
+  { id: 7, colorId: "tan", displayCode: "K5", name: "Tan", nameHe: "בז'", hex: "#dfc790", material: "solid", role: "skin", core: true },
+  { id: 4, colorId: "reddish-brown", displayCode: "K6", name: "Reddish Brown", nameHe: "חום אדמדם", hex: "#73483a", material: "solid", role: "skin", core: true },
+  { id: 5, colorId: "dark-brown", displayCode: "K7", name: "Dark Brown", nameHe: "חום כהה", hex: "#523e37", material: "solid", role: "skin", core: true },
   // Skin-ramp fill (K8–K15). Added after measuring that four visually distinct
   // skin tones all collapsed onto Medium Nougat — which is what made faces read
   // flat and posterised. These eight subdivide the light→deep ramp so a face
   // gets actual modelling. Chosen by greedily minimising mean OKLab error over
   // a Fitzpatrick I–VI sample (0.0491 → 0.0343).
-  { id: 31, colorId: "blush", displayCode: "K8", name: "Blush", nameHe: "ורדרד בהיר", hex: "#ffd7c3", material: "solid", role: "skin", core: true },
-  { id: 32, colorId: "light-peach", displayCode: "K9", name: "Light Peach", nameHe: "אפרסק בהיר", hex: "#f2ba93", material: "solid", role: "skin", core: true },
-  { id: 33, colorId: "peach", displayCode: "K10", name: "Peach", nameHe: "אפרסק", hex: "#f0c4a0", material: "solid", role: "skin", core: true },
-  { id: 34, colorId: "warm-nougat", displayCode: "K11", name: "Warm Nougat", nameHe: "נוגט חם", hex: "#e59e6d", material: "solid", role: "skin", core: true },
-  { id: 35, colorId: "taupe", displayCode: "K12", name: "Taupe", nameHe: "טאופ", hex: "#9e7d5e", material: "solid", role: "skin", core: true },
-  { id: 36, colorId: "sienna", displayCode: "K13", name: "Sienna", nameHe: "סיינה", hex: "#a65523", material: "solid", role: "skin", core: true },
-  { id: 37, colorId: "deep-umber", displayCode: "K14", name: "Deep Umber", nameHe: "חום עמוק", hex: "#693f23", material: "solid", role: "skin", core: true },
-  { id: 38, colorId: "coffee", displayCode: "K15", name: "Coffee", nameHe: "חום קפה", hex: "#4e3524", material: "solid", role: "skin", core: true },
+  { id: 31, colorId: "blush", displayCode: "K8", name: "Blush", nameHe: "ורדרד בהיר", hex: "#ffd7c3", material: "solid", role: "skin", core: false },
+  { id: 32, colorId: "light-peach", displayCode: "K9", name: "Light Peach", nameHe: "אפרסק בהיר", hex: "#f1b993", material: "solid", role: "skin", core: true },
+  { id: 33, colorId: "peach", displayCode: "K10", name: "Peach", nameHe: "אפרסק", hex: "#ebc0a4", material: "solid", role: "skin", core: false },
+  { id: 34, colorId: "warm-nougat", displayCode: "K11", name: "Warm Nougat", nameHe: "נוגט חם", hex: "#eca279", material: "solid", role: "skin", core: false },
+  { id: 35, colorId: "taupe", displayCode: "K12", name: "Taupe", nameHe: "טאופ", hex: "#aa8b6e", material: "solid", role: "skin", core: false },
+  { id: 36, colorId: "sienna", displayCode: "K13", name: "Sienna", nameHe: "סיינה", hex: "#ab5827", material: "solid", role: "skin", core: true },
+  { id: 37, colorId: "deep-umber", displayCode: "K14", name: "Deep Umber", nameHe: "חום עמוק", hex: "#724345", material: "solid", role: "skin", core: false },
+  { id: 38, colorId: "coffee", displayCode: "K15", name: "Coffee", nameHe: "חום קפה", hex: "#4e3524", material: "solid", role: "skin", core: false },
   // Accents — A
-  { id: 11, colorId: "red", displayCode: "A1", name: "Red", nameHe: "אדום", hex: "#c91a09", material: "solid", role: "accent", core: true },
-  { id: 12, colorId: "dark-red", displayCode: "A2", name: "Dark Red", nameHe: "אדום כהה", hex: "#720e0f", material: "solid", role: "accent", core: false },
-  { id: 13, colorId: "orange", displayCode: "A3", name: "Orange", nameHe: "כתום", hex: "#fe8a18", material: "solid", role: "accent", core: true },
-  { id: 14, colorId: "yellow", displayCode: "A4", name: "Yellow", nameHe: "צהוב", hex: "#f2cd37", material: "solid", role: "accent", core: true },
-  { id: 15, colorId: "bright-green", displayCode: "A5", name: "Bright Green", nameHe: "ירוק", hex: "#4b9f4a", material: "solid", role: "accent", core: true },
-  { id: 16, colorId: "dark-green", displayCode: "A6", name: "Dark Green", nameHe: "ירוק כהה", hex: "#237841", material: "solid", role: "accent", core: true },
-  { id: 27, colorId: "olive-green", displayCode: "A7", name: "Olive Green", nameHe: "ירוק זית", hex: "#9b9a5a", material: "solid", role: "accent", core: false },
-  { id: 17, colorId: "blue", displayCode: "A8", name: "Blue", nameHe: "כחול", hex: "#0055bf", material: "solid", role: "accent", core: true },
-  { id: 18, colorId: "dark-blue", displayCode: "A9", name: "Dark Blue", nameHe: "כחול כהה", hex: "#0a3463", material: "solid", role: "accent", core: true },
-  { id: 19, colorId: "medium-blue", displayCode: "A10", name: "Medium Blue", nameHe: "כחול בינוני", hex: "#5a93db", material: "solid", role: "accent", core: true },
-  { id: 20, colorId: "bright-light-blue", displayCode: "A11", name: "Bright Light Blue", nameHe: "תכלת", hex: "#9fc3e9", material: "solid", role: "accent", core: true },
-  { id: 24, colorId: "medium-azure", displayCode: "A12", name: "Medium Azure", nameHe: "טורקיז", hex: "#36aebf", material: "solid", role: "accent", core: true },
-  { id: 22, colorId: "bright-pink", displayCode: "A13", name: "Bright Pink", nameHe: "ורוד", hex: "#e4adc8", material: "solid", role: "accent", core: true },
-  { id: 21, colorId: "dark-pink", displayCode: "A14", name: "Dark Pink", nameHe: "ורוד כהה", hex: "#c870a0", material: "solid", role: "accent", core: false },
-  { id: 28, colorId: "light-pink", displayCode: "A15", name: "Light Pink", nameHe: "ורוד בהיר", hex: "#f6adc6", material: "solid", role: "accent", core: false },
-  { id: 29, colorId: "medium-lavender", displayCode: "A16", name: "Medium Lavender", nameHe: "לבנדר", hex: "#ac78ba", material: "solid", role: "accent", core: false },
-  { id: 30, colorId: "dark-purple", displayCode: "A17", name: "Dark Purple", nameHe: "סגול כהה", hex: "#3f3691", material: "solid", role: "accent", core: false },
+  { id: 11, colorId: "red", displayCode: "A1", name: "Red", nameHe: "אדום", hex: "#cd2928", material: "solid", role: "accent", core: true },
+  { id: 12, colorId: "dark-red", displayCode: "A2", name: "Dark Red", nameHe: "אדום כהה", hex: "#853433", material: "solid", role: "accent", core: true },
+  { id: 13, colorId: "orange", displayCode: "A3", name: "Orange", nameHe: "כתום", hex: "#ff7e30", material: "solid", role: "accent", core: true },
+  { id: 14, colorId: "yellow", displayCode: "A4", name: "Yellow", nameHe: "צהוב", hex: "#ffd300", material: "solid", role: "accent", core: true },
+  { id: 15, colorId: "bright-green", displayCode: "A5", name: "Bright Green", nameHe: "ירוק", hex: "#00a64d", material: "solid", role: "accent", core: true },
+  { id: 16, colorId: "dark-green", displayCode: "A6", name: "Dark Green", nameHe: "ירוק כהה", hex: "#00863a", material: "solid", role: "accent", core: true },
+  { id: 27, colorId: "olive-green", displayCode: "A7", name: "Olive Green", nameHe: "ירוק זית", hex: "#99a444", material: "solid", role: "accent", core: false },
+  { id: 17, colorId: "blue", displayCode: "A8", name: "Blue", nameHe: "כחול", hex: "#0065b2", material: "solid", role: "accent", core: true },
+  { id: 18, colorId: "dark-blue", displayCode: "A9", name: "Dark Blue", nameHe: "כחול כהה", hex: "#23415d", material: "solid", role: "accent", core: true },
+  { id: 19, colorId: "medium-blue", displayCode: "A10", name: "Medium Blue", nameHe: "כחול בינוני", hex: "#58a3da", material: "solid", role: "accent", core: true },
+  { id: 20, colorId: "bright-light-blue", displayCode: "A11", name: "Bright Light Blue", nameHe: "תכלת", hex: "#93bce6", material: "solid", role: "accent", core: true },
+  { id: 24, colorId: "medium-azure", displayCode: "A12", name: "Medium Azure", nameHe: "טורקיז", hex: "#00b5cc", material: "solid", role: "accent", core: true },
+  { id: 22, colorId: "bright-pink", displayCode: "A13", name: "Bright Pink", nameHe: "ורוד", hex: "#edaad6", material: "solid", role: "accent", core: true },
+  { id: 21, colorId: "dark-pink", displayCode: "A14", name: "Dark Pink", nameHe: "ורוד כהה", hex: "#c081a1", material: "solid", role: "accent", core: false },
+  { id: 28, colorId: "light-pink", displayCode: "A15", name: "Light Pink", nameHe: "ורוד בהיר", hex: "#dfc8df", material: "solid", role: "accent", core: false },
+  { id: 29, colorId: "medium-lavender", displayCode: "A16", name: "Medium Lavender", nameHe: "לבנדר", hex: "#ae78c2", material: "solid", role: "accent", core: true },
+  { id: 30, colorId: "dark-purple", displayCode: "A17", name: "Dark Purple", nameHe: "סגול כהה", hex: "#673e87", material: "solid", role: "accent", core: false },
 ];
 
 /**
@@ -179,7 +194,7 @@ export function buildPalette(defs: BrickColorDef[]): BrickColor[] {
   });
 }
 
-/** The full 31-color catalog (every color we could stock). */
+/** The full 42-color catalog (every color we could stock). */
 export const CATALOG: BrickColor[] = buildPalette(DEFAULT_PALETTE_DEFS);
 
 /** Alias kept for existing imports — the catalog the engine matches against. */
@@ -256,12 +271,12 @@ export function toEnginePixelMap(
   return isSlugPixelMap(raw) ? decodePixelMap(raw) : (raw as number[][]);
 }
 
-/** The 19 core color ids (slugs) that ship in the first order (in stock). */
+/** The 30 core color ids (slugs) that ship in the first Peiye order (in stock). */
 export const CORE_SLUGS: ReadonlySet<string> = new Set(
   CATALOG.filter((c) => c.core).map((c) => c.colorId),
 );
 
-/** True if a color is one of the 19 launch (in-stock-by-default) colors. */
+/** True if a color is one of the 30 launch (in-stock-by-default) colors. */
 export function isCore(idOrSlug: number | string): boolean {
   const slug = typeof idOrSlug === "number" ? slugForId(idOrSlug) : idOrSlug;
   return CORE_SLUGS.has(slug);

@@ -13,7 +13,8 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Private/transactional areas should not be indexed.
-      disallow: ["/admin", "/order/", "/workspace/", "/b2b/thank-you"],
+      // `/playbook` holds unlisted internal ops guides (e.g. /playbook/galit).
+      disallow: ["/admin", "/order/", "/workspace/", "/b2b/thank-you", "/playbook"],
     },
     sitemap: `${siteUrl()}/sitemap.xml`,
   };

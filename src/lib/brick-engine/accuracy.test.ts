@@ -165,7 +165,21 @@ describe("random green studs (mid-grey lightness hole)", () => {
       .sort((a, b) => a - b);
     expect(ls.length).toBeGreaterThanOrEqual(4);
     for (let i = 1; i < ls.length; i++) {
-      expect(ls[i] - ls[i - 1], `gap at L=${ls[i - 1].toFixed(3)}`).toBeLessThan(0.12);
+      // 0.135, not the original 0.12: migration 0024 realigned every hex to the
+      // supplier's own RGB chart, and Peiye has NO neutral (chroma < 0.03)
+      // between `charcoal` A29 at L 0.417 and `dark-bluish-gray` 199 at L 0.549
+      // — a 0.132 gap we cannot close by buying a different brick. Their whole
+      // low-chroma range is 26/A29/148/179/199/B45/A04/194/A02, and 148 (0.397)
+      // sits on top of A29 rather than in the hole. This is a property of the
+      // catalogue we can order from, not a palette design error.
+      //
+      // Do NOT relax this further without re-checking the sibling test above
+      // ("neutral pixels went green") — that one is the actual regression guard
+      // for fe89bce, it exercises the real matcher, and it still passes at 0.
+      // The nearest thing to a filler is B44 深灰蓝 #576c7a (L 0.519), but at
+      // chroma 0.034 it is a sand-blue, not a neutral; it is the top candidate
+      // for the second order (see Pixipic_FirstOrder_Peiye_Brief.md).
+      expect(ls[i] - ls[i - 1], `gap at L=${ls[i - 1].toFixed(3)}`).toBeLessThan(0.135);
     }
   });
 });
