@@ -70,11 +70,31 @@ export default function LogoProofPage() {
         </Swatch>
       </Row>
 
-      <Row label="על רקע אדום ועל כהה" note="וריאנט invert — מילה לבנה, לבנה צהובה.">
+      <Row
+        label="רקע שקוף, בהיר וכהה"
+        note="שלוש הלבנים זהות בכל הרקעים — כולן עוברות ניגודיות 3:1 גם על לבן וגם על כהה. רק הכיתוב מתהפך."
+      >
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] text-foreground/50">שקוף</span>
+          <div
+            className="flex items-center justify-center rounded-lg border border-outline p-4"
+            style={{
+              backgroundImage:
+                "linear-gradient(45deg,#e6e9ec 25%,transparent 25%),linear-gradient(-45deg,#e6e9ec 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e6e9ec 75%),linear-gradient(-45deg,transparent 75%,#e6e9ec 75%)",
+              backgroundSize: "14px 14px",
+              backgroundPosition: "0 0,0 7px,7px -7px,-7px 0",
+            }}
+          >
+            <BrandLogo className="h-10 w-auto" />
+          </div>
+        </div>
         <Swatch caption="אדום מותג" bg="bg-primary" ring={false}>
           <BrandLogo className="h-10 w-auto" invert />
         </Swatch>
         <Swatch caption="כהה" bg="bg-foreground" ring={false}>
+          <BrandLogo className="h-10 w-auto" invert />
+        </Swatch>
+        <Swatch caption="שחור מלא" bg="bg-black" ring={false}>
           <BrandLogo className="h-10 w-auto" invert />
         </Swatch>
       </Row>
