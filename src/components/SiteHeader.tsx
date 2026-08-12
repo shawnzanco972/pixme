@@ -17,7 +17,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-30 border-b border-outline/70 bg-surface/85 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-6">
         <Link href="/" aria-label="Pixipic — דף הבית">
-          <BrandLogo className="text-2xl" />
+          <BrandLogo className="h-8 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-6 sm:flex">

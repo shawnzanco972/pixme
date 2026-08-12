@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">
+  <title>Pixipic</title>
+  <rect width="36" height="36" rx="7" fill="#f7f9fb"/>
+  <g>
+    <rect x="1.7" y="1.7" width="10.6" height="10.6" rx="1.9" fill="#cd2928"/><circle cx="7" cy="7" r="3.1" fill="#e07470"/>
+    <rect x="13.7" y="1.7" width="10.6" height="10.6" rx="1.9" fill="#f0962f"/><circle cx="19" cy="7" r="3.1" fill="#f5b871"/>
+    <rect x="25.7" y="1.7" width="10.6" height="10.6" rx="1.9" fill="#ffd300"/><circle cx="31" cy="7" r="3.1" fill="#ffe14d"/>
+    <rect x="1.7" y="13.7" width="10.6" height="10.6" rx="1.9" fill="#00a64d"/><circle cx="7" cy="19" r="3.1" fill="#4dc484"/>
+    <rect x="13.7" y="13.7" width="10.6" height="10.6" rx="1.9" fill="#00b5cc"/><circle cx="19" cy="19" r="3.1" fill="#4dcbdb"/>
+    <rect x="25.7" y="13.7" width="10.6" height="10.6" rx="1.9" fill="#0065b2"/><circle cx="31" cy="19" r="3.1" fill="#4d93c9"/>
+    <rect x="1.7" y="25.7" width="10.6" height="10.6" rx="1.9" fill="#ae78c2"/><circle cx="7" cy="31" r="3.1" fill="#c69bd4"/>
+    <rect x="13.7" y="25.7" width="10.6" height="10.6" rx="1.9" fill="#de9064"/><circle cx="19" cy="31" r="3.1" fill="#e9b391"/>
+    <rect x="25.7" y="25.7" width="10.6" height="10.6" rx="1.9" fill="#a3a9aa"/><circle cx="31" cy="31" r="3.1" fill="#c2c6c7"/>
+  </g>
+</svg>

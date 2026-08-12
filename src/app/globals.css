@@ -373,52 +373,10 @@ h6 {
 }
 
 /* --------------------------------------------------------------- Brand logo
-   "Pixipic" wordmark where the middle "i" is built from bricks (SVG, 2.5D):
-   a stem of three connected dark-red 1×1 bricks with a stud on top, and a
-   blue 1×1 brick floating above as the dot. */
-.brand-logo {
-  display: inline-flex;
-  align-items: baseline;
-  font-family: var(--font-rubik), system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  color: var(--color-primary);
-  user-select: none;
-  /* Brick faces (front / top / side) for the stem + the floating dot. */
-  --logo-stem-front: #8c1120;
-  --logo-stem-top: #aa1a2c;
-  --logo-stem-side: #5e0a16;
-  --logo-dot-front: var(--color-secondary, #1d4ed8);
-  --logo-dot-top: #4f74e8;
-  --logo-dot-side: #143788;
-}
-.brand-logo__i {
-  position: relative;
-  display: inline-block;
-  width: 0.34em;
-  height: 0.95em;
-  margin-inline: 0.05em;
-  vertical-align: baseline;
-}
-/* The SVG bricks rise above the x-height (the floating dot), so it's taller
-   than its inline box and anchored to the baseline at the bottom. */
-.brand-logo__bricks {
-  position: absolute;
-  bottom: -0.02em;
-  inset-inline: 0;
-  margin-inline: auto;
-  width: 0.34em;
-  height: 1.13em;
-  overflow: visible;
-}
-/* On dark / photo backgrounds: white tower, yellow floating stud. */
-.brand-logo--invert {
-  color: #ffffff;
-  --logo-stem-front: #f4f4f4;
-  --logo-stem-top: #ffffff;
-  --logo-stem-side: #c9c9c9;
-  --logo-dot-front: var(--color-accent, #ffd500);
-  --logo-dot-top: #ffe566;
-  --logo-dot-side: #c6a300;
-}
+   The logo is now a self-contained SVG component (components/BrandLogo.tsx):
+   a 3x3 tile of flat top-down 1x1 plates plus a wordmark whose cap-height is
+   exactly two grid modules. It carries its own colour system via props
+   (default / invert / mono), so it needs NO global CSS — size it with a
+   utility class instead, e.g. <BrandLogo className="h-8 w-auto" />.
+   The old `.brand-logo*` rules drove an isometric 2.5D brick "i" and were
+   removed with it. */
