@@ -84,6 +84,12 @@ const ASSETS: {
     el: <BrandLogo className="h-11 w-auto text-foreground" mono />,
   },
   {
+    name: "pixipic-logo-red",
+    label: "לוגו מלא — אדום מלא",
+    use: "גרסה חד-צבעית באדום המותג — רקע בהיר או שקוף",
+    el: <BrandLogo className="h-11 w-auto text-primary" mono />,
+  },
+  {
     name: "pixipic-mark",
     label: "הסימן בלבד",
     use: "אייקון אפליקציה, אווטאר, פאביקון",

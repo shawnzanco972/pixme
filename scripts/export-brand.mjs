@@ -26,7 +26,14 @@ import { fileURLToPath } from "node:url";
 
 const ORIGIN = process.env.ORIGIN ?? "http://localhost:3000";
 const PAGE = `${ORIGIN}/playbook/logo`;
+/**
+ * `currentColor` has nothing to inherit from in a standalone file, so each
+ * mono asset names its own colour. Keys are `data-export` names.
+ */
 const INK = "#191c1e";
+const MONO_COLOR = {
+  "pixipic-logo-red": "#b7102a", // brand red, one-colour
+};
 
 const outDir = join(dirname(fileURLToPath(import.meta.url)), "..", "public", "brand");
 
@@ -56,7 +63,7 @@ function extract(html) {
 }
 
 /** Make the markup stand alone outside the app. */
-function standalone(svg) {
+function standalone(svg, name) {
   let s = svg
     // The app resolves the typeface through a CSS variable that does not exist
     // in a bare .svg file — name the family directly.
@@ -64,8 +71,7 @@ function standalone(svg) {
       /font-family="var\(--font-rubik\),\s*system-ui,\s*sans-serif"/g,
       'font-family="Rubik, system-ui, sans-serif"',
     )
-    // `currentColor` has nothing to inherit from in a standalone file.
-    .replace(/currentColor/g, INK)
+    .replace(/currentColor/g, MONO_COLOR[name] ?? INK)
     // React emits the app's utility classes; they mean nothing outside it.
     .replace(/\sclass="[^"]*"/g, "");
 
@@ -83,7 +89,7 @@ if (!assets.length) {
 
 mkdirSync(outDir, { recursive: true });
 for (const [name, svg] of assets) {
-  const file = standalone(svg);
+  const file = standalone(svg, name);
   writeFileSync(join(outDir, `${name}.svg`), file, "utf8");
   console.log(`  ${name}.svg  ${file.length.toLocaleString()} bytes`);
 }

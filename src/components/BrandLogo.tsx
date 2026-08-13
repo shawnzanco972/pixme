@@ -269,38 +269,46 @@ export function BrandLogo({
 }
 
 /**
- * Hebrew lockup — פיקסיפיק.
+ * Hebrew lockup — פִיקסִיפִיק.
  *
- * The word contains EXACTLY THREE yuds, mirroring the three i's in "Pixipic",
- * and each one follows פ, ס, פ respectively. A yud is already a small mark
- * riding at the top of the line — the closest thing Hebrew has to a tittle — so
- * each yud is replaced by a plate. Its advance is 8.40 against the Latin i's
- * 8.49, so the same plate size drops straight into the slot.
+ * Hebrew has no tittle, so the plates become HIRIQ — the nikud dot that sits
+ * BELOW a letter to voice an /i/. In פיקסיפיק the three yuds are each preceded
+ * by פ, ס, פ, and those are exactly the letters that would carry a hiriq:
+ * פִיקסִיפִיק. So a plate goes under each of those three, the yuds stay, and the
+ * spelling is untouched. (An earlier pass deleted the yuds and put plates in
+ * their place — that changed the spelling and was simply wrong.)
  *
  * Every glyph is placed INDIVIDUALLY at an explicit x with direction="ltr".
- * Laying the word out as one RTL text run and overlaying plates cannot work:
- * bidi reorders the glyphs, so there is no stable coordinate for any letter.
- * Placing single glyphs sidesteps bidi entirely — but it means the visual order
- * below is REVERSED from the logical spelling. Visual left-to-right is
- * ק(8) י(7) פ(6) י(5) ס(4) ק(3) י(2) פ(1); read it right-to-left to get
+ * Laying the word out as one RTL text run cannot work: bidi reorders glyphs, so
+ * there is no stable coordinate to hang a mark on. Placing single glyphs
+ * sidesteps bidi — but it means the array below is in VISUAL order, which is
+ * REVERSED from the spelling. Left-to-right that is
+ * ק(8) י(7) פ(6) י(5) ס(4) ק(3) י(2) פ(1); read it right-to-left for
  * פ-י-ק-ס-י-פ-י-ק. Do not "fix" the order.
  *
- * Colours run in READING order (right to left), so the rightmost plate is the
- * first colour — matching the Latin lockup's left-to-right run.
+ * `dot` indexes the colourway in READING order (right to left), so the
+ * rightmost hiriq is the first colour — matching the Latin lockup.
  */
-const HE_ADV = { פ: 18.45, י: 8.4, ק: 21.12, ס: 20.55 };
-const HE_DOT_Y = 10; // a yud rides at the top of the letter, not the baseline
+const HE_ADV = { פ: 18.45, י: 8.4, ק: 21.12, ס: 20.55 } as const;
+const HE_BOX_H = 52; // taller than the Latin box: the hiriq hangs below baseline
+const HE_DOT_Y = BASE + 5; // clear of the baseline and of ק's descender
 
-/** Visual left-to-right. `dot` indexes the colourway in READING order. */
-const HE_RUNS: ({ t: keyof typeof HE_ADV } | { dot: number })[] = [
-  { t: "ק" }, { dot: 2 }, { t: "פ" }, { dot: 1 },
-  { t: "ס" }, { t: "ק" }, { dot: 0 }, { t: "פ" },
+/** Visual left-to-right. `dot` = this letter carries a hiriq plate beneath it. */
+const HE_RUNS: { t: keyof typeof HE_ADV; dot?: number }[] = [
+  { t: "ק" },
+  { t: "י" },
+  { t: "פ", dot: 2 },
+  { t: "י" },
+  { t: "ס", dot: 1 },
+  { t: "ק" },
+  { t: "י" },
+  { t: "פ", dot: 0 },
 ];
 
 const HE_LAYOUT = (() => {
   let x = 2; // left pad for the rotated plate's overhang
   const items = HE_RUNS.map((r) => {
-    const w = "t" in r ? HE_ADV[r.t] : HE_ADV["י"];
+    const w = HE_ADV[r.t];
     const item = { ...r, x, cx: x + w / 2, w };
     x += w;
     return item;
@@ -321,11 +329,16 @@ export function BrandLogoHe({
 }) {
   const ink = mono ? "currentColor" : invert ? "#ffffff" : "#191c1e";
   const plates = COLORWAYS[colorway];
-  const MARK_X = HE_LAYOUT.end + 12; // mark LEADS in RTL, so it sits at the right
+  const MARK_X = HE_LAYOUT.end + 12; // the mark LEADS in RTL, so it sits right
   const TOTAL = MARK_X + 3 * M;
 
   return (
-    <svg viewBox={`0 0 ${TOTAL} 46`} className={className} role="img" aria-label="פיקסיפיק">
+    <svg
+      viewBox={`0 0 ${TOTAL} ${HE_BOX_H}`}
+      className={className}
+      role="img"
+      aria-label="פיקסיפיק"
+    >
       <g
         direction="ltr"
         fontFamily="var(--font-rubik), system-ui, sans-serif"
@@ -334,17 +347,15 @@ export function BrandLogoHe({
         fill={ink}
         letterSpacing="-0.03em"
       >
-        {HE_LAYOUT.items.map((r, k) =>
-          "t" in r ? (
-            <text key={k} x={r.x} y={BASE} textLength={r.w} lengthAdjust="spacingAndGlyphs">
-              {r.t}
-            </text>
-          ) : null,
-        )}
+        {HE_LAYOUT.items.map((r, k) => (
+          <text key={k} x={r.x} y={BASE} textLength={r.w} lengthAdjust="spacingAndGlyphs">
+            {r.t}
+          </text>
+        ))}
       </g>
 
       {HE_LAYOUT.items.map((r, k) =>
-        "dot" in r ? (
+        r.dot === undefined ? null : (
           <g key={k} transform={`rotate(-18 ${r.cx} ${HE_DOT_Y + DOT / 2})`}>
             <Plate
               x={r.cx - DOT / 2}
@@ -354,10 +365,10 @@ export function BrandLogoHe({
               studFill={mono ? "rgba(255,255,255,0.85)" : lighten(plates[r.dot], 0.4)}
             />
           </g>
-        ) : null,
+        ),
       )}
 
-      <Mark x={MARK_X} y={5} mono={mono} />
+      <Mark x={MARK_X} y={(HE_BOX_H - 3 * M) / 2} mono={mono} />
     </svg>
   );
 }
