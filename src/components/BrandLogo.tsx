@@ -112,25 +112,37 @@ const DOT = 8.6; // the tilted plate (tittle) — see note in BrandLogo below
 const DOT_Y = BASE - 27.5; // sits ~2 units clear above the stem's x-height top
 
 /**
- * The three i-dot plates, in reading order. These are the MARK'S LEFT COLUMN
- * (TILE indices 0/3/6) lifted straight out, so the word is literally built from
- * the mark.
+ * The three plates, in reading order.
  *
- * They are also the only trio that survives BOTH grounds. Measured WCAG
- * contrast (3:1 is the threshold for graphical objects, SC 1.4.11):
+ * `classic` is the MARK'S LEFT COLUMN (TILE indices 0/3/6) lifted straight out,
+ * so the word is literally built from the mark. It is also the only trio that
+ * survives BOTH grounds. Measured WCAG contrast (SC 1.4.11 wants 3:1 for
+ * graphical objects):
  *   #cd2928  white 5.33 : dark 3.22
  *   #00a64d  white 3.20 : dark 5.35
  *   #ae78c2  white 3.35 : dark 5.11
- * Only 5 of the palette's 17 accents clear 3:1 on both, and these three are the
- * hue-distinct ones among them. Note what this replaces: the old single plate
- * was brand red #b7102a, which scores just 2.55 on dark — it FAILED on the
- * footer it was meant to sit on. Do not "restore brand red" here without
- * re-running the contrast check.
+ * Only 5 of the palette's 17 accents clear 3:1 on both. Note what this
+ * replaced: the old single plate was brand red #b7102a, which scores 2.55 on
+ * dark — it FAILED on the footer it was built for. Do not "restore brand red"
+ * without re-running the contrast check.
  *
- * Because all three pass on both grounds there is ONE colourway: the plates are
- * identical on transparent, light and dark. Only the lettering flips (`invert`).
+ * `warm` (teal / orange / yellow) is DARK-GROUND ONLY, and that is physics, not
+ * preference. To clear 3:1 against white a colour needs relative luminance
+ * <= 0.183; these sit at 0.42, 0.40 and 0.70:
+ *   #00b5cc  white 2.48 : dark 6.92
+ *   #f0962f  white 2.31 : dark 7.43
+ *   #ffd300  white 1.44 : dark 11.88
+ * Teal and orange COULD be darkened into range, but a yellow dark enough to
+ * pass on white stops being yellow (it reads as olive/bronze). So this colourway
+ * is gated to dark backgrounds — the proof sheet at /playbook/logo shows it only
+ * there. Never ship `warm` on a light or transparent ground.
  */
-const DOT_COLORS = ["#cd2928", "#00a64d", "#ae78c2"];
+export type BrandLogoColorway = "classic" | "warm";
+
+const COLORWAYS: Record<BrandLogoColorway, string[]> = {
+  classic: ["#cd2928", "#00a64d", "#ae78c2"],
+  warm: ["#00b5cc", "#f0962f", "#ffd300"],
+};
 
 /**
  * Glyph advances for Rubik 800 at FS with -0.03em tracking, MEASURED in-browser
@@ -167,16 +179,19 @@ export function BrandLogo({
   variant = "full",
   invert = false,
   mono = false,
+  colorway = "classic",
   className = "",
   title = "Pixipic",
 }: {
   variant?: BrandLogoVariant;
   invert?: boolean;
   mono?: boolean;
+  colorway?: BrandLogoColorway;
   className?: string;
   title?: string;
 }) {
   const ink = mono ? "currentColor" : invert ? "#ffffff" : "#191c1e";
+  const plates = COLORWAYS[colorway];
 
   if (variant === "mark") {
     return (
@@ -238,11 +253,11 @@ export function BrandLogo({
                 x={r.cx - DOT / 2}
                 y={DOT_Y}
                 s={DOT}
-                fill={mono ? "currentColor" : DOT_COLORS[r.dot]}
+                fill={mono ? "currentColor" : plates[r.dot]}
                 studFill={
                   mono
                     ? "rgba(255,255,255,0.85)"
-                    : lighten(DOT_COLORS[r.dot], 0.4)
+                    : lighten(plates[r.dot], 0.4)
                 }
               />
             </g>
@@ -254,62 +269,94 @@ export function BrandLogo({
 }
 
 /**
- * Hebrew lockup — פיקסיפיק. Hebrew has no tittle to carry a plate, so the trio
- * becomes a row of three accent plates above the word's leading (right) edge.
- * Same three colours, same -18deg tilt, so it reads as the same brand device.
+ * Hebrew lockup — פיקסיפיק.
+ *
+ * The word contains EXACTLY THREE yuds, mirroring the three i's in "Pixipic",
+ * and each one follows פ, ס, פ respectively. A yud is already a small mark
+ * riding at the top of the line — the closest thing Hebrew has to a tittle — so
+ * each yud is replaced by a plate. Its advance is 8.40 against the Latin i's
+ * 8.49, so the same plate size drops straight into the slot.
+ *
+ * Every glyph is placed INDIVIDUALLY at an explicit x with direction="ltr".
+ * Laying the word out as one RTL text run and overlaying plates cannot work:
+ * bidi reorders the glyphs, so there is no stable coordinate for any letter.
+ * Placing single glyphs sidesteps bidi entirely — but it means the visual order
+ * below is REVERSED from the logical spelling. Visual left-to-right is
+ * ק(8) י(7) פ(6) י(5) ס(4) ק(3) י(2) פ(1); read it right-to-left to get
+ * פ-י-ק-ס-י-פ-י-ק. Do not "fix" the order.
+ *
+ * Colours run in READING order (right to left), so the rightmost plate is the
+ * first colour — matching the Latin lockup's left-to-right run.
  */
+const HE_ADV = { פ: 18.45, י: 8.4, ק: 21.12, ס: 20.55 };
+const HE_DOT_Y = 10; // a yud rides at the top of the letter, not the baseline
+
+/** Visual left-to-right. `dot` indexes the colourway in READING order. */
+const HE_RUNS: ({ t: keyof typeof HE_ADV } | { dot: number })[] = [
+  { t: "ק" }, { dot: 2 }, { t: "פ" }, { dot: 1 },
+  { t: "ס" }, { t: "ק" }, { dot: 0 }, { t: "פ" },
+];
+
+const HE_LAYOUT = (() => {
+  let x = 2; // left pad for the rotated plate's overhang
+  const items = HE_RUNS.map((r) => {
+    const w = "t" in r ? HE_ADV[r.t] : HE_ADV["י"];
+    const item = { ...r, x, cx: x + w / 2, w };
+    x += w;
+    return item;
+  });
+  return { items, end: x };
+})();
+
 export function BrandLogoHe({
   invert = false,
   mono = false,
+  colorway = "classic",
   className = "",
 }: {
   invert?: boolean;
   mono?: boolean;
+  colorway?: BrandLogoColorway;
   className?: string;
 }) {
   const ink = mono ? "currentColor" : invert ? "#ffffff" : "#191c1e";
-
-  // RTL layout: the mark leads, so it sits at the RIGHT. The word runs
-  // right-to-left from `WORD_START` back toward x=0.
-  const W = 118; // pinned word advance
-  const MARK_X = W + 12;
+  const plates = COLORWAYS[colorway];
+  const MARK_X = HE_LAYOUT.end + 12; // mark LEADS in RTL, so it sits at the right
   const TOTAL = MARK_X + 3 * M;
-  const WORD_START = W;
-  const STEP = DOT * 1.25;
 
   return (
     <svg viewBox={`0 0 ${TOTAL} 46`} className={className} role="img" aria-label="פיקסיפיק">
-      {/* `direction="rtl"` + default text-anchor "start": in RTL the inline
-          start is the RIGHT edge, so the run grows leftwards from WORD_START.
-          Using textAnchor="end" here anchors the LEFT edge instead and throws
-          the whole word off the canvas (measured: x=160..278 in a 166 box). */}
-      <text
-        x={WORD_START}
-        y={BASE}
-        direction="rtl"
-        textLength={W}
-        lengthAdjust="spacingAndGlyphs"
+      <g
+        direction="ltr"
         fontFamily="var(--font-rubik), system-ui, sans-serif"
         fontWeight={800}
         fontSize={FS}
         fill={ink}
+        letterSpacing="-0.03em"
       >
-        פיקסיפיק
-      </text>
-      {DOT_COLORS.map((c, k) => {
-        const cx = WORD_START - 6 - (DOT_COLORS.length - 1 - k) * STEP;
-        return (
-          <g key={k} transform={`rotate(-18 ${cx} ${DOT / 2 + 1})`}>
+        {HE_LAYOUT.items.map((r, k) =>
+          "t" in r ? (
+            <text key={k} x={r.x} y={BASE} textLength={r.w} lengthAdjust="spacingAndGlyphs">
+              {r.t}
+            </text>
+          ) : null,
+        )}
+      </g>
+
+      {HE_LAYOUT.items.map((r, k) =>
+        "dot" in r ? (
+          <g key={k} transform={`rotate(-18 ${r.cx} ${HE_DOT_Y + DOT / 2})`}>
             <Plate
-              x={cx - DOT / 2}
-              y={1}
+              x={r.cx - DOT / 2}
+              y={HE_DOT_Y}
               s={DOT}
-              fill={mono ? "currentColor" : c}
-              studFill={mono ? "rgba(255,255,255,0.85)" : lighten(c, 0.4)}
+              fill={mono ? "currentColor" : plates[r.dot]}
+              studFill={mono ? "rgba(255,255,255,0.85)" : lighten(plates[r.dot], 0.4)}
             />
           </g>
-        );
-      })}
+        ) : null,
+      )}
+
       <Mark x={MARK_X} y={5} mono={mono} />
     </svg>
   );

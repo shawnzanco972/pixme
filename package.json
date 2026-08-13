@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "create-admin": "node --env-file=.env.local scripts/create-admin.mjs"
+    "create-admin": "node --env-file=.env.local scripts/create-admin.mjs",
+    "export:brand": "node scripts/export-brand.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
