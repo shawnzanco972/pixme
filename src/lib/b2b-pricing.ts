@@ -29,7 +29,7 @@ export const MAX_SELF_SERVE_SEATS = 100;
  * Per-mosaic volume discount: [minEmployees, discountFraction]. Highest
  * matching tier wins. Gradual so bulk buyers see real savings.
  */
-const MOSAIC_DISCOUNT_TIERS: ReadonlyArray<readonly [number, number]> = [
+export const MOSAIC_DISCOUNT_TIERS: ReadonlyArray<readonly [number, number]> = [
   [50, 0.18],
   [25, 0.12],
   [10, 0.06],
@@ -44,6 +44,12 @@ const MANAGED_FEE_TIERS: ReadonlyArray<readonly [number, number]> = [
   [25, 14],
   [1, 18],
 ];
+
+/**
+ * Public alias of the discount ladder, for the marketing page's tier table.
+ * Ordered highest-volume-first, same as the lookup table.
+ */
+export const VOLUME_TIERS = MOSAIC_DISCOUNT_TIERS;
 
 /** Headline managed fee for marketing copy ("from ₪10"). */
 export const MANAGED_FEE_MIN = 10;
