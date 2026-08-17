@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { BrickStepCard, BRICK_COLORWAYS } from "@/components/BrickStepCard";
 import { HeroMosaic, type HeroDesign } from "@/components/HeroMosaic";
 import { ReadyDesignsGallery } from "@/components/ReadyDesignsGallery";
 import { parseEngineSettings } from "@/lib/design-settings";
@@ -62,28 +63,19 @@ const HOW = [
     n: "1",
     title: "מעלים תמונה",
     body: "פורטרט, חיית מחמד, לוגו או משפט אהוב. גם תמונה מהטלפון עובדת מעולה.",
-    grad: "linear-gradient(180deg, #cf2440 0%, #b7102a 60%, #ad0f27 100%)",
-    bevel: "#7d0018",
-    stud: "linear-gradient(180deg, #d93a52 0%, #b7102a 100%)",
-    ink: "#fff",
+    colorway: BRICK_COLORWAYS.red,
   },
   {
     n: "2",
     title: "מעצבים על המסך",
     body: "בוחרים גודל, מזיזים את המסגרת ומכבים צבעים שלא מתאימים. התצוגה מתעדכנת מיד.",
-    grad: "linear-gradient(180deg, #3766e6 0%, #1d4ed8 60%, #1a45c2 100%)",
-    bevel: "#002f96",
-    stud: "linear-gradient(180deg, #4b78ef 0%, #1d4ed8 100%)",
-    ink: "#fff",
+    colorway: BRICK_COLORWAYS.blue,
   },
   {
     n: "3",
     title: "מרכיבים ותולים",
     body: "ערכה עם כל הלבנים, לוחות בסיס וחוברת הוראות בגודל 1:1 — מניחים לבנה לפי המפה.",
-    grad: "linear-gradient(180deg, #ffd968 0%, #f3bf2f 60%, #e8b524 100%)",
-    bevel: "#b98600",
-    stud: "linear-gradient(180deg, #ffe28c 0%, #f3bf2f 100%)",
-    ink: "#191c1e",
+    colorway: BRICK_COLORWAYS.gold,
   },
 ];
 
@@ -285,44 +277,13 @@ export default async function Home() {
         </div>
         <div className="grid gap-8 sm:grid-cols-3">
           {HOW.map((s) => (
-            <div
+            <BrickStepCard
               key={s.n}
-              className="relative mt-7 flex flex-col gap-2.5 rounded-[20px] p-8"
-              style={{
-                background: s.grad,
-                color: s.ink,
-                boxShadow: `0 10px 0 0 ${s.bevel}, 0 30px 40px -24px rgba(25,28,30,0.5), inset 0 2px 0 rgba(255,255,255,0.28)`,
-              }}
-            >
-              <span className="absolute -top-5 flex gap-3 start-7" aria-hidden>
-                <span
-                  className="block h-6 w-11 rounded-t-[11px] rounded-b-[4px]"
-                  style={{
-                    background: s.stud,
-                    boxShadow:
-                      "inset 0 3px 3px rgba(255,255,255,0.45), inset 0 -6px 7px rgba(0,0,0,0.22)",
-                  }}
-                />
-                <span
-                  className="block h-6 w-11 rounded-t-[11px] rounded-b-[4px]"
-                  style={{
-                    background: s.stud,
-                    boxShadow:
-                      "inset 0 3px 3px rgba(255,255,255,0.45), inset 0 -6px 7px rgba(0,0,0,0.22)",
-                  }}
-                />
-              </span>
-              <span
-                className="flex h-10 w-10 items-center justify-center rounded-[10px] font-heading text-xl font-black"
-                style={{ background: "rgba(0,0,0,0.2)" }}
-              >
-                {s.n}
-              </span>
-              <h3 className="mt-1.5 font-heading text-2xl font-black tracking-[-0.02em]">
-                {s.title}
-              </h3>
-              <p className="text-base leading-relaxed opacity-90">{s.body}</p>
-            </div>
+              n={s.n}
+              title={s.title}
+              body={s.body}
+              colorway={s.colorway}
+            />
           ))}
         </div>
       </section>
