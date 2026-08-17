@@ -4,26 +4,35 @@
  * Access is the secret owner_token in the URL (no login). Rendered server-side
  * with the service-role key, so we can read the order, its workspace, the
  * roster and each employee's submission status without exposing any of it via
- * public RLS. The owner adds employees (→ personalized seat links) and watches
- * who has / hasn't submitted.
+ * public RLS.
+ *
+ * The page answers three questions, in this order: what do I need to DO right
+ * now, where does each person stand, and what has already gone to production.
  */
 import { notFound } from "next/navigation";
 
 import { RosterManager } from "@/components/b2b/RosterManager";
 import type { SeatReviewRow } from "@/components/b2b/SeatRow";
 import {
+  CM_PER_PLATE,
   defaultAllocation,
   projectProgress,
   seatStatus,
   totalPlateCredits,
 } from "@/lib/b2b";
 import { isEmailConfigured } from "@/lib/email";
-import { presetStuds } from "@/lib/pricing";
 import { createAdminClient } from "@/lib/supabase/server";
 import { toEnginePixelMap } from "@/lib/brick-engine/palette";
 import type { StoredPixelMap } from "@/lib/supabase/types.helpers";
 
 export const dynamic = "force-dynamic";
+
+const SHIPMENT_LABEL: Record<string, string> = {
+  requested: "התקבלה — ממתינה לייצור",
+  in_production: "בייצור",
+  shipped: "נשלחה",
+  cancelled: "בוטלה",
+};
 
 export default async function ProjectDashboard({
   params,
@@ -49,26 +58,26 @@ export default async function ProjectDashboard({
     .eq("b2b_order_id", order.id)
     .maybeSingle();
 
-  const { cols, rows } = presetStuds({
-    platesX: order.plates_x,
-    platesY: order.plates_y,
-  });
+  const sizeLabel = `⁦${order.plates_x * CM_PER_PLATE}×${order.plates_y * CM_PER_PLATE}⁩ ס״מ`;
 
   // Not provisioned yet (payment pending) — no workspace exists.
   if (!ws) {
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 p-8">
+      <main className="mx-auto w-full max-w-4xl flex-1 p-6 sm:p-8">
         <Header
           company={order.company_name}
           project={order.project_name}
           seats={order.licenses_purchased}
-          cols={cols}
-          rows={rows}
+          sizeLabel={sizeLabel}
         />
-        <p className="card mt-6 p-6 text-center text-amber-800">
-          התשלום בעיבוד. לוח הבקרה ייפתח להוספת עובדים ברגע שהתשלום יאושר.
-          רעננו את העמוד בעוד מספר דקות.
-        </p>
+        <div className="card mt-6 flex flex-col items-center gap-2 p-8 text-center">
+          <span className="mi text-[34px] text-accent">hourglass_top</span>
+          <p className="font-heading font-bold">התשלום בעיבוד</p>
+          <p className="max-w-md text-sm text-foreground/60">
+            לוח הבקרה ייפתח להוספת עובדים ברגע שהתשלום יאושר. שמרו את הקישור
+            הזה — הוא לא ישתנה. רעננו בעוד כמה דקות.
+          </p>
+        </div>
       </main>
     );
   }
@@ -85,7 +94,9 @@ export default async function ProjectDashboard({
 
   const { data: subs } = await admin
     .from("employee_submissions")
-    .select("id, roster_id, status, pixel_map, scheduled_for")
+    .select(
+      "id, roster_id, status, pixel_map, scheduled_for, shipment_id, is_draft",
+    )
     .eq("workspace_id", ws.id);
 
   const subByRoster = new Map<string, NonNullable<typeof subs>[number]>();
@@ -101,7 +112,7 @@ export default async function ProjectDashboard({
       name: r.name,
       email: r.email,
       inviteToken: r.invite_token,
-      status: seatStatus(sub?.status),
+      status: seatStatus(sub?.status, sub?.shipment_id, sub?.is_draft),
       submissionId: sub?.id ?? null,
       pixelMap: pm,
       scheduledFor: sub?.scheduled_for ?? null,
@@ -110,44 +121,112 @@ export default async function ProjectDashboard({
     };
   });
 
+  // Shipments already released by this owner.
+  const { data: shipments } = await admin
+    .from("b2b_shipments")
+    .select("id, status, note, created_at, shipped_at")
+    .eq("b2b_order_id", order.id)
+    .order("created_at", { ascending: false });
+
+  const shipmentCounts = new Map<string, number>();
+  for (const s of subs ?? []) {
+    if (!s.shipment_id) continue;
+    shipmentCounts.set(s.shipment_id, (shipmentCounts.get(s.shipment_id) ?? 0) + 1);
+  }
+
   const progress = projectProgress(rosterRows.map((r) => r.status));
   const seatsLeft = order.licenses_purchased - rosterRows.length;
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 p-6 sm:p-8">
+    <main className="mx-auto w-full max-w-4xl flex-1 p-6 sm:p-8">
       <Header
         company={order.company_name}
         project={order.project_name}
         seats={order.licenses_purchased}
-        cols={cols}
-        rows={rows}
+        sizeLabel={sizeLabel}
       />
 
-      <div className="mt-4 rounded-xl border border-secondary/30 bg-secondary/5 p-4 text-sm text-foreground/80">
-        <p className="font-medium">זהו לוח הבקרה הפרטי של הפרויקט שלכם 🔒</p>
-        <p className="mt-1 text-zinc-600">
-          שמרו את הקישור הזה (מומלץ להוסיף לסימניות) — דרכו מוסיפים עובדים,
-          שולחים להם קישור אישי לעיצוב, מאשרים את העיצובים ומזמינים. כל מי שיש לו
-          את הקישור יכול לנהל את הפרויקט, אז שתפו אותו רק עם מי שאחראי מטעמכם.
-        </p>
-      </div>
+      {/* What needs doing right now */}
+      {progress.total > 0 && (
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              n: progress.notStarted + progress.draft,
+              label:
+                progress.draft > 0
+                  ? `טרם סיימו (${progress.draft} בעבודה)`
+                  : "טרם העלו",
+              icon: "schedule",
+              color: "#6b7280",
+            },
+            {
+              n: progress.submitted,
+              label: "ממתין לאישורכם",
+              icon: "rate_review",
+              color: "#1d4ed8",
+            },
+            {
+              n: progress.ready,
+              label: "מוכן לשליחה",
+              icon: "check_circle",
+              color: "#9a7400",
+            },
+            {
+              n: progress.released,
+              label: "נשלח לייצור",
+              icon: "local_shipping",
+              color: "#2e7d32",
+            },
+          ].map((t) => (
+            <div
+              key={t.label}
+              className="flex flex-col gap-1 rounded-2xl bg-surface p-4"
+              style={{
+                border: "1px solid var(--color-outline)",
+                boxShadow: "0 4px 0 0 #eceff2",
+              }}
+            >
+              <span className="mi text-[20px]" style={{ color: t.color }}>
+                {t.icon}
+              </span>
+              <span className="font-heading text-2xl font-black">{t.n}</span>
+              <span className="text-xs text-foreground/60">{t.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Progress */}
-      <div className="card mt-6 flex flex-col gap-3 p-6">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium">
-            {progress.total - progress.notStarted} מתוך {progress.total} שלחו
-          </span>
-          <span className="text-zinc-500">
-            {progress.ready} מוכנים · {progress.notStarted} ממתינים
-          </span>
+      {progress.total > 0 && (
+        <div className="card mt-4 flex flex-col gap-2.5 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            {/* Must match the tiles above: a draft is still the employee's
+                move, so it does not count as handed in. */}
+            <span className="font-heading font-bold">
+              {progress.total - progress.notStarted - progress.draft} מתוך{" "}
+              {progress.total} סיימו ושלחו
+            </span>
+            {progress.needsOwner > 0 && (
+              <span className="text-secondary">
+                {progress.needsOwner} מחכים לפעולה שלכם
+              </span>
+            )}
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-muted">
+            <div
+              className="h-full rounded-full bg-success transition-all"
+              style={{ width: `${Math.round(progress.doneFraction * 100)}%` }}
+            />
+          </div>
         </div>
-        <div className="h-3 w-full overflow-hidden rounded-full bg-surface-muted">
-          <div
-            className="h-full rounded-full bg-success transition-all"
-            style={{ width: `${Math.round(progress.doneFraction * 100)}%` }}
-          />
-        </div>
+      )}
+
+      <div className="mt-4 rounded-2xl border border-secondary/30 bg-secondary/5 p-4 text-sm">
+        <p className="font-heading font-bold">🔒 זהו הקישור הפרטי לפרויקט</p>
+        <p className="mt-1 leading-relaxed text-foreground/70">
+          הוסיפו אותו לסימניות — אין כאן סיסמה, והוא הכניסה היחידה. כל מי שיש לו
+          את הקישור יכול לנהל את הפרויקט, אז שתפו רק עם מי שאחראי מטעמכם.
+        </p>
       </div>
 
       <RosterManager
@@ -157,6 +236,38 @@ export default async function ProjectDashboard({
         emailConfigured={isEmailConfigured()}
         totalCredits={totalCredits}
       />
+
+      {/* Shipments already released */}
+      {(shipments ?? []).length > 0 && (
+        <section className="mt-8 flex flex-col gap-3">
+          <h2 className="font-heading text-xl font-black">משלוחים</h2>
+          <p className="-mt-1 text-sm text-foreground/60">
+            כל משלוח מגיע אליכם למשרד בקרטון אחד, ממוין לפי שמות.
+          </p>
+          <ul className="flex flex-col gap-2">
+            {(shipments ?? []).map((s) => (
+              <li
+                key={s.id}
+                className="card flex flex-wrap items-center justify-between gap-3 p-4"
+              >
+                <div className="min-w-0">
+                  <p className="font-heading font-bold">
+                    {shipmentCounts.get(s.id) ?? 0} ערכות
+                  </p>
+                  <p className="text-xs text-foreground/55">
+                    שוחרר ב-
+                    {new Date(s.created_at).toLocaleDateString("he-IL")}
+                    {s.note ? ` · ${s.note}` : ""}
+                  </p>
+                </div>
+                <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-foreground/70">
+                  {SHIPMENT_LABEL[s.status] ?? s.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }
@@ -165,23 +276,21 @@ function Header({
   company,
   project,
   seats,
-  cols,
-  rows,
+  sizeLabel,
 }: {
   company: string;
   project: string | null;
   seats: number;
-  cols: number;
-  rows: number;
+  sizeLabel: string;
 }) {
   return (
     <header className="flex flex-col gap-1">
-      <p className="text-sm text-zinc-500">{company}</p>
-      <h1 className="font-heading text-3xl font-bold">
+      <p className="text-sm text-foreground/55">{company}</p>
+      <h1 className="font-heading text-3xl font-black tracking-[-0.02em]">
         {project ?? "פרויקט הפסיפסים שלכם"}
       </h1>
-      <p className="text-sm text-zinc-600">
-        {seats} עובדים · פסיפס {cols}×{rows} לבנים לכל עובד
+      <p className="text-sm text-foreground/60">
+        {seats} עובדים · פסיפס {sizeLabel} לכל אחד
       </p>
     </header>
   );

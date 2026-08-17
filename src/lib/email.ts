@@ -198,22 +198,49 @@ export async function sendLowStockDigest(opts: {
   });
 }
 
-/** Send an employee their personalized seat link to upload a photo. */
+/**
+ * Send an employee their personalized seat link.
+ *
+ * This email IS the product's first impression for the employee — most will
+ * never have seen Pixipic — so it has to answer three things before the click:
+ * what am I getting, what do I have to do, and how long does it take. It must
+ * also be clear that they ASSEMBLE the mosaic themselves; the earlier copy said
+ * "we'll take care of the rest", which set up the wrong expectation entirely.
+ */
 export async function sendSeatInvite(opts: {
   to: string;
   employeeName: string;
   projectLabel: string;
   inviteToken: string;
+  /** Mosaic size for this seat, e.g. "38×38 ס״מ" — set when known. */
+  sizeLabel?: string;
 }): Promise<boolean> {
   const url = `${siteUrl()}/seat/${opts.inviteToken}`;
+  const step = (n: string, text: string) =>
+    `<tr>
+       <td style="padding:4px 0 4px 10px;vertical-align:top;width:26px">
+         <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:#b7102a;color:#fff;text-align:center;line-height:22px;font-weight:bold;font-size:13px">${n}</span>
+       </td>
+       <td style="padding:4px 0;vertical-align:top">${text}</td>
+     </tr>`;
+
   return sendEmail({
     to: opts.to,
-    subject: `${opts.projectLabel}: הפסיפס האישי שלכם מחכה`,
+    subject: `${opts.projectLabel}: בחרו את התמונה לפסיפס שלכם`,
     html: shell(
-      `<h1 style="font-size:20px;margin:0 0 8px">שלום ${opts.employeeName}!</h1>
-       <p>במסגרת ${opts.projectLabel} מגיע לכם פסיפס לבנים אישי. כל מה שצריך זה להעלות תמונה אחת — אנחנו נדאג לשאר.</p>
-       <p>${button(url, "להעלאת התמונה")}</p>
-       <p style="color:#8a9099;font-size:12px;direction:ltr;text-align:left">${url}</p>`,
+      `<h1 style="font-size:20px;margin:0 0 8px">שלום ${opts.employeeName} 👋</h1>
+       <p style="margin:0 0 14px">במסגרת <b>${opts.projectLabel}</b> מחכה לכם מתנה: ערכת פסיפס מלבנים${
+         opts.sizeLabel ? ` בגודל ${opts.sizeLabel}` : ""
+       } — <b>מהתמונה שאתם תבחרו</b>.</p>
+       <table style="width:100%;border-collapse:collapse;font-size:15px;margin:0 0 14px">
+         ${step("1", "בוחרים תמונה אהובה — הילדים, הכלב, טיול, לא משנה.")}
+         ${step("2", "רואים אותה על המסך הופכת ללבנים, ומכוונים עד שזה נראה מושלם.")}
+         ${step("3", "מקבלים ערכה עם כל הלבנים וחוברת הוראות — ומרכיבים בבית.")}
+       </table>
+       <p style="margin:0 0 14px;color:#51585d">לוקח כ-3 דקות. אפשר לשמור באמצע ולחזור אחר כך מאותו קישור.</p>
+       <p>${button(url, "לבחירת התמונה")}</p>
+       <p style="color:#8a9099;font-size:12px;direction:ltr;text-align:left">${url}</p>
+       <p style="color:#8a9099;font-size:12px;margin-top:14px">הקישור אישי — אין צורך בהרשמה או בסיסמה.</p>`,
     ),
   });
 }

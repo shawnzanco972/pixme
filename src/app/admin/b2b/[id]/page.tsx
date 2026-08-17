@@ -27,8 +27,10 @@ import type { OrderStatus, StoredPixelMap } from "@/lib/supabase/types.helpers";
 
 const SEAT_HE: Record<SeatStatus, string> = {
   not_started: "טרם התחיל",
+  draft: "טיוטה",
   submitted: "נשלח",
-  ready: "מוכן",
+  ready: "מאושר",
+  released: "שוחרר לייצור",
   rejected: "נדחה",
 };
 
@@ -69,7 +71,7 @@ export default async function AdminB2bDetail({
     ? await supabase
         .from("employee_submissions")
         .select(
-          "id, employee_name, status, workspace_id, roster_id, created_at, scheduled_for, pixel_map",
+          "id, employee_name, status, workspace_id, roster_id, created_at, updated_at, approved_at, scheduled_for, pixel_map, shipment_id, is_draft",
         )
         .in("workspace_id", wsIds)
         .order("created_at", { ascending: false })
@@ -99,12 +101,15 @@ export default async function AdminB2bDetail({
       name: r.name,
       email: r.email,
       inviteToken: r.invite_token,
-      status: seatStatus(sub?.status),
+      status: seatStatus(sub?.status, sub?.shipment_id, sub?.is_draft),
       submissionId: sub?.id ?? null,
       pixelMap: pm,
       scheduledFor: sub?.scheduled_for ?? null,
       effectivePlates: r.plates_allocated ?? defaultAlloc,
       maxPlates: 0, // computed in RosterManager from the pool
+      updatedAt: sub?.updated_at ?? null,
+      approvedAt: sub?.approved_at ?? null,
+      shipmentId: sub?.shipment_id ?? null,
     };
   });
   const progress = projectProgress(seatRows.map((s) => s.status));
@@ -188,6 +193,7 @@ export default async function AdminB2bDetail({
             seatsLeft={Math.max(0, seatsLeft)}
             emailConfigured={isEmailConfigured()}
             totalCredits={totalCredits}
+            admin
           />
         </section>
       )}

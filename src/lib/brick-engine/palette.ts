@@ -261,6 +261,13 @@ export function isSlugPixelMap(pm: unknown): pm is string[][] {
  * Coerce a stored pixel_map (either slug form or a LEGACY integer form from
  * before migration 0018) into engine integer indices. Returns null for a
  * missing/malformed map. Use at every DB read boundary.
+ *
+ * Malformed includes "contains a slug this build doesn't know" — a row written
+ * by an older/newer palette, or a colour that was retired. `decodePixelMap`
+ * throws on those by design (it's the strict inverse of `encodePixelMap`), but
+ * a throw here is wrong: this runs while rendering pages that list MANY stored
+ * maps, so one bad row would blank the whole owner dashboard instead of just
+ * its own thumbnail. Callers already handle null by showing a placeholder.
  */
 export function toEnginePixelMap(
   raw: string[][] | number[][] | null | undefined,
@@ -268,7 +275,12 @@ export function toEnginePixelMap(
   if (!Array.isArray(raw) || raw.length === 0 || !Array.isArray(raw[0])) {
     return null;
   }
-  return isSlugPixelMap(raw) ? decodePixelMap(raw) : (raw as number[][]);
+  if (!isSlugPixelMap(raw)) return raw as number[][];
+  try {
+    return decodePixelMap(raw);
+  } catch {
+    return null;
+  }
 }
 
 /** The 30 core color ids (slugs) that ship in the first Peiye order (in stock). */

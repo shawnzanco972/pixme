@@ -23,16 +23,24 @@ type Action =
   | "reopen"
   | "schedule"
   | "allocate"
-  | "buy_credits";
+  | "buy_credits"
+  | "rename"
+  | "remove"
+  | "ship";
 
 export async function POST(request: Request) {
   let body: {
     ownerToken?: string;
     submissionId?: string;
+    /** Batch review: approve/reject/release several seats in one request. */
+    submissionIds?: string[];
     rosterId?: string;
     action?: Action;
     scheduledFor?: string | null;
     plates?: number;
+    name?: string;
+    email?: string | null;
+    note?: string | null;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -126,20 +134,163 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  // --- Review a submission -------------------------------------------------
-  const { submissionId } = body;
-  if (!submissionId) {
+  // --- Roster: fix a name / email ------------------------------------------
+  if (action === "rename") {
+    if (!body.rosterId) {
+      return NextResponse.json({ error: "Missing rosterId" }, { status: 400 });
+    }
+    const name = (body.name ?? "").trim();
+    if (!name) {
+      return NextResponse.json({ error: "Name required" }, { status: 400 });
+    }
+    const email = body.email?.trim() ? body.email.trim() : null;
+    const { data: seat } = await admin
+      .from("employee_roster")
+      .select("id, workspace_id")
+      .eq("id", body.rosterId)
+      .maybeSingle();
+    if (!seat || !wsIds.includes(seat.workspace_id)) {
+      return NextResponse.json({ error: "Seat not in project" }, { status: 403 });
+    }
+    const { error } = await admin
+      .from("employee_roster")
+      .update({ name, email })
+      .eq("id", seat.id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // --- Roster: remove a seat ------------------------------------------------
+  //
+  // Only a seat with no submission can go. A seat that already holds a design
+  // must be reopened/rejected first — deleting it would silently destroy work
+  // the employee did and drop a slot the company paid for.
+  if (action === "remove") {
+    if (!body.rosterId) {
+      return NextResponse.json({ error: "Missing rosterId" }, { status: 400 });
+    }
+    const { data: seat } = await admin
+      .from("employee_roster")
+      .select("id, workspace_id")
+      .eq("id", body.rosterId)
+      .maybeSingle();
+    if (!seat || !wsIds.includes(seat.workspace_id)) {
+      return NextResponse.json({ error: "Seat not in project" }, { status: 403 });
+    }
+    const { count } = await admin
+      .from("employee_submissions")
+      .select("id", { count: "exact", head: true })
+      .eq("roster_id", seat.id);
+    if ((count ?? 0) > 0) {
+      return NextResponse.json(
+        { error: "לעובד הזה כבר יש עיצוב — בטלו אותו לפני ההסרה." },
+        { status: 409 },
+      );
+    }
+    const { error } = await admin
+      .from("employee_roster")
+      .delete()
+      .eq("id", seat.id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // --- Fulfillment: release approved seats as one shipment -----------------
+  //
+  // The owner picks WHICH approved seats go out now. Everything ships in bulk
+  // to the company, so a shipment carries no address — just the set of seats
+  // and an optional note.
+  if (action === "ship") {
+    const ids = (body.submissionIds ?? []).filter(
+      (v): v is string => typeof v === "string" && v.length > 0,
+    );
+    if (ids.length === 0) {
+      return NextResponse.json({ error: "No seats selected" }, { status: 400 });
+    }
+    // Every id must be an approved, not-yet-released seat in THIS project.
+    const { data: subs } = await admin
+      .from("employee_submissions")
+      .select("id, workspace_id, status, shipment_id")
+      .in("id", ids);
+    const eligible = (subs ?? []).filter(
+      (s) =>
+        wsIds.includes(s.workspace_id) &&
+        s.status === "ready" &&
+        !s.shipment_id,
+    );
+    if (eligible.length === 0) {
+      return NextResponse.json(
+        { error: "אין עיצובים מאושרים וזמינים לשליחה." },
+        { status: 409 },
+      );
+    }
+    const { data: shipment, error: shipErr } = await admin
+      .from("b2b_shipments")
+      .insert({
+        b2b_order_id: order.id,
+        note: body.note?.trim() || null,
+      })
+      .select("id")
+      .single();
+    if (shipErr || !shipment) {
+      return NextResponse.json(
+        { error: shipErr?.message ?? "Could not create shipment" },
+        { status: 500 },
+      );
+    }
+    const { error: linkErr } = await admin
+      .from("employee_submissions")
+      .update({ shipment_id: shipment.id })
+      .in(
+        "id",
+        eligible.map((s) => s.id),
+      );
+    if (linkErr) {
+      return NextResponse.json({ error: linkErr.message }, { status: 500 });
+    }
+    return NextResponse.json({
+      ok: true,
+      shipmentId: shipment.id,
+      released: eligible.length,
+    });
+  }
+
+  // --- Review one or many submissions --------------------------------------
+  //
+  // `submissionIds` is the batch form (approve-all); `submissionId` the single.
+  // Batching matters: the old dashboard fired one request per seat in a loop,
+  // so approving 40 designs meant 40 round-trips and any mid-loop failure left
+  // the roster half-approved with no report.
+  const ids = (
+    body.submissionIds?.length ? body.submissionIds : [body.submissionId]
+  ).filter((v): v is string => typeof v === "string" && v.length > 0);
+  if (ids.length === 0) {
     return NextResponse.json({ error: "Missing submissionId" }, { status: 400 });
   }
-  const { data: sub } = await admin
+  const { data: subs } = await admin
     .from("employee_submissions")
-    .select("id, workspace_id")
-    .eq("id", submissionId)
-    .maybeSingle();
-  if (!sub || !wsIds.includes(sub.workspace_id)) {
+    .select("id, workspace_id, shipment_id")
+    .in("id", ids);
+  const owned = (subs ?? []).filter((s) => wsIds.includes(s.workspace_id));
+  if (owned.length !== ids.length) {
     return NextResponse.json(
       { error: "Submission not part of this project" },
       { status: 403 },
+    );
+  }
+  // A released seat is already in production — reopening or rejecting it here
+  // would desync us from what's physically being packed.
+  if (
+    (action === "reopen" || action === "reject") &&
+    owned.some((s) => s.shipment_id)
+  ) {
+    return NextResponse.json(
+      { error: "עיצוב שכבר נשלח לייצור לא ניתן לשינוי." },
+      { status: 409 },
     );
   }
 
@@ -173,10 +324,10 @@ export async function POST(request: Request) {
   const { error: updErr } = await admin
     .from("employee_submissions")
     .update(patch)
-    .eq("id", submissionId);
+    .in("id", ids);
   if (updErr) {
     return NextResponse.json({ error: updErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, updated: ids.length });
 }

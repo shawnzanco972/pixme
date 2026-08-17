@@ -57,15 +57,21 @@ export default async function AdminOverview() {
       .from("b2b_orders")
       .select("id", { count: "exact", head: true })
       .eq("status", "paid"),
-    // B2B production queue: approved ("ready") employee kits we must build —
+    // B2B production queue: employee kits the company has RELEASED to us —
     // workspace → order joined in ONE round trip via FK embeds (was a
     // 3-query sequential waterfall).
+    //
+    // `status = ready` alone is NOT enough: that only means the owner approved
+    // the design. They approve in bulk but release in batches (the holiday run
+    // now, the boss's set today), so packing on approval would build sets the
+    // company hasn't asked for. A shipment_id is the release signal.
     supabase
       .from("employee_submissions")
       .select(
-        "id, employee_name, scheduled_for, b2b_workspaces(b2b_orders(company_name, project_name))",
+        "id, employee_name, scheduled_for, b2b_shipments(note, status), b2b_workspaces(b2b_orders(company_name, project_name))",
       )
-      .eq("status", "ready"),
+      .eq("status", "ready")
+      .not("shipment_id", "is", null),
     loadInventory(supabase),
   ]);
 
@@ -77,6 +83,7 @@ export default async function AdminOverview() {
         employee: s.employee_name,
         company: ord?.project_name || ord?.company_name || "—",
         scheduledFor: s.scheduled_for,
+        note: s.b2b_shipments?.note ?? null,
       };
     })
     // Soonest scheduled first; unscheduled (null) last.
@@ -238,6 +245,7 @@ export default async function AdminOverview() {
                   <th className="p-3 text-start">מתוזמן ל־</th>
                   <th className="p-3 text-start">חברה / פרויקט</th>
                   <th className="p-3 text-start">עובד</th>
+                  <th className="p-3 text-start">הערת משלוח</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,6 +260,7 @@ export default async function AdminOverview() {
                     </td>
                     <td className="p-3 font-medium">{q.company}</td>
                     <td className="p-3">{q.employee}</td>
+                    <td className="p-3 text-zinc-500">{q.note ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

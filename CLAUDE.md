@@ -99,6 +99,28 @@ We are building a highly automated, **zero-stock (or low-inventory) e-commerce p
 - Deterministic via a seeded RNG (`rng.ts`) — the pixel_map is persisted and
   trusted by the PDF route, so the same image+options must always reproduce it.
 
+## B2B MODEL (the customer is the COMPANY, never the employee)
+
+- **We hold nothing about an employee beyond the name + email the company
+  entered.** No addresses, no phones, no accounts. Everything ships in bulk to
+  the company. Never add per-employee PII or a "ship to home" option.
+- **Approve ≠ ship.** Two separate owner decisions: approving a DESIGN
+  (`employee_submissions.status = ready`) and RELEASING it to production
+  (`shipment_id` → `b2b_shipments`, migration 0025). A company approves 20
+  designs at once but may release 19 for the holidays and one for the boss
+  today. The admin production queue must filter on `shipment_id is not null` —
+  packing on approval builds sets nobody asked for.
+- **Drafts** (`is_draft`, migration 0026): an employee saves work in progress
+  without handing it to the manager. Drafts stay out of the review queue and
+  count as "not finished" in progress, not as submitted.
+- **Never show "לוחות"/plate credits to a company.** That's internal capacity
+  vocabulary; the owner UI shows centimetres (`plateSizeLabel()` in `b2b.ts`).
+- Seat lifecycle lives in `seatStatus()`; labels in `b2b-status.ts` are shared
+  by the owner dashboard and the admin view so they can't drift.
+- The owner dashboard (`/b2b/project/[token]`) is gated ONLY by the secret
+  token in the URL — no login. Admin (`/admin/b2b/[id]`) reuses the same
+  `RosterManager` with that token, plus `admin` for support diagnostics.
+
 ## DATABASE
 
 - Supabase Postgres. SQL migrations live in `supabase/migrations/`.

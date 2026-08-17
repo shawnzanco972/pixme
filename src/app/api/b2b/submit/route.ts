@@ -1,10 +1,14 @@
 /**
- * POST /api/b2b/submit  { inviteToken, imagePath, pixelMap }
+ * POST /api/b2b/submit  { inviteToken, imagePath, pixelMap, draft? }
  *
  * Records one employee's mosaic submission. Gated by the roster invite_token
  * (not a login). Runs with the service-role key so it can link the submission
  * back to the roster seat — which is how the owner dashboard knows who's done.
- * Idempotent per seat: a seat that already submitted is rejected.
+ *
+ * `draft: true` saves the work WITHOUT handing it to the manager for review
+ * (see 0026_submission_drafts.sql). Employees try a few photos over a couple of
+ * days; a draft keeps that progress without lighting the seat up as "waiting
+ * for your approval" while they're still deciding.
  *
  * The DB trigger on employee_submissions still enforces that the workspace is
  * active, not expired, and has a free slot (and increments slots_used).
@@ -26,7 +30,12 @@ function isPixelMap(v: unknown): v is number[][] {
 }
 
 export async function POST(request: Request) {
-  let body: { inviteToken?: string; imagePath?: string; pixelMap?: unknown };
+  let body: {
+    inviteToken?: string;
+    imagePath?: string;
+    pixelMap?: unknown;
+    draft?: boolean;
+  };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -72,6 +81,7 @@ export async function POST(request: Request) {
         pixel_map: encodePixelMap(body.pixelMap) as Json,
         status: "pending",
         approved_at: null,
+        is_draft: body.draft === true,
       })
       .eq("id", seat.submission_id);
     if (updErr) {
@@ -81,14 +91,21 @@ export async function POST(request: Request) {
   }
 
   // Insert the submission (trigger validates workspace + increments slots).
+  //
+  // NOTE the encodePixelMap: this path used to persist the RAW INTEGER map
+  // while the re-edit path above wrote slugs, so a seat's stored format
+  // depended on whether it had been edited. Slug form is the only format we
+  // write (migration 0018) — integer ids are engine-local and shift whenever
+  // the catalogue changes, which would silently repaint old designs.
   const { data: sub, error: insErr } = await admin
     .from("employee_submissions")
     .insert({
       workspace_id: seat.workspace_id,
       employee_name: seat.name,
       image_url: body.imagePath ?? null,
-      pixel_map: body.pixelMap as Json,
+      pixel_map: encodePixelMap(body.pixelMap) as Json,
       roster_id: seat.id,
+      is_draft: body.draft === true,
     })
     .select("id")
     .single();

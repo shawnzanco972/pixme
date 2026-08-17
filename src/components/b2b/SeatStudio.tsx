@@ -12,7 +12,11 @@
  */
 import { useState } from "react";
 
-import { Studio, type DesignPayload } from "@/components/b2c/Studio";
+import {
+  Studio,
+  type DesignPayload,
+  type StudioLibraryItem,
+} from "@/components/b2c/Studio";
 import { createClient } from "@/lib/supabase/client";
 import { uploadToSignedUrl } from "@/lib/supabase/storage";
 
@@ -23,6 +27,7 @@ export function SeatStudio({
   initialPlatesY,
   alreadySubmitted = false,
   rejected = false,
+  library,
 }: {
   inviteToken: string;
   plateBudget: number;
@@ -30,12 +35,18 @@ export function SeatStudio({
   initialPlatesY: number;
   alreadySubmitted?: boolean;
   rejected?: boolean;
+  /** Ready-made designs, for an employee with no photo at hand. */
+  library?: StudioLibraryItem[];
 }) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set by the "save for later" button just before the studio hands us the
+  // design, so one submit path serves both actions.
+  const [asDraft, setAsDraft] = useState(false);
 
-  async function handleProceed(design: DesignPayload) {
+  async function handleProceed(design: DesignPayload, draft = false) {
     setError(null);
     if (!design.file) {
       setError("נא להעלות תמונה.");
@@ -62,13 +73,17 @@ export function SeatStudio({
           inviteToken,
           imagePath: path,
           pixelMap: design.pixelMap,
+          draft,
         }),
       });
       if (!res.ok) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(j.error ?? "לא ניתן לשלוח — ייתכן שהפרויקט אינו פעיל.");
       }
-      setDone(true);
+      if (draft) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 4000);
+      } else setDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "שגיאה בלתי צפויה.");
     } finally {
@@ -109,14 +124,31 @@ export function SeatStudio({
             : "כבר שלחתם עיצוב — אפשר לעדכן אותו כאן עד לאישור מנהל הפרויקט."}
         </div>
       )}
+      {saved && (
+        <div className="mx-auto max-w-2xl rounded-xl bg-success/10 p-4 text-center text-sm text-success">
+          נשמר! אפשר לסגור ולחזור לאותו קישור מתי שתרצו. מנהל הפרויקט עוד לא
+          רואה את זה — הוא יראה רק כשתשלחו.
+        </div>
+      )}
       <Studio
         embedded
         hidePricing
         plateBudget={plateBudget}
         initialPlatesX={initialPlatesX}
         initialPlatesY={initialPlatesY}
-        proceedLabel={submitting ? "שולח…" : "שליחת העיצוב ←"}
-        onProceed={(d) => void handleProceed(d)}
+        library={library}
+        proceedLabel={
+          submitting && !asDraft ? "שולח…" : "שליחה למנהל הפרויקט ←"
+        }
+        onProceed={(d) => {
+          setAsDraft(false);
+          void handleProceed(d, false);
+        }}
+        secondaryLabel={submitting && asDraft ? "שומר…" : "שמירה להמשך"}
+        onSecondary={(d) => {
+          setAsDraft(true);
+          void handleProceed(d, true);
+        }}
       />
       {error && (
         <p className="mx-auto max-w-2xl text-center text-sm text-red-600">

@@ -76,6 +76,22 @@ export function fitPlateDims(args: {
   return { x, y };
 }
 
+/** One 24×24 baseplate is ~19 cm per side. */
+export const CM_PER_PLATE = 19;
+
+/**
+ * Human size label for a plate allocation, e.g. 4 → "⁦38×38⁩ ס״מ".
+ *
+ * The owner dashboard must never say "לוחות" — plates/credits is internal
+ * vocabulary (see 0013_plate_allocation.sql). The company bought a mosaic of a
+ * certain size in centimetres; that's the only unit they should ever see.
+ * Bidi-isolated so the pair doesn't reorder inside a Hebrew run.
+ */
+export function plateSizeLabel(plates: number): string {
+  const { x, y } = balancedDims(plates);
+  return `⁦${x * CM_PER_PLATE}×${y * CM_PER_PLATE}⁩ ס״מ`;
+}
+
 export interface WorkspaceLike {
   active: boolean;
   expiration_date: string | null;
@@ -108,29 +124,60 @@ export function workspaceStatus(
 
 // --- Project owner / roster ------------------------------------------------
 
-/** A roster seat's lifecycle as the owner dashboard sees it. */
-export type SeatStatus = "not_started" | "submitted" | "ready" | "rejected";
+/**
+ * A roster seat's lifecycle as the owner dashboard sees it.
+ *
+ * Note the split at the end: `ready` means the owner approved the DESIGN;
+ * `released` means they also sent it to production in a shipment batch. Those
+ * are two separate decisions made at different times — a company approves 20
+ * designs in one sitting but may release 19 for the holidays and one single set
+ * for the boss today.
+ */
+export type SeatStatus =
+  | "not_started"
+  | "draft"
+  | "submitted"
+  | "ready"
+  | "released"
+  | "rejected";
 
 /**
- * Derive a seat's status from its linked submission status (or lack of one).
+ * Derive a seat's status from its linked submission (or lack of one).
  * `submitted` covers the in-flight states (pending/processing) — the employee
- * has done their part; it's now on us.
+ * has done their part; it's now on the owner. A seat attached to a shipment
+ * reports `released` regardless of anything else, since that's the state the
+ * owner cares about once it's out of their hands.
  */
-export function seatStatus(submissionStatus: string | null | undefined): SeatStatus {
+export function seatStatus(
+  submissionStatus: string | null | undefined,
+  shipmentId?: string | null,
+  isDraft?: boolean | null,
+): SeatStatus {
   if (!submissionStatus) return "not_started";
-  if (submissionStatus === "ready") return "ready";
   if (submissionStatus === "rejected") return "rejected";
-  return "submitted"; // pending | processing
+  if (submissionStatus === "ready") return shipmentId ? "released" : "ready";
+  // A draft is work in progress the employee hasn't handed over — it must not
+  // appear in the owner's review queue.
+  return isDraft ? "draft" : "submitted"; // pending | processing
+}
+
+/** Seats the owner can put into a new shipment: approved, not yet released. */
+export function isReleasable(status: SeatStatus): boolean {
+  return status === "ready";
 }
 
 export interface ProjectProgress {
   total: number;
   notStarted: number;
+  draft: number;
   submitted: number;
   ready: number;
+  released: number;
   rejected: number;
   /** Fraction of seats whose employee has submitted (0..1). */
   doneFraction: number;
+  /** Seats waiting on the OWNER to act (review or release) — the real to-do. */
+  needsOwner: number;
 }
 
 /** Summarize roster completion for the owner dashboard progress bar. */
@@ -138,16 +185,23 @@ export function projectProgress(statuses: SeatStatus[]): ProjectProgress {
   const total = statuses.length;
   const count = (s: SeatStatus) => statuses.filter((x) => x === s).length;
   const notStarted = count("not_started");
+  const draft = count("draft");
   const ready = count("ready");
+  const released = count("released");
   const rejected = count("rejected");
   const submitted = count("submitted");
-  const done = total - notStarted;
+  // "Done" = handed over. A draft is still the employee's move, so it counts
+  // with the not-started group for progress purposes.
+  const done = total - notStarted - draft;
   return {
     total,
     notStarted,
+    draft,
     submitted,
     ready,
+    released,
     rejected,
     doneFraction: total > 0 ? done / total : 0,
+    needsOwner: submitted + ready,
   };
 }

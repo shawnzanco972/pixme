@@ -10,7 +10,10 @@
  * at which point this locks to a done state.
  */
 import { SeatStudio } from "@/components/b2b/SeatStudio";
+import type { StudioLibraryItem } from "@/components/b2c/Studio";
 import { balancedDims, workspaceStatus } from "@/lib/b2b";
+import { parseEngineSettings } from "@/lib/design-settings";
+import { designPublicUrl } from "@/lib/supabase/storage";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +71,24 @@ export default async function SeatPage({
     }
   }
 
+  // Ready-made designs, same catalogue the retail studio offers. An employee
+  // without a photo to hand should still be able to produce something they
+  // like rather than abandon the link.
+  const { data: designRows } = await admin
+    .from("ready_designs")
+    .select("id, title, image_path, default_plates_x, default_plates_y, settings")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+
+  const library: StudioLibraryItem[] = (designRows ?? []).map((d) => ({
+    id: d.id,
+    title: d.title,
+    imageUrl: designPublicUrl(admin, d.image_path),
+    platesX: d.default_plates_x,
+    platesY: d.default_plates_y,
+    settings: parseEngineSettings(d.settings),
+  }));
+
   const hasSubmission = Boolean(seat?.submission_id);
   const approved = status === "ready";
   const rejected = status === "rejected";
@@ -115,6 +136,7 @@ export default async function SeatPage({
           initialPlatesY={balancedDims(budget).y}
           alreadySubmitted={hasSubmission && !rejected}
           rejected={rejected}
+          library={library}
         />
       )}
     </main>

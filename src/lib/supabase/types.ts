@@ -84,6 +84,44 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_shipments: {
+        Row: {
+          b2b_order_id: string
+          created_at: string
+          id: string
+          note: string | null
+          shipped_at: string | null
+          status: Database["public"]["Enums"]["b2b_shipment_status"]
+          updated_at: string
+        }
+        Insert: {
+          b2b_order_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          shipped_at?: string | null
+          status?: Database["public"]["Enums"]["b2b_shipment_status"]
+          updated_at?: string
+        }
+        Update: {
+          b2b_order_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          shipped_at?: string | null
+          status?: Database["public"]["Enums"]["b2b_shipment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_shipments_b2b_order_id_fkey"
+            columns: ["b2b_order_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       b2b_workspaces: {
         Row: {
           active: boolean
@@ -412,9 +450,11 @@ export type Database = {
           employee_name: string
           id: string
           image_url: string | null
+          is_draft: boolean
           pixel_map: Json | null
           roster_id: string | null
           scheduled_for: string | null
+          shipment_id: string | null
           status: Database["public"]["Enums"]["submission_status"]
           updated_at: string
           workspace_id: string
@@ -425,9 +465,11 @@ export type Database = {
           employee_name: string
           id?: string
           image_url?: string | null
+          is_draft?: boolean
           pixel_map?: Json | null
           roster_id?: string | null
           scheduled_for?: string | null
+          shipment_id?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           updated_at?: string
           workspace_id: string
@@ -438,9 +480,11 @@ export type Database = {
           employee_name?: string
           id?: string
           image_url?: string | null
+          is_draft?: boolean
           pixel_map?: Json | null
           roster_id?: string | null
           scheduled_for?: string | null
+          shipment_id?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           updated_at?: string
           workspace_id?: string
@@ -451,6 +495,13 @@ export type Database = {
             columns: ["roster_id"]
             isOneToOne: false
             referencedRelation: "employee_roster"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_submissions_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_shipments"
             referencedColumns: ["id"]
           },
           {
@@ -608,6 +659,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      b2b_shipment_status:
+        | "requested"
+        | "in_production"
+        | "shipped"
+        | "cancelled"
       order_status: "pending" | "paid" | "fulfilled" | "cancelled" | "refunded"
       submission_status: "pending" | "processing" | "ready" | "rejected"
     }
@@ -737,6 +793,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      b2b_shipment_status: [
+        "requested",
+        "in_production",
+        "shipped",
+        "cancelled",
+      ],
       order_status: ["pending", "paid", "fulfilled", "cancelled", "refunded"],
       submission_status: ["pending", "processing", "ready", "rejected"],
     },

@@ -84,6 +84,13 @@ export interface StudioProps {
   /** Label for the embedded CTA (defaults to "המשך לשלב הבא ←"). */
   proceedLabel?: string;
   /**
+   * Optional second CTA beside the primary one (embedded mode). The employee
+   * seat flow uses it for "save for later": same design payload, different
+   * intent — keep the work without handing it to the manager for review.
+   */
+  secondaryLabel?: string;
+  onSecondary?: (data: DesignPayload) => void;
+  /**
    * Pre-load a ready-made design's artwork (public URL). Fetched once on mount
    * and pushed through the normal pipeline, exactly like an uploaded photo.
    */
@@ -126,6 +133,8 @@ export function Studio({
   initialPlatesY,
   hidePricing = false,
   proceedLabel,
+  secondaryLabel,
+  onSecondary,
   initialImageUrl,
   initialImageName,
   initialSettings,
@@ -698,23 +707,44 @@ export function Studio({
             שמירת הגדרות ברירת מחדל
           </button>
         ) : embedded ? (
-          <button
-            type="button"
-            onClick={() =>
-              result &&
-              onProceed?.({
-                file,
-                pixelMap: result.pixelMap,
-                cols,
-                rows,
-                price: price.total,
-              })
-            }
-            disabled={!result}
-            className="btn btn-primary w-full"
-          >
-            {proceedLabel ?? "המשך לשלב הבא ←"}
-          </button>
+          <div className="flex w-full flex-col gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                result &&
+                onProceed?.({
+                  file,
+                  pixelMap: result.pixelMap,
+                  cols,
+                  rows,
+                  price: price.total,
+                })
+              }
+              disabled={!result}
+              className="btn btn-primary w-full"
+            >
+              {proceedLabel ?? "המשך לשלב הבא ←"}
+            </button>
+            {secondaryLabel && onSecondary && (
+              <button
+                type="button"
+                onClick={() =>
+                  result &&
+                  onSecondary({
+                    file,
+                    pixelMap: result.pixelMap,
+                    cols,
+                    rows,
+                    price: price.total,
+                  })
+                }
+                disabled={!result}
+                className="btn btn-ghost w-full"
+              >
+                {secondaryLabel}
+              </button>
+            )}
+          </div>
         ) : (
           <button
             type="button"
@@ -1122,6 +1152,31 @@ export function Studio({
             >
               {showOriginal ? "תצוגת הפסיפס" : "השוואה לתמונה המקורית"}
             </button>
+          ) : library && library.length > 0 ? (
+            /* Real artwork beats emoji shapes: a heart/star chip makes the
+               engine look like a clip-art toy, while an actual design shows
+               what a photo mosaic resolves to. The emoji starters below are
+               only the fallback for an empty catalogue. */
+            <div className="flex flex-wrap justify-center gap-2">
+              {library.slice(0, 6).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => void loadLibraryItem(item)}
+                  title={item.title}
+                  className="h-14 w-14 overflow-hidden rounded-lg border-2 border-outline transition-colors hover:border-secondary"
+                >
+                  <MosaicThumb
+                    imageUrl={item.imageUrl}
+                    platesX={item.platesX}
+                    platesY={item.platesY}
+                    settings={item.settings}
+                    studPx={3}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           ) : (
             <div className="flex flex-wrap justify-center gap-2">
               {STARTERS.map((st) => (
@@ -1715,6 +1770,25 @@ export function Studio({
               </span>
             )}
           </div>
+          {secondaryLabel && onSecondary && embedded && (
+            <button
+              type="button"
+              onClick={() =>
+                result &&
+                onSecondary({
+                  file,
+                  pixelMap: result.pixelMap,
+                  cols,
+                  rows,
+                  price: price.total,
+                })
+              }
+              disabled={ctaDisabled}
+              className="btn btn-ghost min-h-[52px] px-3 text-sm"
+            >
+              {secondaryLabel}
+            </button>
+          )}
           <button
             type="button"
             onClick={primaryAction}
